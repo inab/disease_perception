@@ -12,18 +12,20 @@ Installation
 
 2) You could also need `ruby` and `gem`.
 
-3) Clone this repository, and run `npm install`, so [Grunt] (http://gruntjs.com/), [Bower] (http://bower.io/) and other dependencies are installed:
+3) Clone this repository, and run `npm install yarn`, so [Yarn](https://yarnpkg.com/) dependency, which is used to fetch [Grunt](http://gruntjs.com/) and other dependencies are installed:
 
 ```bash
 git clone https://github.com/inab/comorbidities.git
-npm install
+npm install yarn
+
 ```
 
-4) Add `node_modules/.bin` subdirectory to the `PATH` environment variable, so `bower` and `grunt` can be instantiated
+4) Add `node_modules/.bin` subdirectory to the `PATH` environment variable, so `yarn` can be instantiated
 
 ```bash
 PATH="${PWD}/node_modules/.bin:${PATH}"
 export PATH
+yarn
 ```
 
 5) Run `grunt build` in order to prepare and deploy the BSC Comorbidities browser protoype site, which will be deployed at `dist` subdirectory.

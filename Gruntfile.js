@@ -310,12 +310,12 @@ module.exports = function (grunt) {
           src: ['generated/*']
         }, {
           expand: true,
-          cwd: 'bower_components/cartodb.js/dist/themes/img',
+          cwd: 'node_modules/@bower_components/cartodb.js/dist/themes/img',
           src: '*',
           dest: '<%= yeoman.dist %>/img',
         }, {
           expand: true,
-          cwd: 'bower_components/cartodb.js/dist/themes/css/images',
+          cwd: 'node_modules/@bower_components/cartodb.js/dist/themes/css/images',
           src: ['*.png','*.gif'],
           dest: '<%= yeoman.dist %>/styles/images',
         }]

@@ -1,4 +1,0 @@
-{
-  "shorthand-resolver": "https://github.com/{{owner}}/{{package}}.git",
-  "directory": "bower_components"
-}
