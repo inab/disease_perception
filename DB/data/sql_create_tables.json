@@ -1,0 +1,21 @@
+{
+ "patient_gene_maps":          "CREATE TABLE patient_gene_maps ( id INTEGER PRIMARY KEY, patient_id INTEGER, gene_id INTEGER, regulation_sign INTEGER, FOREIGN KEY(patient_id) REFERENCES patient(id), FOREIGN KEY(gene_id) REFERENCES gene(id) ); ",
+ "study":                      "CREATE TABLE study ( id INTEGER PRIMARY KEY, geo_arrayexpress_code TEXT ); ",
+ "patient":                    "CREATE TABLE patient ( id INTEGER PRIMARY KEY, patient_subgroup_id INTEGER, study_id INTEGER, FOREIGN KEY(patient_subgroup_id) REFERENCES patient_subgroup(id), FOREIGN KEY(study_id) REFERENCES study(id) ); ",
+ "patient_drug_maps":          "CREATE TABLE patient_drug_maps ( id INTEGER PRIMARY KEY, patient_id INTEGER, drug_id INTEGER, regulation_sign INTEGER, FOREIGN KEY(patient_id) REFERENCES patient(id), FOREIGN KEY(drug_id) REFERENCES drug(id) ); ",
+ "drug":                       "CREATE TABLE drug ( id INTEGER PRIMARY KEY, name TEXT );",
+ "disease":                    "CREATE TABLE disease ( id INTEGER PRIMARY KEY, name TEXT, disease_group_id INTEGER, FOREIGN KEY(disease_group_id) REFERENCES disease_group(id) ); ",
+ "patient_subgroup":           "CREATE TABLE patient_subgroup ( id INTEGER PRIMARY KEY, name TEXT, disease_id INTEGER, FOREIGN KEY(disease_id) REFERENCES disease(id) ); ",
+ "disease_group":              "CREATE TABLE disease_group ( id INTEGER PRIMARY KEY, name TEXT );",
+ "gene":                       "CREATE TABLE gene ( id INTEGER PRIMARY KEY, gene_symbol TEXT, ensembl_id TEXT, uniprot_id TEXT);",
+ "disease_digraph":            "CREATE TABLE disease_digraph ( id INTEGER PRIMARY KEY, disease_a_id INTEGER, disease_b_id INTEGER, relative_risk FLOAT, FOREIGN KEY(disease_a_id) REFERENCES disease(id), FOREIGN KEY(disease_b_id) REFERENCES disease(id) ); ",
+ "patient_subgroup_digraph":   "CREATE TABLE patient_subgroup_digraph ( id INTEGER PRIMARY KEY, patient_subgroup_a_id INTEGER, patient_subgroup_b_id INTEGER, relative_risk FLOAT, FOREIGN KEY(patient_subgroup_a_id) REFERENCES patient_subgroup(id), FOREIGN KEY(patient_subgroup_b_id) REFERENCES patient_subgroup(id) );",
+ "patient_graph":              "CREATE TABLE patient_graph ( id INTEGER PRIMARY KEY, patient_a_id INTEGER, patient_b_id INTEGER, interaction_sign INTEGER, FOREIGN KEY(patient_a_id) REFERENCES patient(id), FOREIGN KEY(patient_b_id) REFERENCES patient(id) ); ",
+ "patient_subgroup_gene_intersect": "CREATE TABLE patient_subgroup_gene_intersect ( id INTEGER PRIMARY KEY, patient_subgroup_id INTEGER, gene_id INTEGER, regulation_sign INTEGER, FOREIGN KEY(patient_subgroup_id) REFERENCES patient_subgroup(id), FOREIGN KEY(gene_id) REFERENCES gene(id) ); ",
+ "patient_subgroup_drug_intersect": "CREATE TABLE patient_subgroup_drug_intersect ( id INTEGER PRIMARY KEY, patient_subgroup_id INTEGER, drug_id INTEGER, regulation_sign INTEGER, FOREIGN KEY(patient_subgroup_id) REFERENCES patient_subgroup(id), FOREIGN KEY(drug_id) REFERENCES drug(id) ); "
+}
+
+
+
+
+
