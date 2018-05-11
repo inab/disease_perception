@@ -12,7 +12,7 @@ This program is written for Python 3.5 or later. It depends on standard librerie
 python3 -m venv .pyenv
 source .pyenv/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements.txt -c constraints.txt
 ```
 
 * The program can be run using the next command line:
