@@ -7,11 +7,17 @@
 	{
 		"table": "disease",
 		"sql_ddl": "CREATE TABLE disease ( id INTEGER PRIMARY KEY, name TEXT, disease_group_id INTEGER, FOREIGN KEY(disease_group_id) REFERENCES disease_group(id) ); ",
+		"indexes": [
+			["disease_group_id"]
+		],
 		"datafile": "disease.tsv.gz"
 	},
 	{
 		"table": "patient_subgroup",
 		"sql_ddl": "CREATE TABLE patient_subgroup ( id INTEGER PRIMARY KEY, name TEXT, disease_id INTEGER, FOREIGN KEY(disease_id) REFERENCES disease(id) ); ",
+		"indexes": [
+			["disease_id"]
+		],
 		"datafile": "patient_subgroup.tsv.gz"
 	},
 	{
@@ -33,8 +39,8 @@
 		"table": "patient",
 		"sql_ddl": "CREATE TABLE patient ( id INTEGER PRIMARY KEY, patient_subgroup_id INTEGER, study_id INTEGER, FOREIGN KEY(patient_subgroup_id) REFERENCES patient_subgroup(id), FOREIGN KEY(study_id) REFERENCES study(id) ); ",
 		"indexes": [
-			["study_id"],
-			["patient_subgroup_id"]
+			["patient_subgroup_id"],
+			["study_id"]
 		],
 		"datafile": "patient.tsv.gz"
 	},
