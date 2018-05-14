@@ -1,16 +1,32 @@
 [
 	{
 		"table": "disease_group",
-		"sql_ddl": "CREATE TABLE disease_group ( id INTEGER PRIMARY KEY, name TEXT );",
+		"sql_ddl": "CREATE TABLE disease_group ( id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
 		"datafile": "disease_group.tsv.gz"
 	},
 	{
+		"table": "disease_group_properties",
+		"sql_ddl": "CREATE TABLE disease_group_properties ( disease_group_id INTEGER NOT NULL, property TEXT NOT NULL, value TEXT, FOREIGN KEY(disease_group_id) REFERENCES disease_group(id) ); ",
+		"indexes": [
+			["disease_group_id","property"]
+		],
+		"datafile": "disease_group_properties.tsv"
+	},
+	{
 		"table": "disease",
-		"sql_ddl": "CREATE TABLE disease ( id INTEGER PRIMARY KEY, name TEXT, disease_group_id INTEGER, FOREIGN KEY(disease_group_id) REFERENCES disease_group(id) ); ",
+		"sql_ddl": "CREATE TABLE disease ( id INTEGER PRIMARY KEY, name TEXT NOT NULL, disease_group_id INTEGER NOT NULL, FOREIGN KEY(disease_group_id) REFERENCES disease_group(id) ); ",
 		"indexes": [
 			["disease_group_id"]
 		],
 		"datafile": "disease.tsv.gz"
+	},
+	{
+		"table": "disease_properties",
+		"sql_ddl": "CREATE TABLE disease_properties ( disease_id INTEGER NOT NULL, property TEXT NOT NULL, value TEXT, FOREIGN KEY(disease_id) REFERENCES disease(id) ); ",
+		"indexes": [
+			["disease_id","property"]
+		],
+		"datafile": "disease_properties.tsv"
 	},
 	{
 		"table": "patient_subgroup",
