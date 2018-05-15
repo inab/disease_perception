@@ -1,4 +1,4 @@
-# Commorbidities Database creation
+# Install instructions of comorbidities database population program
 
 This program is written for Python 3.5 or later. It depends on standard libreries, plus the ones declared in [requirements.txt](requirements.txt).
 
@@ -13,11 +13,5 @@ python3 -m venv .pyDBenv
 source .pyDBenv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt -c constraints.txt
-```
-
-* The program can be run using the next command line:
-
-```bash
-source .pyDBenv/bin/activate
-python create_db.py
+deactivate
 ```

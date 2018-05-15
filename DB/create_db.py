@@ -7,7 +7,7 @@ import sqlite3
 
 def main(project_folder="./"):
 	data_folder = os.path.join(project_folder,'data')
-	output_folder = os.path.join(project_folder,'out')
+	output_folder = os.path.join(project_folder,'..','REST','DB')
 	
 	os.makedirs(output_folder,exist_ok=True)
 	
