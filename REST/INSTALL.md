@@ -1,6 +1,6 @@
-# Commorbidities REST API
+# Install instructions of comorbidities REST API
 
-This program is written for Python 3.5 or later. It depends on standard libreries, plus the ones declared in [requirements.txt](requirements.txt).
+The source code of this API is written for Python 3.5 or later. It depends on standard libreries, plus the ones declared in [requirements.txt](requirements.txt).
 
 * In order to install the dependencies you need `pip` and `venv` Python modules.
 	- `pip` is available in many Linux distributions (Ubuntu package `python-pip`, CentOS EPEL package `python-pip`), and also as [pip](https://pip.pypa.io/en/stable/) Python package.
@@ -13,11 +13,17 @@ python3 -m venv .pyRESTenv
 source .pyRESTenv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt -c constraints.txt
+# Next commands are to assure a static swagger ui interface is in place
+if [ ! -d .pyRESTenv/lib/python3.5/site-packages/flask_restplus/static ] ; then
+	wget --content-disposition https://github.com/swagger-api/swagger-ui/archive/v3.14.2.tar.gz
+	tar xf swagger-ui-3.14.2.tar.gz swagger-ui-3.14.2/dist
+	mv swagger-ui-3.14.2/dist .pyRESTenv/lib/python3*/site-packages/flask_restplus/static && rmdir swagger-ui-3.14.2
+fi
 ```
 
 * The program can be run using the next command line:
 
 ```bash
 source .pyRESTenv/bin/activate
-python 
+python como_network.py
 ```
