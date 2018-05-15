@@ -9,8 +9,8 @@ This program is written for Python 3.5 or later. It depends on standard librerie
 * The creation of a virtual environment and installation of the dependencies in that environment is done running:
 
 ```bash
-python3 -m venv .pyenv
-source .pyenv/bin/activate
+python3 -m venv .pyDBenv
+source .pyDBenv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt -c constraints.txt
 ```
@@ -18,6 +18,6 @@ pip install -r requirements.txt -c constraints.txt
 * The program can be run using the next command line:
 
 ```bash
-source .pyenv/bin/activate
+source .pyDBenv/bin/activate
 python create_db.py
 ```
