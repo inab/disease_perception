@@ -1,3 +1,3 @@
 flask
 flask-cors
-git+https://github.com/noirbizarre/flask-restplus.git@d749772383f6c84b67c1f187e83b5c8b9177ab73#egg=flask-restplus
+flask-restplus
