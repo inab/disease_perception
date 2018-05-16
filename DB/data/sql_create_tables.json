@@ -43,7 +43,7 @@
 	},
 	{
 		"table": "study",
-		"sql_ddl": "CREATE TABLE study ( id INTEGER PRIMARY KEY, geo_arrayexpress_code TEXT ); ",
+		"sql_ddl": "CREATE TABLE study ( id INTEGER PRIMARY KEY, geo_arrayexpress_code TEXT UNIQUE ); ",
 		"datafile": "study.tsv.gz"
 	},
 	{
