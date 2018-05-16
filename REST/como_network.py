@@ -140,6 +140,107 @@ class ComorbiditiesNetwork(object):
 			cur.close()
 		
 		return res
+	
+	def disease_groups(self):
+		res = []
+		cur = self._getCursor()
+		try:
+			cur.execute('SELECT id,name FROM disease_group')
+			while True:
+				disease_groups = cur.fetchmany()
+				if len(disease_groups)==0:
+					break
+				
+				res.extend(map(lambda dg: {'id': dg[0],'name': dg[1]},disease_groups))
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+	
+	def disease_group(self,id):
+		res = None
+		cur = self._getCursor()
+		try:
+			cur.execute('SELECT dg.id,dg.name,dgp.property,dgp.value FROM disease_group dg,disease_group_properties dgp WHERE dg.id = ? AND dgp.disease_group_id = dg.id ORDER BY 1',(id,))
+			res = {}
+			while True:
+				dg_props = cur.fetchmany()
+				if len(dg_props) == 0:
+					# Empty dictionary?
+					if not res:
+						self.api.abort(404, "Disease group {} is not found in the database".format(id))
+					break
+				
+				# Initializing common properties
+				if not 'id' in res:
+					dgp = dg_props[0]
+					res = {
+						'id': dgp[0],
+						'name': dgp[1]
+					}
+				
+				for dgp in dg_props:
+					res[dgp[2]] = dgp[3]
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+	
+	def diseases(self,disease_group_id=None):
+		res = []
+		cur = self._getCursor()
+		try:
+			if disease_group_id is None:
+				cur.execute('SELECT id,name,disease_group_id FROM disease')
+			else:
+				cur.execute('SELECT id,name,disease_group_id FROM disease WHERE disease_group_id = ?',(disease_group_id,))
+			while True:
+				diseases = cur.fetchmany()
+				if len(diseases)==0:
+					if(len(res)==0):
+						self.api.abort(404, "Disease group {} is not found in the database".format(disease_group_id))
+					break
+				
+				res.extend(map(lambda disease: {'id': disease[0],'name': disease[1],'disease_group_id': disease[2]},diseases))
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+	
+	def disease(self,id):
+		res = None
+		cur = self._getCursor()
+		try:
+			cur.execute('SELECT d.id,d.name,d.disease_group_id,dp.property,dp.value FROM disease d,disease_properties dp WHERE d.id = ? AND dp.disease_id = d.id ORDER BY 1',(id,))
+			res = {}
+			while True:
+				disease_props = cur.fetchmany()
+				if len(disease_props) == 0:
+					# Empty dictionary?
+					if not res:
+						self.api.abort(404, "Disease {} is not found in the database".format(id))
+					break
+				
+				# Initializing common properties
+				if not 'id' in res:
+					dp = disease_props[0]
+					res = {
+						'id': dp[0],
+						'name': dp[1],
+						'disease_group_id': dp[2]
+					}
+				
+				for dp in disease_props:
+					res[dp[3]] = dp[4]
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+		
 
 
 app = Flask(__name__)
@@ -243,6 +344,50 @@ study_model = api.model('Study', {
 
 simple_study_model = study_model
 
+
+#simple_disease_group_model = api.schema_model('DiseaseGroup', {
+#	'description': 'A disease group describedç in the comorbidities database',
+#	'properties': {
+#		'id': {
+#			'type': 'string',
+#			'description': 'The internal id of the disease group'
+#		},
+#		'name': {
+#			'type': 'string',
+#			'description': 'The disease group symbolic name'
+#		}
+#	},
+#	'type': 'object',
+#	'required': ['id','name']
+#})
+
+simple_disease_group_model = api.model('SimpleDiseaseGroup', {
+	'id': fields.Integer(required=True, description = 'The internal id of the disease group'),
+	'name': fields.String(required=True, description = 'The disease group symbolic name')
+})
+
+disease_group_model = api.model('DiseaseGroup', {
+	'id': fields.Integer(required=True, description = 'The internal id of the disease group'),
+	'name': fields.String(required=True, description = 'The disease group symbolic name'),
+	'color': fields.String(required=True, description = 'Preferred color for this group of diseases')
+})
+
+
+simple_disease_model = api.model('SimpleDisease', {
+	'id': fields.Integer(required=True, description = 'The internal id of the disease'),
+	'disease_group_id': fields.Integer(required=True, description = 'The internal id of the disease group where this disease is classified into'),
+	'name': fields.String(required=True, description = 'The disease symbolic name')
+})
+
+disease_model = api.model('Disease', {
+	'id': fields.Integer(required=True, description = 'The internal id of the disease'),
+	'disease_group_id': fields.Integer(required=True, description = 'The internal id of the disease group where this disease is classified into'),
+	'name': fields.String(required=True, description = 'The disease symbolic name'),
+	'color': fields.String(required=True, description = 'Preferred color for this group of diseases'),
+	'icd9': fields.String(description = 'The ICD9 code of this disease'),
+	'icd10': fields.String(description = 'The ICD10 code of this disease')
+})
+
 # This is the singleton instance shared by all the resources
 
 # Creating the object holding the state of the API
@@ -335,6 +480,72 @@ class Study(Resource):
 		'''It gets detailed study information'''
 		return CMNetwork.study(study_id)
 
+
+dg_ns = Namespace('disease_groups','Disease groups')
+api.add_namespace(dg_ns,path='/diseases/groups')
+
+@dg_ns.route('')
+class DiseaseGroupList(Resource):
+	'''Shows a list of all the disease groups'''
+	@dg_ns.doc('list_disease_groups')
+	@dg_ns.marshal_list_with(simple_disease_group_model)
+	def get(self):
+		'''List all the disease groups present in the comorbidity network'''
+		return CMNetwork.disease_groups()
+
+@dg_ns.route('/<int:id>')
+@dg_ns.response(404, 'Disease group not found')
+@dg_ns.param('id', 'The disease group id')
+class DiseaseGroup(Resource):
+	'''Return the detailed information of a disease group'''
+	@dg_ns.doc('disease_group')
+	@dg_ns.marshal_with(disease_group_model)
+	def get(self,id):
+		'''It gets detailed disease group information'''
+		return CMNetwork.disease_group(id)
+
+@dg_ns.route('/<int:id>/list')
+@dg_ns.response(404, 'Disease group not found')
+@dg_ns.param('id', 'The disease group id')
+class DiseaseGroup(Resource):
+	'''Return the disease list of a disease group'''
+	@dg_ns.doc('disease_group_list')
+	@dg_ns.marshal_list_with(simple_disease_model)
+	def get(self,id):
+		'''It gets the list of diseases in this group'''
+		return CMNetwork.diseases(id)
+
+
+disease_ns = Namespace('diseases','Diseases')
+api.add_namespace(disease_ns,path='/diseases')
+
+@disease_ns.route('')
+class DiseaseList(Resource):
+	'''Shows a list of all the diseases'''
+	@disease_ns.doc('list_diseases')
+	@disease_ns.marshal_list_with(simple_disease_model)
+	def get(self):
+		'''List all the diseases present in the comorbidity network'''
+		return CMNetwork.diseases()
+
+@disease_ns.route('/<int:id>')
+@disease_ns.response(404, 'Disease not found')
+@disease_ns.param('id', 'The disease id')
+class Disease(Resource):
+	'''Return the detailed information of a disease'''
+	@disease_ns.doc('disease')
+	@disease_ns.marshal_with(disease_model)
+	def get(self,id):
+		'''It gets detailed disease information'''
+		return CMNetwork.disease(id)
+
+
+psg_ns = Namespace('patient_subgroups','Patient subgroups')
+api.add_namespace(psg_ns,path='/patients/subgroups')
+
+@psg_ns.route('')
+class PatientSubgroupList(Resource):
+	'''Shows a list of all the patient subgroups'''
 
 
 if __name__ == '__main__':
