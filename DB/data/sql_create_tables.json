@@ -38,7 +38,7 @@
 	},
 	{
 		"table": "gene",
-		"sql_ddl": "CREATE TABLE gene ( id INTEGER PRIMARY KEY, gene_symbol TEXT, ensembl_id TEXT, uniprot_id TEXT);",
+		"sql_ddl": "CREATE TABLE gene ( id INTEGER PRIMARY KEY, gene_symbol TEXT UNIQUE, ensembl_id TEXT, uniprot_id TEXT);",
 		"datafile": "gene.tsv.gz"
 	},
 	{
