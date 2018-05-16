@@ -17,13 +17,8 @@ pip install -r requirements.txt -c constraints.txt
 if [ ! -d .pyRESTenv/lib/python3.5/site-packages/flask_restplus/static ] ; then
 	wget --content-disposition https://github.com/swagger-api/swagger-ui/archive/v3.14.2.tar.gz
 	tar xf swagger-ui-3.14.2.tar.gz swagger-ui-3.14.2/dist
-	mv swagger-ui-3.14.2/dist .pyRESTenv/lib/python3*/site-packages/flask_restplus/static && rmdir swagger-ui-3.14.2
+	mv swagger-ui-3.14.2/dist .pyRESTenv/lib/python3*/site-packages/flask_restplus/static
+	rm -r swagger-ui-3.14.2*
 fi
 ```
 
-* The program can be run using the next command line:
-
-```bash
-source .pyRESTenv/bin/activate
-python como_network.py
-```
