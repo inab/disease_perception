@@ -190,10 +190,10 @@ class ComorbiditiesNetwork(object):
 		res = []
 		cur = self._getCursor()
 		try:
-			if disease_group_id is None:
-				cur.execute('SELECT id,name,disease_group_id FROM disease')
-			else:
+			if disease_group_id is not None:
 				cur.execute('SELECT id,name,disease_group_id FROM disease WHERE disease_group_id = ?',(disease_group_id,))
+			else:
+				cur.execute('SELECT id,name,disease_group_id FROM disease')
 			while True:
 				diseases = cur.fetchmany()
 				if len(diseases)==0:
@@ -238,3 +238,61 @@ class ComorbiditiesNetwork(object):
 			cur.close()
 		
 		return res
+	
+	def patients(self,patient_id=None,patient_subgroup_id=None):
+		res = []
+		cur = self._getCursor()
+		try:
+			if patient_subgroup_id is not None:
+				cur.execute('SELECT p.id,p.patient_subgroup_id,s.geo_arrayexpress_code FROM patient p, study s WHERE p.study_id = s.id AND patient_subgroup_id = ?',(patient_subgroup_id,))
+			elif patient_id is not None:
+				cur.execute('SELECT p.id,p.patient_subgroup_id,s.geo_arrayexpress_code FROM patient p, study s WHERE p.study_id = s.id AND p.id = ?',(patient_id,))
+			else:
+				cur.execute('SELECT p.id,p.patient_subgroup_id,s.geo_arrayexpress_code FROM patient p, study s WHERE p.study_id = s.id')
+			while True:
+				patients = cur.fetchmany()
+				if len(patients)==0:
+					if(len(res)==0):
+						if patient_subgroup_id is not None:
+							self.api.abort(404, "Patient subgroup {} is not found in the database".format(patient_subgroup_id))
+						elif patient_id is not None:
+							self.api.abort(404, "Patient {} is not found in the database".format(patient_id))
+					break
+				
+				res.extend(map(lambda patient: {'id': patient[0],'patient_subgroup_id': patient[1],'study_id': patient[2]},patients))
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+	
+	def patient(self,patient_id):
+		res = self.patients(patient_id=patient_id)
+		return res[0]
+	
+	def patient_subgroups(self,patient_subgroup_id=None):
+		res = []
+		cur = self._getCursor()
+		try:
+			if patient_subgroup_id is not None:
+				cur.execute('SELECT id,name,disease_id FROM patient_subgroup WHERE id = ?',(patient_subgroup_id,))
+			else:
+				cur.execute('SELECT id,name,disease_id FROM patient_subgroup')
+			while True:
+				patient_subgroups = cur.fetchmany()
+				if len(patient_subgroups)==0:
+					if(len(res)==0):
+						if patient_subgroup_id is not None:
+							self.api.abort(404, "Patient subgroup {} is not found in the database".format(patient_subgroup_id))
+					break
+				
+				res.extend(map(lambda ps: {'id': ps[0],'name': ps[1],'disease_id': ps[2]},patient_subgroups))
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+	
+	def patient_subgroup(self,patient_subgroup_id):
+		res = self.patient_subgroups(patient_subgroup_id=patient_subgroup_id)
+		return res[0]

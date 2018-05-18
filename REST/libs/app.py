@@ -14,18 +14,16 @@ from .res.ns import ROUTES as ROOT_ROUTES
 from .res.genes import ROUTES as GENE_ROUTES
 from .res.drugs import ROUTES as DRUG_ROUTES
 from .res.studies import ROUTES as STUDY_ROUTES
-from .res.disease_groups import ROUTES as DISEASE_GROUP_ROUTES
 from .res.diseases import ROUTES as DISEASE_ROUTES
-from .res.patient_subgroups import ROUTES as PATIENT_SUBGROUP_ROUTES
+from .res.patients import ROUTES as PATIENT_ROUTES
 
 ROUTE_SETS = [
 	ROOT_ROUTES,
 	GENE_ROUTES,
 	DRUG_ROUTES,
 	STUDY_ROUTES,
-	DISEASE_GROUP_ROUTES,
 	DISEASE_ROUTES,
-	PATIENT_SUBGROUP_ROUTES
+	PATIENT_ROUTES
 ]
 
 def _register_cm_namespaces(api,res_kwargs):
