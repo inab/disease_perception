@@ -29,6 +29,6 @@ ROUTES={
 	'path': '/studies',
 	'routes': [
 		(StudyList,''),
-		(Study,'/<study_id>')
+		(Study,'/<string:study_id>')
 	]
 }

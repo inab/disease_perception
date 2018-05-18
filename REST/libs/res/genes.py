@@ -33,6 +33,6 @@ ROUTES={
 	'path': '/genes',
 	'routes': [
 		(GeneList,''),
-		(Gene,'/<symbol>')
+		(Gene,'/<string:symbol>')
 	]
 }
