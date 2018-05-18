@@ -4,7 +4,7 @@
 
 import sys, os
 
-from flask_restplus import Api, Resource, fields
+from flask_restplus import Namespace, Api, Resource, fields
 
 class CMResource(Resource):
 	'''This class eases passing the instance of the comorbidity network query API'''
@@ -14,26 +14,13 @@ class CMResource(Resource):
 
 
 
-api = Api(
-	version='0.2',
-	title='Comorbidities Network REST API',
-	description='A simple comorbidites network exploring API which is used by the web explorer',
-	default='cm',
-	license='AGPL-3',
-	default_label='Comorbidities network queries'
-)
-
-def init_comorbidities_api(app):
-	api.app = app
-	api.init_app(app)
-	
-	return api
-
-
+NS = Namespace('cm','Comorbidities network info')
 #ns = api.namespace('cm', description='Comorbidities network queries')
 
+
+GENES_NS = Namespace('genes','Comorbidities related genes')
 # The different models
-#simple_gene_model = api.schema_model('SimpleGene', {
+#simple_gene_model = GENES_NS.schema_model('SimpleGene', {
 #	'properties': {
 #		'symbol': {
 #			'type': 'string',
@@ -44,11 +31,11 @@ def init_comorbidities_api(app):
 #	'required': [ 'symbol' ]
 #})
 
-simple_gene_model = api.model('SimpleGene', {
+simple_gene_model = GENES_NS.model('SimpleGene', {
 	'symbol': fields.String(required=True,description = 'The gene symbol'),
 })
 
-#gene_model = api.schema_model('Gene', {
+#gene_model = GENES_NS.schema_model('Gene', {
 #	'properties': {
 #		'symbol': {
 #			'type': 'string',
@@ -68,14 +55,16 @@ simple_gene_model = api.model('SimpleGene', {
 #	'required': [ 'symbol' ]
 #})
 
-gene_model = api.model('Gene', {
+gene_model = GENES_NS.model('Gene', {
 	'symbol': fields.String(required=True,description = 'The gene symbol'),
 	'ensembl_id': fields.String(description = 'The EnsEMBL gene id'),
 	'uniprot_acc': fields.String(description = 'The UniProt Accession Number')
 })
 
 
-#drug_model = api.schema_model('Drug', {
+DRUGS_NS = Namespace('drugs','Comorbidities related drugs')
+
+#drug_model = DRUGS_NS.schema_model('Drug', {
 #	'description': 'A drug stored in the comorbidities database',
 #	'properties': {
 #		'id': {
@@ -91,7 +80,7 @@ gene_model = api.model('Gene', {
 #	'required': ['id','name']
 #})
 
-drug_model = api.model('Drug', {
+drug_model = DRUGS_NS.model('Drug', {
 	'id': fields.Integer(required=True, description = 'The internal id of the drug'),
 	'name': fields.String(required=True, description = 'The drug name')
 })
@@ -99,7 +88,9 @@ drug_model = api.model('Drug', {
 simple_drug_model = drug_model
 
 
-#study_model = api.schema_model('Study', {
+STUDIES_NS = Namespace('studies','Comorbidities related studies')
+
+#study_model = STUDIES_NS.schema_model('Study', {
 #	'description': 'A study stored in the comorbidities database',
 #	'properties': {
 #		'id': {
@@ -116,15 +107,16 @@ simple_drug_model = drug_model
 #	'required': ['id','source']
 #})
 
-study_model = api.model('Study', {
+study_model = STUDIES_NS.model('Study', {
 	'id': fields.String(required=True, description = 'The id of the study in the original source'),
 	'source': fields.String(required=True, description = 'The study source')
 })
 
 simple_study_model = study_model
 
+DG_NS = Namespace('disease_groups','Disease groups')
 
-#simple_disease_group_model = api.schema_model('DiseaseGroup', {
+#simple_disease_group_model = DG_NS.schema_model('DiseaseGroup', {
 #	'description': 'A disease group describedç in the comorbidities database',
 #	'properties': {
 #		'id': {
@@ -140,25 +132,27 @@ simple_study_model = study_model
 #	'required': ['id','name']
 #})
 
-simple_disease_group_model = api.model('SimpleDiseaseGroup', {
+simple_disease_group_model = DG_NS.model('SimpleDiseaseGroup', {
 	'id': fields.Integer(required=True, description = 'The internal id of the disease group'),
 	'name': fields.String(required=True, description = 'The disease group symbolic name')
 })
 
-disease_group_model = api.model('DiseaseGroup', {
+disease_group_model = DG_NS.model('DiseaseGroup', {
 	'id': fields.Integer(required=True, description = 'The internal id of the disease group'),
 	'name': fields.String(required=True, description = 'The disease group symbolic name'),
 	'color': fields.String(required=True, description = 'Preferred color for this group of diseases')
 })
 
 
-simple_disease_model = api.model('SimpleDisease', {
+DISEASE_NS = Namespace('diseases','Diseases')
+
+simple_disease_model = DISEASE_NS.model('SimpleDisease', {
 	'id': fields.Integer(required=True, description = 'The internal id of the disease'),
 	'disease_group_id': fields.Integer(required=True, description = 'The internal id of the disease group where this disease is classified into'),
 	'name': fields.String(required=True, description = 'The disease symbolic name')
 })
 
-disease_model = api.model('Disease', {
+disease_model = DISEASE_NS.model('Disease', {
 	'id': fields.Integer(required=True, description = 'The internal id of the disease'),
 	'disease_group_id': fields.Integer(required=True, description = 'The internal id of the disease group where this disease is classified into'),
 	'name': fields.String(required=True, description = 'The disease symbolic name'),
@@ -166,3 +160,6 @@ disease_model = api.model('Disease', {
 	'icd9': fields.String(description = 'The ICD9 code of this disease'),
 	'icd10': fields.String(description = 'The ICD10 code of this disease')
 })
+
+
+PSG_NS = Namespace('patient_subgroups','Patient subgroups')
