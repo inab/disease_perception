@@ -4,12 +4,15 @@
 
 import sys, os
 
-from flask_restplus import Namespace, Resource
-
-from .api_models import *
-
-psg_ns = Namespace('patient_subgroups','Patient subgroups')
+from .api_models import CMResource, PSG_NS
 
 class PatientSubgroupList(CMResource):
 	'''Shows a list of all the patient subgroups'''
 
+ROUTES={
+	'ns': PSG_NS,
+	'path': '/patients/subgroups',
+	'routes': [
+		(PatientSubgroupList,'')
+	]
+}

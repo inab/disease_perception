@@ -5,59 +5,35 @@
 import sys, os
 
 from flask import Flask
-from flask_restplus import Namespace, Resource
+from flask_restplus import Api, Namespace, Resource
 from flask_cors import CORS
 
 from .cm_queries import ComorbiditiesNetwork
 
-from .res.api_models import init_comorbidities_api
+from .res.ns import ROUTES as ROOT_ROUTES
+from .res.genes import ROUTES as GENE_ROUTES
+from .res.drugs import ROUTES as DRUG_ROUTES
+from .res.studies import ROUTES as STUDY_ROUTES
+from .res.disease_groups import ROUTES as DISEASE_GROUP_ROUTES
+from .res.diseases import ROUTES as DISEASE_ROUTES
+from .res.patient_subgroups import ROUTES as PATIENT_SUBGROUP_ROUTES
 
-from .res.ns import ns
-from .res.genes import genes_ns,GeneList,Gene
-from .res.drugs import drugs_ns,DrugList,Drug
-from .res.studies import studies_ns,StudyList,Study
-from .res.disease_groups import dg_ns,DiseaseGroupList,DiseaseGroup,DiseaseGroupDiseases
-from .res.diseases import disease_ns,DiseaseList,Disease
-from .res.patient_subgroups import psg_ns,PatientSubgroupList
+ROUTE_SETS = [
+	ROOT_ROUTES,
+	GENE_ROUTES,
+	DRUG_ROUTES,
+	STUDY_ROUTES,
+	DISEASE_GROUP_ROUTES,
+	DISEASE_ROUTES,
+	PATIENT_SUBGROUP_ROUTES
+]
 
 def _register_cm_namespaces(api,res_kwargs):
-	# Registering the different namespaces, along with their paths
-	api.add_namespace(ns)
-	
-	# Genes
-	api.add_namespace(genes_ns,path='/genes')
-	genes_ns.add_resource(GeneList,'',resource_class_kwargs=res_kwargs)
-	genes_ns.add_resource(Gene,'/<symbol>',resource_class_kwargs=res_kwargs)
-	
-	# Drugs
-	api.add_namespace(drugs_ns,path='/drugs')
-
-	drugs_ns.add_resource(DrugList,'',resource_class_kwargs=res_kwargs)
-	drugs_ns.add_resource(Drug,'/<int:id>',resource_class_kwargs=res_kwargs)
-	
-	# Studies
-	api.add_namespace(studies_ns,path='/studies')
-
-	studies_ns.add_resource(StudyList,'',resource_class_kwargs=res_kwargs)
-	studies_ns.add_resource(Study,'/<study_id>',resource_class_kwargs=res_kwargs)
-	
-	# Diseases groups
-	api.add_namespace(dg_ns,path='/diseases/groups')
-	
-	dg_ns.add_resource(DiseaseGroupList,'',resource_class_kwargs=res_kwargs)
-	dg_ns.add_resource(DiseaseGroup,'/<int:id>',resource_class_kwargs=res_kwargs)
-	dg_ns.add_resource(DiseaseGroupDiseases,'/<int:id>/list',resource_class_kwargs=res_kwargs)
-	
-	# Diseases
-	api.add_namespace(disease_ns,path='/diseases')
-	
-	disease_ns.add_resource(DiseaseList,'',resource_class_kwargs=res_kwargs)
-	disease_ns.add_resource(Disease,'/<int:id>',resource_class_kwargs=res_kwargs)
-	
-	# Patient subgroups
-	api.add_namespace(psg_ns,path='/patients/subgroups')
-	
-	psg_ns.add_resource(PatientSubgroupList,'',resource_class_kwargs=res_kwargs)
+	for route_set in ROUTE_SETS:
+		ns = route_set['ns']
+		api.add_namespace(ns,route_set['path'])
+		for route in route_set['routes']:
+			ns.add_resource(route[0],route[1],resource_class_kwargs=res_kwargs)
 
 def init_comorbidities_app(dbpath):
 	app = Flask('como_network')
@@ -66,7 +42,15 @@ def init_comorbidities_app(dbpath):
 	cors = CORS(app)
 
 	# Attaching the API to the app 
-	api = init_comorbidities_api(app)
+	api = Api(
+		app,
+		version='0.3',
+		title='Comorbidities Network REST API',
+		description='A simple comorbidites network exploring API which is used by the web explorer',
+		default='cm',
+		license='AGPL-3',
+		default_label='Comorbidities network queries'
+	)
 	
 	# This is the singleton instance shared by all the resources
 	CMNetwork = ComorbiditiesNetwork(dbpath,api)
