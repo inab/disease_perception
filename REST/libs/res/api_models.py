@@ -135,6 +135,20 @@ disease_model = DISEASE_NS.model('Disease', {
 	'icd10': fields.String(description = 'The ICD10 code of this disease')
 })
 
+disease_comorbidity_model = DISEASE_NS.model('DiseaseComorbidity', {
+	'from_id': fields.Integer(required=True, description = 'The internal id of the disease A (from)'),
+	'to_id': fields.Integer(required=True, description = 'The internal id of the disease B (to)'),
+	'rel_risk': fields.Float(required=True, description = 'The relative risk of comorbidity')
+})
+
+disease_patient_subgroup_comorbidity_model = DISEASE_NS.model('DiseasePatientSubgroupComorbidity', {
+	'from_id': fields.Integer(required=True, description = 'The internal id of the patient subgroup A (from)'),
+	'from_size': fields.Integer(required=True, description = 'The size of the patient subgroup A (from)'),
+	'to_id': fields.Integer(required=True, description = 'The internal id of the patient subgroup B (to)'),
+	'to_size': fields.Integer(required=True, description = 'The size of the patient subgroup B (to)'),
+	'rel_risk': fields.Float(required=True, description = 'The relative risk of comorbidity')
+})
+
 simple_disease_group_model = DISEASE_NS.model('SimpleDiseaseGroup', {
 	'id': fields.Integer(required=True, description = 'The internal id of the disease group'),
 	'name': fields.String(required=True, description = 'The disease group symbolic name')

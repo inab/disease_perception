@@ -239,6 +239,128 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
+	def disease_comorbidities(self,id):
+		res = None
+		cur = self._getCursor()
+		try:
+			cur.execute('SELECT disease_a_id,disease_b_id,relative_risk FROM disease_digraph WHERE disease_a_id = :disease_id OR disease_b_id = :disease_id',{'disease_id': id})
+			res = []
+			while True:
+				disease_co = cur.fetchmany()
+				if len(disease_co) == 0:
+					# Empty dictionary?
+					if not res:
+						self.api.abort(404, "Disease {} has no comorbidities stored in the database".format(id))
+					break
+				
+				res.extend(map(lambda co: {'from_id': co[0], 'to_id': co[1], 'rel_risk': co[2] },disease_co))
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+	
+	def diseases_patient_subgroups_comorbidities(self,disease_id_i,disease_id_j,min_subgroup_size=None):
+		res = None
+		cur = self._getCursor()
+		try:
+			query_all = '''
+SELECT psd.patient_subgroup_a_id,
+	CASE
+		WHEN psd.patient_subgroup_a_id = dps_i.id THEN
+		dps_i.ps_size
+		ELSE dps_j.ps_size
+	END,
+	psd.patient_subgroup_b_id,
+	CASE
+		WHEN psd.patient_subgroup_b_id = dps_i.id THEN
+		dps_i.ps_size
+		ELSE dps_j.ps_size
+	END,
+	psd.relative_risk
+FROM
+(
+	SELECT ps.id AS id, COUNT(p.id) AS ps_size
+	FROM patient_subgroup ps, patient p
+	WHERE ps.disease_id = :disease_id_i
+	AND ps.id = p.patient_subgroup_id
+	GROUP BY ps.id
+) AS dps_i,
+(
+	SELECT ps.id AS id, COUNT(p.id) AS ps_size
+	FROM patient_subgroup ps, patient p
+	WHERE ps.disease_id = :disease_id_j
+	AND ps.id = p.patient_subgroup_id
+	GROUP BY ps.id
+) AS dps_j,
+	patient_subgroup_digraph psd
+WHERE  ( psd.patient_subgroup_a_id = dps_i.id
+	AND psd.patient_subgroup_b_id = dps_j.id )
+OR
+	( psd.patient_subgroup_a_id = dps_j.id
+	AND psd.patient_subgroup_b_id = dps_i.id )
+			'''
+			query_min = '''
+SELECT psd.patient_subgroup_a_id,
+	CASE
+		WHEN psd.patient_subgroup_a_id = dps_i.id THEN
+		dps_i.ps_size
+		ELSE dps_j.ps_size
+	END,
+	psd.patient_subgroup_b_id,
+	CASE
+		WHEN psd.patient_subgroup_b_id = dps_i.id THEN
+		dps_i.ps_size
+		ELSE dps_j.ps_size
+	END,
+	psd.relative_risk
+FROM
+(
+	SELECT ps.id AS id, COUNT(p.id) AS ps_size
+	FROM patient_subgroup ps, patient p
+	WHERE ps.disease_id = :disease_id_i
+	AND ps.id = p.patient_subgroup_id
+	GROUP BY ps.id
+	HAVING ps_size >= :min_size
+) AS dps_i,
+(
+	SELECT ps.id AS id, COUNT(p.id) AS ps_size
+	FROM patient_subgroup ps, patient p
+	WHERE ps.disease_id = :disease_id_j
+	AND ps.id = p.patient_subgroup_id
+	GROUP BY ps.id
+	HAVING ps_size >= :min_size
+) AS dps_j,
+	patient_subgroup_digraph psd
+WHERE  ( psd.patient_subgroup_a_id = dps_i.id
+	AND psd.patient_subgroup_b_id = dps_j.id )
+OR
+	( psd.patient_subgroup_a_id = dps_j.id
+	AND psd.patient_subgroup_b_id = dps_i.id )
+			'''
+			query = query_all if min_subgroup_size is None else query_min
+			cur.execute(query,{
+				'disease_id_i': disease_id_i,
+				'disease_id_j': disease_id_j,
+				'min_size': min_subgroup_size
+			})
+			res = []
+			while True:
+				pat_sub_co = cur.fetchmany()
+				if len(pat_sub_co) == 0:
+					# Empty dictionary?
+					if not res:
+						self.api.abort(404, "Diseases {} and {} have no patient subgroup comorbidities stored in the database".format(disease_id_i,disease_id_j))
+					break
+				
+				res.extend(map(lambda co: {'from_id': co[0], 'from_size':co[1], 'to_id': co[2], 'to_size': co[3], 'rel_risk': co[4] },pat_sub_co))
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+	
+	
 	def patients(self,patient_id=None,patient_subgroup_id=None):
 		res = []
 		cur = self._getCursor()
