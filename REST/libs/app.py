@@ -4,7 +4,7 @@
 
 import sys, os
 
-from flask import Flask
+from flask import Flask, Blueprint, redirect
 from flask_restplus import Api, Namespace, Resource
 from flask_cors import CORS
 
@@ -34,14 +34,22 @@ def _register_cm_namespaces(api,res_kwargs):
 			ns.add_resource(route[0],route[1],resource_class_kwargs=res_kwargs)
 
 def init_comorbidities_app(dbpath):
+	#app = Flask('como_network',static_url_path='/',static_folder='static')
 	app = Flask('como_network')
+	blueprint = Blueprint('api','como_network_api')
+	blueprint_static = Blueprint('frontend','como_network_frontend',static_url_path='/',static_folder='static')
+
+	@blueprint_static.route('/')
+	def root():
+	    return redirect('index.html')
+
 
 	# This enables CORS along all the app
 	cors = CORS(app)
 
 	# Attaching the API to the app 
 	api = Api(
-		app,
+		app=blueprint,
 		version='0.3',
 		title='Comorbidities Network REST API',
 		description='A simple comorbidites network exploring API which is used by the web explorer',
@@ -56,5 +64,9 @@ def init_comorbidities_app(dbpath):
 	res_kwargs = {'cmnetwork': CMNetwork}
 	
 	_register_cm_namespaces(api,res_kwargs)
+	
+	# Adding the two containers: API + frontend
+	app.register_blueprint(blueprint,url_prefix='/api')
+	app.register_blueprint(blueprint_static,url_prefix='/')
 	
 	return app
