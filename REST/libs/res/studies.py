@@ -4,12 +4,12 @@
 
 import sys, os
 
-from .api_models import CMResource, STUDIES_NS, study_model, simple_study_model
+from .api_models import CMResource, STUDIES_NS, study_model
 
 class StudyList(CMResource):
 	'''Shows a list of all the studies used to build the comorbidity network'''
 	@STUDIES_NS.doc('list_studies')
-	@STUDIES_NS.marshal_list_with(simple_study_model)
+	@STUDIES_NS.marshal_list_with(study_model)
 	def get(self):
 		'''List all the studies used to build the comorbidity network'''
 		return self.cmn.studies()

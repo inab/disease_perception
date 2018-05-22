@@ -4,12 +4,12 @@
 
 import sys, os
 
-from .api_models import CMResource, DISEASE_NS, simple_disease_model, disease_model, disease_comorbidity_model, disease_patient_subgroup_comorbidity_model, simple_disease_group_model, disease_group_model
+from .api_models import CMResource, DISEASE_NS, disease_model, disease_comorbidity_model, disease_patient_subgroup_comorbidity_model, simple_disease_group_model, disease_group_model
 
 class DiseaseList(CMResource):
 	'''Shows a list of all the diseases'''
 	@DISEASE_NS.doc('list_diseases')
-	@DISEASE_NS.marshal_list_with(simple_disease_model)
+	@DISEASE_NS.marshal_list_with(disease_model)
 	def get(self):
 		'''List all the diseases present in the comorbidity network'''
 		return self.cmn.diseases()
@@ -50,7 +50,7 @@ class DiseasePatientSubgroupComorbidities(CMResource):
 class DiseaseGroupList(CMResource):
 	'''Shows a list of all the disease groups'''
 	@DISEASE_NS.doc('list_disease_groups')
-	@DISEASE_NS.marshal_list_with(simple_disease_group_model)
+	@DISEASE_NS.marshal_list_with(disease_group_model)
 	def get(self):
 		'''List all the disease groups present in the comorbidity network'''
 		return self.cmn.disease_groups()
@@ -70,7 +70,7 @@ class DiseaseGroup(CMResource):
 class DiseaseGroupDiseases(CMResource):
 	'''Return the disease list of a disease group'''
 	@DISEASE_NS.doc('disease_group_list')
-	@DISEASE_NS.marshal_list_with(simple_disease_model)
+	@DISEASE_NS.marshal_list_with(disease_model)
 	def get(self,id):
 		'''It gets the list of diseases in this group'''
 		return self.cmn.diseases(disease_group_id=id)

@@ -7,6 +7,7 @@ import sys, os
 from flask import Flask, Blueprint, redirect
 from flask_restplus import Api, Namespace, Resource
 from flask_cors import CORS
+from flask_compress import Compress
 
 from .cm_queries import ComorbiditiesNetwork
 
@@ -46,6 +47,9 @@ def init_comorbidities_app(dbpath):
 
 	# This enables CORS along all the app
 	cors = CORS(app)
+	
+	# This enables compression
+	compress = Compress(app)
 
 	# Attaching the API to the app 
 	api = Api(

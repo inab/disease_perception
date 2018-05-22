@@ -4,14 +4,14 @@
 
 import sys, os
 
-from .api_models import CMResource, GENES_NS, gene_model, simple_gene_model
+from .api_models import CMResource, GENES_NS, gene_model
 
 # Now, the routes
 #@GENES_NS.route('',resource_class_kwargs={'cmnetwork': CMNetwork})
 class GeneList(CMResource):
 	'''Shows a list of all the genes related in comorbidities'''
 	@GENES_NS.doc('list_genes')
-	@GENES_NS.marshal_list_with(simple_gene_model)
+	@GENES_NS.marshal_list_with(gene_model)
 	def get(self):
 		'''List all genes'''
 		#return CMNetwork.genes()

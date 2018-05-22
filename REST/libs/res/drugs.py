@@ -4,12 +4,12 @@
 
 import sys, os
 
-from .api_models import CMResource, DRUGS_NS, drug_model, simple_drug_model
+from .api_models import CMResource, DRUGS_NS, drug_model
 
 class DrugList(CMResource):
 	'''Shows a list of all the drugs related in comorbidity studies'''
 	@DRUGS_NS.doc('list_drugs')
-	@DRUGS_NS.marshal_list_with(simple_drug_model)
+	@DRUGS_NS.marshal_list_with(drug_model)
 	def get(self):
 		'''List all drugs involved in the different studies'''
 		return self.cmn.drugs()

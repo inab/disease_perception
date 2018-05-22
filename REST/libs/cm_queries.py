@@ -21,17 +21,26 @@ class ComorbiditiesNetwork(object):
 		cur.arraysize = self.itersize
 		return cur
 		
-	def genes(self):
+	def genes(self,symbol=None):
 		res = []
 		cur = self._getCursor()
 		try:
-			cur.execute('SELECT gene_symbol FROM gene')
+			if symbol is not None:
+				cur.execute('SELECT gene_symbol,ensembl_id,uniprot_id FROM gene WHERE gene_symbol = ?',(symbol,))
+			else:
+				cur.execute('SELECT gene_symbol,ensembl_id,uniprot_id FROM gene')
 			while True:
 				genes = cur.fetchmany()
 				if len(genes)==0:
+					if len(res) == 0 and symbol is not None:
+						self.api.abort(404, "Gene {} is not found in the database".format(symbol))
 					break
 				
-				res.extend(map(lambda gene: {'symbol': gene[0]},genes))
+				res.extend(map(lambda gene: {
+						'symbol': gene[0],
+						'ensembl_id': gene[1],
+						'uniprot_acc': gene[2]
+					},genes))
 		finally:
 			# Assuring the cursor is properly closed
 			cur.close()
@@ -39,35 +48,23 @@ class ComorbiditiesNetwork(object):
 		return res
 		
 	def gene(self,symbol):
-		res = None
-		cur = self._getCursor()
-		try:
-			cur.execute('SELECT gene_symbol,ensembl_id,uniprot_id FROM gene WHERE gene_symbol = ?',(symbol,))
-			while True:
-				gene = cur.fetchone()
-				if gene is not None:
-					res = {
-						'symbol': gene[0],
-						'ensembl_id': gene[1],
-						'uniprot_acc': gene[2]
-					}
-				else:
-					self.api.abort(404, "Gene {} is not found in the database".format(symbol))
-				break
-		finally:
-			# Assuring the cursor is properly closed
-			cur.close()
+		res = self.genes(symbol=symbol)
 		
-		return res
-		
-	def drugs(self):
+		return res[0]
+	
+	def drugs(self,drug_id=None):
 		res = []
 		cur = self._getCursor()
 		try:
-			cur.execute('SELECT id,name FROM drug')
+			if drug_id is not None:
+				cur.execute('SELECT id,name FROM drug WHERE id = ?',(drug_id,))
+			else:
+				cur.execute('SELECT id,name FROM drug')
 			while True:
 				drugs = cur.fetchmany()
 				if len(drugs)==0:
+					if len(res) == 0 and drug_id is not None:
+						self.api.abort(404, "Drug {} is not found in the database".format(drug_id))
 					break
 				
 				res.extend(map(lambda drug: {'id': drug[0],'name': drug[1]},drugs))
@@ -78,39 +75,27 @@ class ComorbiditiesNetwork(object):
 		return res
 		
 	def drug(self,id):
-		res = None
-		cur = self._getCursor()
-		try:
-			cur.execute('SELECT id,name FROM drug WHERE id = ?',(id,))
-			while True:
-				drug = cur.fetchone()
-				if drug is not None:
-					res = {
-						'id': drug[0],
-						'name': drug[1]
-					}
-				else:
-					self.api.abort(404, "Drug {} is not found in the database".format(id))
-				
-				break
-		finally:
-			# Assuring the cursor is properly closed
-			cur.close()
+		res = self.drugs(drug_id = id)
 		
-		return res
+		return res[0]
 
 	@staticmethod
 	def _formatStudy(study_id):
 		return {'id': study_id,'source': 'GEO'  if study_id.startswith('GSE')  else 'ArrayExpress' }
 	
-	def studies(self):
+	def studies(self,study_id=None):
 		res = []
 		cur = self._getCursor()
 		try:
-			cur.execute('SELECT geo_arrayexpress_code FROM study')
+			if study_id is not None:
+				cur.execute('SELECT geo_arrayexpress_code FROM study WHERE geo_arrayexpress_code = ?',(study_id,))
+			else:
+				cur.execute('SELECT geo_arrayexpress_code FROM study')
 			while True:
 				studies = cur.fetchmany()
 				if len(studies)==0:
+					if len(res)==0 and study_id is not None:
+						self.api.abort(404, "Study {} is not found in the database".format(study_id))
 					break
 				
 				res.extend(map(lambda study: ComorbiditiesNetwork._formatStudy(study[0]) ,studies))
@@ -121,35 +106,44 @@ class ComorbiditiesNetwork(object):
 		return res
 		
 	def study(self,study_id):
-		res = None
-		cur = self._getCursor()
-		try:
-			cur.execute('SELECT geo_arrayexpress_code FROM study WHERE geo_arrayexpress_code = ?',(study_id,))
-			while True:
-				study = cur.fetchone()
-				if study is not None:
-					res = ComorbiditiesNetwork._formatStudy(study[0])
-				else:
-					self.api.abort(404, "Study {} is not found in the database".format(study_id))
-				
-				break
-		finally:
-			# Assuring the cursor is properly closed
-			cur.close()
+		res = self.studies(study_id)
 		
-		return res
+		return res[0]
 	
-	def disease_groups(self):
+	def disease_groups(self,disease_group_id=None):
 		res = []
 		cur = self._getCursor()
 		try:
-			cur.execute('SELECT id,name FROM disease_group')
+			if disease_group_id is not None:
+				cur.execute('SELECT dg.id,dg.name,dgp.property,dgp.value FROM disease_group dg LEFT JOIN disease_group_properties dgp ON dgp.disease_group_id = dg.id WHERE dg.id = ? ORDER BY 1',(disease_group_id,))
+			else:
+				cur.execute('SELECT dg.id,dg.name,dgp.property,dgp.value FROM disease_group dg LEFT JOIN disease_group_properties dgp ON dgp.disease_group_id = dg.id ORDER BY 1')
+			minires = None
 			while True:
-				disease_groups = cur.fetchmany()
-				if len(disease_groups)==0:
+				dg_props = cur.fetchmany()
+				if len(dg_props) == 0:
+					# Empty dictionary?
+					if len(res) == 0:
+						if disease_group_id is not None:
+							self.api.abort(404, "Disease group {} is not found in the database".format(disease_group_id))
 					break
 				
-				res.extend(map(lambda dg: {'id': dg[0],'name': dg[1]},disease_groups))
+				for dgp in dg_props:
+					# Initializing common properties
+					if minires and minires.get('id') != dgp[0]:
+						minires = None
+					
+					if not minires:
+						minires = {
+							'id': dgp[0],
+							'name': dgp[1]
+						}
+						# In this way we do not have to setup an end condition
+						res.append(minires)
+					
+					if dgp[2] is not None:
+						minires[dgp[2]] = dgp[3]
+		
 		finally:
 			# Assuring the cursor is properly closed
 			cur.close()
@@ -157,87 +151,59 @@ class ComorbiditiesNetwork(object):
 		return res
 	
 	def disease_group(self,id):
-		res = None
-		cur = self._getCursor()
-		try:
-			cur.execute('SELECT dg.id,dg.name,dgp.property,dgp.value FROM disease_group dg,disease_group_properties dgp WHERE dg.id = ? AND dgp.disease_group_id = dg.id ORDER BY 1',(id,))
-			res = {}
-			while True:
-				dg_props = cur.fetchmany()
-				if len(dg_props) == 0:
-					# Empty dictionary?
-					if not res:
-						self.api.abort(404, "Disease group {} is not found in the database".format(id))
-					break
-				
-				# Initializing common properties
-				if not 'id' in res:
-					dgp = dg_props[0]
-					res = {
-						'id': dgp[0],
-						'name': dgp[1]
-					}
-				
-				for dgp in dg_props:
-					res[dgp[2]] = dgp[3]
-		finally:
-			# Assuring the cursor is properly closed
-			cur.close()
+		res = self.disease_groups(disease_group_id=id)
 		
-		return res
+		return res[0]
 	
-	def diseases(self,disease_group_id=None):
+	def diseases(self,disease_group_id=None,disease_id=None):
 		res = []
 		cur = self._getCursor()
 		try:
 			if disease_group_id is not None:
-				cur.execute('SELECT id,name,disease_group_id FROM disease WHERE disease_group_id = ?',(disease_group_id,))
+				cur.execute('SELECT d.id,d.name,d.disease_group_id,dp.property,dp.value FROM disease d LEFT JOIN disease_properties dp ON dp.disease_id = d.id WHERE d.disease_group_id = ? ORDER BY 1',(disease_group_id,))
+			elif disease_id is not None:
+				cur.execute('SELECT d.id,d.name,d.disease_group_id,dp.property,dp.value FROM disease d LEFT JOIN disease_properties dp ON dp.disease_id = d.id WHERE d.id = ? ORDER BY 1',(disease_id,))
 			else:
-				cur.execute('SELECT id,name,disease_group_id FROM disease')
+				cur.execute('SELECT d.id,d.name,d.disease_group_id,dp.property,dp.value FROM disease d LEFT JOIN disease_properties dp ON dp.disease_id = d.id ORDER BY 1')
+			minires = None
 			while True:
-				diseases = cur.fetchmany()
-				if len(diseases)==0:
-					if(len(res)==0):
-						self.api.abort(404, "Disease group {} is not found in the database".format(disease_group_id))
+				disease_props = cur.fetchmany()
+				if len(disease_props) == 0:
+					# Empty dictionary?
+					if len(res) == 0:
+						if disease_group_id is not None:
+							self.api.abort(404, "Disease group {} is not found in the database".format(disease_group_id))
+						elif disease_id is not None:
+							self.api.abort(404, "Disease {} is not found in the database".format(disease_id))
 					break
 				
-				res.extend(map(lambda disease: {'id': disease[0],'name': disease[1],'disease_group_id': disease[2]},diseases))
+				for dp in disease_props:
+					# Initializing common properties
+					if minires and minires.get('id') != dp[0]:
+						minires = None
+					
+					if not minires:
+						minires = {
+							'id': dp[0],
+							'name': dp[1],
+							'disease_group_id': dp[2]
+						}
+						# In this way we do not have to setup an end condition
+						res.append(minires)
+					
+					if dp[3] is not None:
+						minires[dp[3]] = dp[4]
+		
 		finally:
 			# Assuring the cursor is properly closed
 			cur.close()
 		
 		return res
 	
-	def disease(self,id):
-		res = None
-		cur = self._getCursor()
-		try:
-			cur.execute('SELECT d.id,d.name,d.disease_group_id,dp.property,dp.value FROM disease d,disease_properties dp WHERE d.id = ? AND dp.disease_id = d.id ORDER BY 1',(id,))
-			res = {}
-			while True:
-				disease_props = cur.fetchmany()
-				if len(disease_props) == 0:
-					# Empty dictionary?
-					if not res:
-						self.api.abort(404, "Disease {} is not found in the database".format(id))
-					break
-				
-				# Initializing common properties
-				if not 'id' in res:
-					dp = disease_props[0]
-					res = {
-						'id': dp[0],
-						'name': dp[1],
-						'disease_group_id': dp[2]
-					}
-				
-				for dp in disease_props:
-					res[dp[3]] = dp[4]
-		finally:
-			# Assuring the cursor is properly closed
-			cur.close()
+	def disease(self,disease_id):
+		res = self.diseases(disease_id=disease_id)
 		
-		return res
+		return res[0]
 	
 	def disease_comorbidities(self,id):
 		res = None
