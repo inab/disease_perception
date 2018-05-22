@@ -40,7 +40,35 @@ Promise.all([
   fetch('json/data.json', {mode: 'no-cors'})
     .then(function(res) {
       return res.json();
-    })
+    }),
+  fetch('api/diseases', {mode: 'no-cors'})
+    .then(function(res) {
+      return res.json();
+    }),
+  fetch('api/diseases/groups', {mode: 'no-cors'})
+    .then(function(res) {
+      return res.json();
+    }),
+  fetch('api/patients', {mode: 'no-cors'})
+    .then(function(res) {
+      return res.json();
+    }),
+  fetch('api/patients/subgroups', {mode: 'no-cors'})
+    .then(function(res) {
+      return res.json();
+    }),
+  fetch('api/drugs', {mode: 'no-cors'})
+    .then(function(res) {
+      return res.json();
+    }),
+  fetch('api/genes', {mode: 'no-cors'})
+    .then(function(res) {
+      return res.json();
+    }),
+  fetch('api/studies', {mode: 'no-cors'})
+    .then(function(res) {
+      return res.json();
+    }),
 ])
   .then(function(dataArray) {
     var cy = window.cy = cytoscape({
