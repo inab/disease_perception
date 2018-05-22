@@ -50,6 +50,9 @@
     "build:fast": "grunt build:fast",
     "build": "grunt build"
   },
+  "resolutions": {
+	"jquery": "^2.2.4"
+  },
   "dependencies": {
     "bootstrap": "^3.3.7",
     "bootstrap-slider": "^10.0.0",
@@ -57,6 +60,7 @@
     "cytoscape-cola": "^2.0.1",
     "cytoscape-qtip": "^2.7.1",
     "fastclick": "^1.0.6",
-    "font-awesome": "^4.7.0"
+    "font-awesome": "^4.7.0",
+    "jquery": "^2.2.4"
   }
 }
