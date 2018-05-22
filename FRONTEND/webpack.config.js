@@ -5,7 +5,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const PATHS = {
 	app: path.resolve(__dirname,'app'),
-	dist: path.resolve(__dirname,'dist')
+	dist: path.resolve(__dirname,'..','REST','static')
 };
 
 function escapeRegExpString(str) { return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&"); }

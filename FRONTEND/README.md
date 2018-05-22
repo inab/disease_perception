@@ -15,7 +15,8 @@ Installation
 3) Clone this repository, and run `npm install yarn`, so [Yarn](https://yarnpkg.com/) dependency, which is used to fetch [Webpack](https://webpack.github.io/) and other dependencies are installed:
 
 ```bash
-git clone https://github.com/inab/comorbidities.git
+git clone https://github.com/inab/comorbidities_frontend.git
+cd FRONTEND
 npm install yarn
 
 ```
