@@ -1,38 +1,16 @@
-About BSC Comorbidities browser prototype
+About BSC Comorbidities browser
 =========================
 
-The original goal of this project is creating the BSC Comorbidities browser prototype
+The original goal of this project is creating the BSC Comorbidities browser frontend
 
-Installation
-------------
+* Before running the BSC Comorbidities browser, please follow the instructions in [INSTALL.md](INSTALL.md), and follow all the procedures referenced by [../REST/README.md](../REST/README.md).
 
-1) Install latest stable [NodeJs](http://nodejs.org/) release, either using your operating system / distribution package manager, or by hand.
-
-(If you have installed NodeJs by hand, remember to add its `bin` subdirectory to the `PATH` environment variable)
-
-2) You could also need `ruby` and `gem`.
-
-3) Clone this repository, and run `npm install yarn`, so [Yarn](https://yarnpkg.com/) dependency, which is used to fetch [Webpack](https://webpack.github.io/) and other dependencies are installed:
+* Once all the componens are properly installed, both the frontend and the API can be reached at http://localhost:5000 when the API is run in debug mode using the next command line:
 
 ```bash
-git clone https://github.com/inab/comorbidities_frontend.git
-cd FRONTEND
-npm install yarn
-
+cd ../REST
+source .pyRESTenv/bin/activate
+python como_network.py
 ```
 
-4) Add `node_modules/.bin` subdirectory to the `PATH` environment variable, so `yarn` can be instantiated (and the dependencies fetched):
-
-```bash
-PATH="${PWD}/node_modules/.bin:${PATH}"
-export PATH
-yarn
-```
-
-5) Now you have to run `webpack` in order to prepare and deploy the BSC Comorbidities browser protoype site, which will be deployed at `dist` subdirectory.
-
-```bash
-webpack -p --progress --colors
-```
-
-6) Congratulations! The [DocumentRoot](http://httpd.apache.org/docs/current/mod/core.html#documentroot) of BSC Comorbidities browser protoype is available at the `dist` subdirectory.
+  If you open http://localhost:5000 , you can start using the frontend.
