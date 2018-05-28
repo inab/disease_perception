@@ -10,4 +10,4 @@ source .pyRESTenv/bin/activate
 python como_network.py
 ```
 
-  If you open http://localhost:5000/ , you can test the API using [Swagger UI](https://swagger.io/swagger-ui/). The API definition is reachable at http://localhost:5000/swagger.json 
+  If you open http://localhost:5000/api , you can test the API using [Swagger UI](https://swagger.io/swagger-ui/). The API definition is reachable at http://localhost:5000/api/swagger.json 
