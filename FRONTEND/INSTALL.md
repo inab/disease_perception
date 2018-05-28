@@ -11,7 +11,7 @@ The source code of this browser is written for Javascript ES6. It depends on the
 ```bash
 git clone https://github.com/inab/comorbidities_frontend.git
 cd FRONTEND
-npm install yarn
+npm install --no-save yarn
 ```
 
 * Add `node_modules/.bin` subdirectory to the `PATH` environment variable, so `yarn` and other installation dependencies can be instantiated. Then, call `yarn`, so the other dependencies are fetched:
