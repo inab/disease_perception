@@ -32,8 +32,11 @@ class ComorbiditiesNetwork(object):
 			while True:
 				genes = cur.fetchmany()
 				if len(genes)==0:
-					if len(res) == 0 and symbol is not None:
-						self.api.abort(404, "Gene {} is not found in the database".format(symbol))
+					if len(res) == 0:
+						if symbol is not None:
+							self.api.abort(404, "Gene {} is not found in the database".format(symbol))
+						else:
+							self.api.abort(500,"Empty comorbidities database")
 					break
 				
 				res.extend(map(lambda gene: {
@@ -63,8 +66,11 @@ class ComorbiditiesNetwork(object):
 			while True:
 				drugs = cur.fetchmany()
 				if len(drugs)==0:
-					if len(res) == 0 and drug_id is not None:
-						self.api.abort(404, "Drug {} is not found in the database".format(drug_id))
+					if len(res) == 0:
+						if drug_id is not None:
+							self.api.abort(404, "Drug {} is not found in the database".format(drug_id))
+						else:
+							self.api.abort(500,"Empty comorbidities database")
 					break
 				
 				res.extend(map(lambda drug: {'id': drug[0],'name': drug[1]},drugs))
@@ -94,8 +100,11 @@ class ComorbiditiesNetwork(object):
 			while True:
 				studies = cur.fetchmany()
 				if len(studies)==0:
-					if len(res)==0 and study_id is not None:
-						self.api.abort(404, "Study {} is not found in the database".format(study_id))
+					if len(res)==0:
+						if study_id is not None:
+							self.api.abort(404, "Study {} is not found in the database".format(study_id))
+						else:
+							self.api.abort(500,"Empty comorbidities database")
 					break
 				
 				res.extend(map(lambda study: ComorbiditiesNetwork._formatStudy(study[0]) ,studies))
@@ -126,6 +135,8 @@ class ComorbiditiesNetwork(object):
 					if len(res) == 0:
 						if disease_group_id is not None:
 							self.api.abort(404, "Disease group {} is not found in the database".format(disease_group_id))
+						else:
+							self.api.abort(500,"Empty comorbidities database")
 					break
 				
 				for dgp in dg_props:
@@ -175,6 +186,8 @@ class ComorbiditiesNetwork(object):
 							self.api.abort(404, "Disease group {} is not found in the database".format(disease_group_id))
 						elif disease_id is not None:
 							self.api.abort(404, "Disease {} is not found in the database".format(disease_id))
+						else:
+							self.api.abort(500,"Empty comorbidities database")
 					break
 				
 				for dp in disease_props:
@@ -205,18 +218,24 @@ class ComorbiditiesNetwork(object):
 		
 		return res[0]
 	
-	def disease_comorbidities(self,id):
+	def disease_comorbidities(self,id=None):
 		res = None
 		cur = self._getCursor()
 		try:
-			cur.execute('SELECT disease_a_id,disease_b_id,relative_risk FROM disease_digraph WHERE disease_a_id = :disease_id OR disease_b_id = :disease_id',{'disease_id': id})
+			if id is not None:
+				cur.execute('SELECT disease_a_id,disease_b_id,relative_risk FROM disease_digraph WHERE disease_a_id = :disease_id OR disease_b_id = :disease_id',{'disease_id': id})
+			else:
+				cur.execute('SELECT disease_a_id,disease_b_id,relative_risk FROM disease_digraph')
 			res = []
 			while True:
 				disease_co = cur.fetchmany()
 				if len(disease_co) == 0:
 					# Empty dictionary?
 					if not res:
-						self.api.abort(404, "Disease {} has no comorbidities stored in the database".format(id))
+						if id is not None:
+							self.api.abort(404, "Disease {} has no comorbidities stored in the database".format(id))
+						else:
+							self.api.abort(500, "Empty comorbidities database")
 					break
 				
 				res.extend(map(lambda co: {'from_id': co[0], 'to_id': co[1], 'rel_risk': co[2] },disease_co))
@@ -345,6 +364,8 @@ OR
 							self.api.abort(404, "Patient subgroup {} is not found in the database".format(patient_subgroup_id))
 						elif patient_id is not None:
 							self.api.abort(404, "Patient {} is not found in the database".format(patient_id))
+						else:
+							self.api.abort(500,"Empty comorbidities database")
 					break
 				
 				res.extend(map(lambda patient: {'id': patient[0],'patient_subgroup_id': patient[1],'study_id': patient[2]},patients))
@@ -372,6 +393,8 @@ OR
 					if(len(res)==0):
 						if patient_subgroup_id is not None:
 							self.api.abort(404, "Patient subgroup {} is not found in the database".format(patient_subgroup_id))
+						else:
+							self.api.abort(500,"Empty comorbidities database")
 					break
 				
 				res.extend(map(lambda ps: {'id': ps[0],'name': ps[1],'disease_id': ps[2]},patient_subgroups))

@@ -24,6 +24,14 @@ class Disease(CMResource):
 		'''It gets detailed disease information'''
 		return self.cmn.disease(id)
 
+class ListDiseaseComorbidities(CMResource):
+	'''Return the comorbidities network'''
+	@DISEASE_NS.doc('disease_comorbidities_network')
+	@DISEASE_NS.marshal_list_with(disease_comorbidity_model)
+	def get(self):
+		'''It lists disease comorbidities network'''
+		return self.cmn.disease_comorbidities()
+
 @DISEASE_NS.response(404, 'Disease not found or with no known comorbidity')
 @DISEASE_NS.param('id', 'The disease id')
 class DiseaseComorbidities(CMResource):
@@ -82,6 +90,7 @@ ROUTES={
 		(DiseaseList,''),
 		(Disease,'/<int:id>'),
 		(DiseaseComorbidities,'/<int:id>/comorbidities'),
+		(ListDiseaseComorbidities,'/comorbidities'),
 		(DiseasePatientSubgroupComorbidities,'/<int:disease_id_i>/ps_comorbidities/<int:disease_id_j>'),
 		(DiseasePatientSubgroupComorbidities,'/<int:disease_id_i>/ps_comorbidities/<int:disease_id_j>/min_size/<int:min_size>'),
 		(DiseaseGroupList,'/groups'),
