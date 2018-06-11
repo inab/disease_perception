@@ -19,7 +19,7 @@ npm install --no-save yarn
 ```bash
 PATH="${PWD}/node_modules/.bin:${PATH}"
 export PATH
-yarn
+yarn --frozen-lockfile
 ```
 
 * Now, you have to run `webpack` in order to prepare and deploy the BSC Comorbidities browser site, which will be deployed at `../REST/static` subdirectory.
