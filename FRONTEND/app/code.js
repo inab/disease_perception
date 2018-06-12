@@ -79,7 +79,15 @@ class ComorbiditiesBrowser {
 	}
 	
 	makeCy(container, style, graphData) {
-		let retval = cytoscape({
+		if(this.cy) {
+			this.cy.destroy();
+			this.cy = null;
+			this.layout = null;
+			this.hiddenNodes = null;
+			this.hiddenArcs = null;
+		}
+		
+		this.cy = cytoscape({
 			container: container,
 			//style: style,
 			style: [
@@ -91,7 +99,8 @@ class ComorbiditiesBrowser {
 			elements: graphData
 		});
 		
-		return retval;
+		this.cy.on('layoutstart', () => { this.running = true; });
+		this.cy.on('layoutstop', () => { this.running = false; });
 	}
 	
 	makeLayout(opts) {
@@ -273,7 +282,9 @@ class ComorbiditiesBrowser {
 		this.$configToggle.on('click', () => {
 			$('body').toggleClass('config-closed');
 			
-			this.cy.resize();
+			if(this.cy) {
+				this.cy.resize();
+			}
 		});
 	}
 	
@@ -300,7 +311,7 @@ class ComorbiditiesBrowser {
 		};
 		
 		// Creation of the cytoscape instance
-		this.cy = this.makeCy(this.graphEl,this.cyStyle,graphData);
+		this.makeCy(this.graphEl,this.cyStyle,graphData);
 		
 		// Applying the initial filtering
 		this.params = params;
@@ -311,9 +322,6 @@ class ComorbiditiesBrowser {
 		
 		// Now, the hooks to the different interfaces
 		this.running = false;
-		
-		this.cy.on('layoutstart', () => { this.running = true; });
-		this.cy.on('layoutstop', () => { this.running = false; });
 		
 		// Initializing the config panel
 		this.initializeConfigContainer();
@@ -335,19 +343,27 @@ class ComorbiditiesBrowser {
 				{
 					name: 'Genetics Home Reference (search)',
 					url: 'https://ghr.nlm.nih.gov/search?query='+encodeURIComponent(diseaseName)
+				},
+				{
+					name: 'NORD (direct)',
+					url: 'https://rarediseases.org/rare-diseases/' + encodeURIComponent(diseaseLower) + '/'
+				},
+				{
+					name: 'Genetics Home Reference (direct)',
+					url: 'https://ghr.nlm.nih.gov/condition/' + encodeURIComponent(diseaseLower)
+				},
+				{
+					name: 'Wikipedia (direct)',
+					url: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(diseaseName)
 				}
 			];
+			
 			if(icd10!=='-') {
 				links.push({
 					name: 'ICDList',
 					url: 'https://icdlist.com/icd-10/' + encodeURIComponent(icd10)
 				});
 			}
-			
-			links.push({
-				name: 'Genetics Home Reference (direct)',
-				url: 'https://ghr.nlm.nih.gov/condition/' + encodeURIComponent(diseaseLower)
-			});
 			
 			n.qtip({
 				content: '<b>'+diseaseName+'</b><br />\n'+
