@@ -10,7 +10,7 @@ body {
   overflow: hidden;
 }
 
-#cy {
+#graph {
   position: absolute;
   left: 0;
   top: 0;
@@ -82,12 +82,12 @@ a:hover {
   pointer-events: none;
 }
 
-.config-closed #cy {
+.config-closed #graph {
   right: 0;
 }
 
 @media (max-width: 600px){
-  #cy {
+  #graph {
     right: 0;
   }
 }
