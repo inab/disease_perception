@@ -1,0 +1,50 @@
+[
+	{
+		"selector": "node",
+		"css": {
+			"content": "data(name)",
+			"text-valign": "center",
+			"text-halign": "center",
+			"background-color": "data(color)",
+			"font-size": "9px",
+			"text-outline-color": "#555",
+			"text-outline-width": "1px",
+			"color": "#fff",
+			"overlay-padding": "6px",
+			"z-index": "10"
+		}
+	},
+	{
+		"selector": "$node > node",
+		"css": {
+			"padding-top": "10px",
+			"padding-left": "10px",
+			"padding-bottom": "10px",
+			"padding-right": "10px",
+			"text-valign": "top",
+			"text-halign": "center",
+			"background-color": "#bbb"
+		}
+	},
+	{
+		"selector": "edge",
+		"css": {
+			"target-arrow-shape": "triangle",
+			"curve-style": "haystack",
+			"haystack-radius": "0.5",
+			"opacity": "0.4",
+			"line-color": "#bbb",
+			"width": "mapData(rel_risk, 0, 50, 1, 8)",
+			"overlay-padding": "3px"
+		}
+	},
+	{
+		"selector": ":selected",
+		"css": {
+			"background-color": "black",
+			"line-color": "black",
+			"target-arrow-color": "black",
+			"source-arrow-color": "black"
+		}
+	}
+]

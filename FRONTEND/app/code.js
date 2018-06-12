@@ -32,202 +32,296 @@ cytoscape.use(qtip);
 //var qtip = require('cytoscape-qtip');
 //cytoscape.use( qtip );
 
-
 import { Diseases } from './diseases';
 import { Patients } from './patients';
 import { Genes } from './genes';
 import { Drugs } from './drugs';
 import { Studies } from './studies';
 
-
-const cyContainer = $('#graph');
-
-var fetchPromises = [
-	fetch('json/cy-style.json', {mode: 'no-cors'})
-	.then(function(res) {
-		return res.json();
-	})
-];
-
-var diseases = new Diseases(cyContainer);
-var patients = new Patients(cyContainer);
-var genes = new Genes(cyContainer);
-var drugs = new Drugs(cyContainer);
-var studies = new Studies(cyContainer);
-diseases.fetch().forEach((e) => fetchPromises.push(e));
-patients.fetch().forEach((e) => fetchPromises.push(e));
-genes.fetch().forEach((e) => fetchPromises.push(e));
-drugs.fetch().forEach((e) => fetchPromises.push(e));
-studies.fetch().forEach((e) => fetchPromises.push(e));
-
-Promise.all(fetchPromises)
-.then(function(dataArray) {
-	let cyStyle = dataArray[0];
-	cyContainer.empty();
-	
-	var graphData = {
-		nodes: diseases.getDiseases(),
-		edges: diseases.getComorbiditiesNetwork()
-	};
-	
-	var cy = window.cy = cytoscape({
-		container: cyContainer,
-		style: cyStyle,
-		elements: graphData
-	});
-	
-	var params = {
-		name: 'cola',
-		nodeSpacing: 5,
-		edgeLengthVal: 45,
-		animate: true,
-		randomize: false,
-		maxSimulationTime: 1500
-	};
-	
-	function makeLayout(opts) {
-		params.randomize = false;
-		params.edgeLength = function(e) { return params.edgeLengthVal / e.data('weight'); };
+class ComorbiditiesBrowser {
+	constructor(graphEl,configEl,configToggleEl) {
+		// The graph container
+		this.graphEl = graphEl;
+		this.$graph = $(this.graphEl);
 		
-		for(var i in opts){
-			params[i] = opts[i];
-		}
+		// The right panel container
+		this.$config = $(configEl);
+		// The right panel toggle container
+		this.$configToggle = $(configToggleEl);
+	}
+
+	initialize() {
+		let cyContainer = this.$graph;
+		// Preparing the initial data fetch
+		let fetchPromises = this.fetch();
 		
-		return cy.layout(params);
+		this.diseases = new Diseases(cyContainer);
+		this.diseases.fetch().forEach((e) => fetchPromises.push(e));
+		
+		this.patients = new Patients(cyContainer);
+		this.patients.fetch().forEach((e) => fetchPromises.push(e));
+		
+		this.genes = new Genes(cyContainer);
+		this.genes.fetch().forEach((e) => fetchPromises.push(e));
+		
+		this.drugs = new Drugs(cyContainer);
+		this.drugs.fetch().forEach((e) => fetchPromises.push(e));
+		
+		this.studies = new Studies(cyContainer);
+		this.studies.fetch().forEach((e) => fetchPromises.push(e));
+		
+		// Now, issuing the fetch itself, and then the layout
+		Promise.all(fetchPromises)
+		.then((dataArray) => this.doLayout(dataArray))
+		.then(function() {
+			FastClick.attach( document.body );
+		});
 	}
 	
-	var layout = makeLayout();
-	var $config = $('#config');
-	$config.empty();
+	makeCy(container, style, graphData) {
+		console.log('UNO',container,style,graphData);
+		//window.falla();
+		let retval = cytoscape({
+			container: container,
+			//style: style,
+			style: [
+			//	// jshint ignore:start
+			//	...graphData.style,
+				...style
+			//	// jshint ignore:end
+			],
+			elements: graphData
+		});
+		
+		console.log('DOS');
+		
+		return retval;
+	}
 	
-	var $btnParam = $('<div class="param"></div>');
-	$config.append( $btnParam );
+	makeLayout(opts) {
+		// Should we initialize the shared params?
+		if(this.params===undefined) {
+			this.params = {
+				// jshint ignore:start
+				...opts
+				// jshint ignore:end
+			};
+		} else {
+			for(let i in opts){
+				this.params[i] = opts[i];
+			}
+		}
+		
+		this.params.randomize = false;
+		// Disabled for now, as it hogs the CPU
+		//this.params.edgeLength = (e) => {
+		//	return this.params.edgeLengthVal / e.data('rel_risk'); 
+		//};
+		
+		
+		// Setting the layout as such
+		this.layout = this.cy.layout(this.params);
+	}
 	
-	function makeSlider(opts) {
-		var $input = $('<input></input>');
-		var $param = $('<div class="param"></div>');
+		
+	makeSlider(opts) {
+		let $input = $('<input></input>');
+		let $param = $('<div class="param"></div>');
 		
 		$param.append('<span class="label label-default">'+ opts.label +'</span>');
 		$param.append($input);
 		
-		$config.append($param);
+		this.$config.append($param);
 		
-		var p = $input.slider({
-		min: opts.min,
-		max: opts.max,
-		value: params[ opts.param ]
-		}).on('slide', _.throttle( function(){
-		params[ opts.param ] = p.getValue();
-		
-		layout.stop();
-		layout = makeLayout();
-		layout.run();
+		let p = $input.slider({
+			min: opts.min,
+			max: opts.max,
+			value: this.params[ opts.param ]
+		}).on('slide', _.throttle( () => {
+			this.params[ opts.param ] = p.getValue();
+			
+			this.layout.stop();
+			this.makeLayout();
+			this.layout.run();
 		}, 16 ) ).data('slider');
 	}
-
-	function makeButton(opts) {
-		var $button = $('<button class="btn btn-default">'+ opts.label +'</button>');
+	
+	makeButton(opts) {
+		let $button = $('<button class="btn btn-default">'+ opts.label +'</button>');
 		
-		$btnParam.append( $button );
+		this.btnParam.append( $button );
 		
-		$button.on('click', function() {
-			layout.stop();
+		$button.on('click', () => {
+			this.layout.stop();
 			
-			if(opts.fn) { opts.fn(); }
+			if(opts.fn) {
+				opts.fn();
+			}
 			
-			layout = makeLayout(opts.layoutOpts);
-			layout.run();
+			this.makeLayout(opts.layoutOpts);
+			this.layout.run();
 		});
 	}
 	
-	var running = false;
-	
-	cy.on('layoutstart', function() {
-		running = true;
-	}).on('layoutstop', function(){
-		running = false;
-	});
-	
-	layout.run();
-	
-	var sliders = [
-		{
-			label: 'Edge length',
-			param: 'edgeLengthVal',
-			min: 1,
-			max: 200
-		},
-		{
-			label: 'Node spacing',
-			param: 'nodeSpacing',
-			min: 1,
-			max: 50
-		}
-	];
-	
-	var buttons = [
-		{
-			label: '<i class="fa fa-random"></i>',
-			layoutOpts: {
-				randomize: true,
-				flow: null
-			}
-		},
-		{
-			label: '<i class="fa fa-long-arrow-down"></i>',
-			layoutOpts: {
-				flow: {
-					axis: 'y',
-					minSeparation: 30
-				}
-			}
-		}
-	];
-	
-	sliders.forEach(makeSlider);
-	
-	buttons.forEach(makeButton);
-	
-	cy.nodes().forEach(function(n) {
-		var g = n.data('name');
-		n.qtip({
-			content: [
-				{
-					name: 'GeneCard',
-					url: 'http://www.genecards.org/cgi-bin/carddisp.pl?gene=' + g
-				},
-				{
-					name: 'UniProt search',
-					url: 'http://www.uniprot.org/uniprot/?query='+ g +'&fil=organism%3A%22Homo+sapiens+%28Human%29+%5B9606%5D%22&sort=score'
-				},
-				{
-					name: 'GeneMANIA',
-					url: 'http://genemania.org/search/human/' + g
-				}
-			].map(function(link) {
-				return '<a target="_blank" href="' + link.url + '">' + link.name + '</a>';
-			}).join('<br />\n'),
-			position: {
-				my: 'top center',
-				at: 'bottom center'
-			},
-			style: {
-				classes: 'qtip-bootstrap',
-				tip: {
-					width: 16,
-					height: 8
-				}
-			}
-		});
-	});
-	
-	$('#config-toggle').on('click', function() {
-		$('body').toggleClass('config-closed');
+	initializeConfigContainer() {
+		let $config = this.$config;
+		$config.empty();
 		
-		cy.resize();
-	});
+		this.btnParam = $('<div class="param"></div>');
+		$config.append( this.btnParam );
+		
+		let sliders = [
+			{
+				label: 'Edge length',
+				param: 'edgeLengthVal',
+				min: 1,
+				max: 200
+			},
+			{
+				label: 'Node spacing',
+				param: 'nodeSpacing',
+				min: 1,
+				max: 50
+			}
+		];
+		
+		let buttons = [
+			{
+				label: '<i class="fa fa-random"></i>',
+				layoutOpts: {
+					randomize: true,
+					flow: null
+				}
+			},
+			{
+				label: '<i class="fa fa-long-arrow-down"></i>',
+				layoutOpts: {
+					flow: {
+						axis: 'y',
+						minSeparation: 30
+					}
+				}
+			}
+		];
+		
+		sliders.forEach((slider) => this.makeSlider(slider));
+		
+		buttons.forEach((button) => this.makeButton(button));
+		
+		// Event handler to show/hide the config container
+		this.$configToggle.on('click', () => {
+			$('body').toggleClass('config-closed');
+			
+			this.cy.resize();
+		});
+	}
+	
+	doLayout() {
+		// First, empty the container
+		this.$graph.empty();
+		
+		// This is the graph data
+		let graphData = this.diseases.getCYComorbiditiesNetwork();
+		//let graphData = this.testData;
+		
+		// The shared params by this instance of cytoscape
+		let params = {
+			name: 'cola',
+			nodeSpacing: 5,
+			edgeLengthVal: 45,
+			animate: true,
+			randomize: false,
+			maxSimulationTime: 1500
+		};
+		
+		// Creation of the cytoscape instance
+		this.cy = this.makeCy(this.graphEl,this.cyStyle,graphData);
+		
+		// Creation of the layout, setting the initial parameters
+		this.makeLayout(params);
+		
+		// Now, the hooks to the different interfaces
+		this.running = false;
+		
+		this.cy.on('layoutstart', () => { this.running = true; });
+		this.cy.on('layoutstop', () => { this.running = false; });
+		
+		// Initializing the config panel
+		this.initializeConfigContainer();
+		
+		// First time the layout is run
+		this.layout.run();
+		
+		// Now, attach event handlers to each node
+		this.cy.nodes().forEach((n) => {
+			let g = n.data('name');
+			n.qtip({
+				content: [
+					{
+						name: 'GeneCard',
+						url: 'http://www.genecards.org/cgi-bin/carddisp.pl?gene=' + g
+					},
+					{
+						name: 'UniProt search',
+						url: 'http://www.uniprot.org/uniprot/?query='+ g +'&fil=organism%3A%22Homo+sapiens+%28Human%29+%5B9606%5D%22&sort=score'
+					},
+					{
+						name: 'GeneMANIA',
+						url: 'http://genemania.org/search/human/' + g
+					}
+				].map(function(link) {
+					return '<a target="_blank" href="' + link.url + '">' + link.name + '</a>';
+				}).join('<br />\n'),
+				position: {
+					my: 'top center',
+					at: 'bottom center'
+				},
+				style: {
+					classes: 'qtip-bootstrap',
+					tip: {
+						width: 16,
+						height: 8
+					}
+				}
+			});
+		});
+	}
+	
+	fetch() {
+		let fetchPromises = [];
+		
+		if(this.cyStyle === undefined) {
+			fetchPromises.push(
+				fetch('json/naive-cy-style.json', {mode: 'no-cors'})
+				.then((res) => {
+					return res.json();
+				})
+				.then((cyStyle) => {
+					this.cyStyle = cyStyle;
+					return this.cyStyle;
+				})
+			);
+			//fetchPromises.push(
+			//	fetch('json/data.json', {mode: 'no-cors'})
+			//	.then((res) => {
+			//		return res.json();
+			//	})
+			//	.then((testData) => {
+			//		this.testData = testData;
+			//		return this.testData;
+			//	})
+			//);
+		}
+		
+		return fetchPromises;
+	}
+}
 
-})
-.then(function() {
-	FastClick.attach( document.body );
+$(document).ready(function() {
+	let graphEl = document.getElementById('graph');
+	let configEl = document.getElementById('config');
+	let configToggleEl = document.getElementById('config-toggle');
+
+	const browser = new ComorbiditiesBrowser(graphEl,configEl,configToggleEl);
+	browser.initialize();
 });
