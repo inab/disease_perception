@@ -14,7 +14,10 @@ export class Studies {
 			fetchPromises.push(
 				fetch('api/studies', {mode: 'no-cors'})
 				.then(function(res) {
-					_Studies = res.json();
+					return res.json();
+				})
+				.then(function(decodedJson) {
+					_Studies = decodedJson;
 					return _Studies;
 				})
 			);

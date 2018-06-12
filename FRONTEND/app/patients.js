@@ -15,7 +15,10 @@ export class Patients {
 			fetchPromises.push(
 				fetch('api/patients', {mode: 'no-cors'})
 				.then(function(res) {
-					_Patients = res.json();
+					return res.json();
+				})
+				.then(function(decodedJson) {
+					_Patients = decodedJson;
 					return _Patients;
 				})
 			);
@@ -25,7 +28,10 @@ export class Patients {
 			fetchPromises.push(
 				fetch('api/patients/subgroups', {mode: 'no-cors'})
 				.then(function(res) {
-					_PatientSubgroups = res.json();
+					return res.json();
+				})
+				.then(function(decodedJson) {
+					_PatientSubgroups = decodedJson;
 					return _PatientSubgroups;
 				})
 			);

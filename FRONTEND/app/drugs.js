@@ -14,7 +14,10 @@ export class Drugs {
 			fetchPromises.push(
 				fetch('api/drugs', {mode: 'no-cors'})
 				.then(function(res) {
-					_Drugs = res.json();
+					return res.json();
+				})
+				.then(function(decodedJson) {
+					_Drugs = decodedJson;
 					return _Drugs;
 				})
 			);

@@ -14,7 +14,10 @@ export class Genes {
 			fetchPromises.push(
 				fetch('api/genes', {mode: 'no-cors'})
 				.then(function(res) {
-					_Genes = res.json();
+					return res.json();
+				})
+				.then(function(decodedJson) {
+					_Genes = decodedJson;
 					return _Genes;
 				})
 			);
