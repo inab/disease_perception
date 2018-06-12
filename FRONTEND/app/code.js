@@ -79,8 +79,6 @@ class ComorbiditiesBrowser {
 	}
 	
 	makeCy(container, style, graphData) {
-		console.log('UNO',container,style,graphData);
-		//window.falla();
 		let retval = cytoscape({
 			container: container,
 			//style: style,
@@ -93,23 +91,12 @@ class ComorbiditiesBrowser {
 			elements: graphData
 		});
 		
-		console.log('DOS');
-		
 		return retval;
 	}
 	
 	makeLayout(opts) {
-		// Should we initialize the shared params?
-		if(this.params===undefined) {
-			this.params = {
-				// jshint ignore:start
-				...opts
-				// jshint ignore:end
-			};
-		} else {
-			for(let i in opts){
-				this.params[i] = opts[i];
-			}
+		for(let i in opts){
+			this.params[i] = opts[i];
 		}
 		
 		this.params.randomize = false;
@@ -133,14 +120,22 @@ class ComorbiditiesBrowser {
 		
 		this.$config.append($param);
 		
+		let scale = opts.scale === undefined ? 'linear' : opts.scale;
+		
 		let p = $input.slider({
 			min: opts.min,
 			max: opts.max,
+			scale: scale,
 			value: this.params[ opts.param ]
-		}).on('slide', _.throttle( () => {
+		}).on('change', _.throttle( () => {
 			this.params[ opts.param ] = p.getValue();
 			
 			this.layout.stop();
+			
+			if(opts.fn) {
+				opts.fn();
+			}
+			
 			this.makeLayout();
 			this.layout.run();
 		}, 16 ) ).data('slider');
@@ -163,6 +158,48 @@ class ComorbiditiesBrowser {
 		});
 	}
 	
+	filterEdgesOnAbsRisk() {
+		if(this.hiddenNodes) {
+			this.hiddenNodes.restore();
+		}
+		
+		if(this.hiddenArcs) {
+			this.hiddenArcs.restore();
+		}
+		
+		// Applying the initial filtering
+		this.hiddenArcs = this.cy.edges((e) => {
+			return Math.abs(e.data('rel_risk')) < this.params.absRelRiskVal;
+		}).remove();
+		
+		// And now, remove the orphaned nodes
+		this.hiddenNodes = this.cy.nodes((n) => {
+			return !n.isParent() && (n.degree(true) === 0);
+			//return n.degree(true) === 0;
+		}).remove();
+	}
+	
+	// This method is not working as expected, so disable it for now
+	toggleDiseaseGroups() {
+		if(this.hiddenDiseaseGroups) {
+			this.hiddenDiseaseGroups.restore();
+			this.hiddenDiseaseGroups = null;
+		} else {
+			// There could be disease groups in hidden nodes
+			if(this.hiddenNodes) {
+				this.hiddenNodes.restore();
+				this.hiddenNodes = null;
+			}
+			
+			this.hiddenDiseaseGroups = this.cy.nodes((n) => {
+				return n.isParent();
+			}).remove();
+			this.hiddenDiseaseGroups.filter((n) => { return !n.isParent(); }).restore();
+		}
+		
+		this.filterEdgesOnAbsRisk();
+	}
+	
 	initializeConfigContainer() {
 		let $config = this.$config;
 		$config.empty();
@@ -170,7 +207,17 @@ class ComorbiditiesBrowser {
 		this.btnParam = $('<div class="param"></div>');
 		$config.append( this.btnParam );
 		
+		let absRelRiskData = this.diseases.getAbsRelRiskRange();
+		
 		let sliders = [
+			{
+				label: 'Cut-off on |Relative risk|',
+				param: 'absRelRiskVal',
+				min: absRelRiskData.min,
+				max: absRelRiskData.max,
+				scale: 'logarithmic',
+				fn: () => this.filterEdgesOnAbsRisk()
+			},
 			{
 				label: 'Edge length',
 				param: 'edgeLengthVal',
@@ -186,6 +233,20 @@ class ComorbiditiesBrowser {
 		];
 		
 		let buttons = [
+			//{
+			//	label: '<i class="fa fa-object-group"></i>',
+			//	layoutOpts: {
+			//		randomize: true
+			//	},
+			//	fn: () => this.toggleDiseaseGroups()
+			//},
+			//{
+			//	label: '<i class="fa fa-object-ungroup"></i>',
+			//	layoutOpts: {
+			//		randomize: true
+			//	},
+			//	fn: () => this.toggleDiseaseGroups()
+			//},
 			{
 				label: '<i class="fa fa-random"></i>',
 				layoutOpts: {
@@ -225,10 +286,14 @@ class ComorbiditiesBrowser {
 		//let graphData = this.testData;
 		
 		// The shared params by this instance of cytoscape
+		let absRelRiskData = this.diseases.getAbsRelRiskRange();
+		console.log(absRelRiskData);
+		
 		let params = {
 			name: 'cola',
 			nodeSpacing: 5,
 			edgeLengthVal: 45,
+			absRelRiskVal: absRelRiskData.initial,
 			animate: true,
 			randomize: false,
 			maxSimulationTime: 1500
@@ -237,8 +302,12 @@ class ComorbiditiesBrowser {
 		// Creation of the cytoscape instance
 		this.cy = this.makeCy(this.graphEl,this.cyStyle,graphData);
 		
+		// Applying the initial filtering
+		this.params = params;
+		this.filterEdgesOnAbsRisk();
+		
 		// Creation of the layout, setting the initial parameters
-		this.makeLayout(params);
+		this.makeLayout();
 		
 		// Now, the hooks to the different interfaces
 		this.running = false;
@@ -254,22 +323,36 @@ class ComorbiditiesBrowser {
 		
 		// Now, attach event handlers to each node
 		this.cy.nodes().forEach((n) => {
-			let g = n.data('name');
+			let diseaseName = n.data('name');
+			let diseaseLower = diseaseName.replace(/ +/g,'-').toLowerCase();
+			let icd9 = n.data('icd9');
+			let icd10 = n.data('icd10');
+			let links = [
+				{
+					name: 'MedlinePlus',
+					url: 'https://vsearch.nlm.nih.gov/vivisimo/cgi-bin/query-meta?v%3Aproject=medlineplus&v%3Asources=medlineplus-bundle&query=' + encodeURIComponent(diseaseName)
+				},
+				{
+					name: 'Genetics Home Reference (search)',
+					url: 'https://ghr.nlm.nih.gov/search?query='+encodeURIComponent(diseaseName)
+				}
+			];
+			if(icd10!=='-') {
+				links.push({
+					name: 'ICDList',
+					url: 'https://icdlist.com/icd-10/' + encodeURIComponent(icd10)
+				});
+			}
+			
+			links.push({
+				name: 'Genetics Home Reference (direct)',
+				url: 'https://ghr.nlm.nih.gov/condition/' + encodeURIComponent(diseaseLower)
+			});
+			
 			n.qtip({
-				content: [
-					{
-						name: 'GeneCard',
-						url: 'http://www.genecards.org/cgi-bin/carddisp.pl?gene=' + g
-					},
-					{
-						name: 'UniProt search',
-						url: 'http://www.uniprot.org/uniprot/?query='+ g +'&fil=organism%3A%22Homo+sapiens+%28Human%29+%5B9606%5D%22&sort=score'
-					},
-					{
-						name: 'GeneMANIA',
-						url: 'http://genemania.org/search/human/' + g
-					}
-				].map(function(link) {
+				content: '<b>'+diseaseName+'</b><br />\n'+
+				'ICD9: '+icd9 + ' ICD10: ' + icd10 + '<br />\n' +
+					links.map(function(link) {
 					return '<a target="_blank" href="' + link.url + '">' + link.name + '</a>';
 				}).join('<br />\n'),
 				position: {

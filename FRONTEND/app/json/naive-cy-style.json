@@ -5,12 +5,15 @@
 			"content": "data(name)",
 			"text-valign": "center",
 			"text-halign": "center",
+			"text-wrap": "wrap",
+			"text-max-width": "5em",
 			"background-color": "data(color)",
-			"font-size": "9px",
+			"font-size": "0.7em",
 			"text-outline-color": "#555",
 			"text-outline-width": "1px",
 			"color": "#fff",
 			"overlay-padding": "6px",
+			"opacity": "1",
 			"z-index": "10"
 		}
 	},
@@ -23,7 +26,8 @@
 			"padding-right": "10px",
 			"text-valign": "top",
 			"text-halign": "center",
-			"background-color": "#bbb"
+			"border-color": "data(color)",
+			"background-opacity": "0"
 		}
 	},
 	{
@@ -33,7 +37,7 @@
 			"curve-style": "haystack",
 			"haystack-radius": "0.5",
 			"opacity": "0.4",
-			"line-color": "#bbb",
+			"line-color": "mapData(score, -10, 10, red, blue)",
 			"width": "mapData(rel_risk, 0, 50, 1, 8)",
 			"overlay-padding": "3px"
 		}

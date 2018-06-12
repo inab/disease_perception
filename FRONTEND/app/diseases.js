@@ -7,9 +7,9 @@ var _DiseaseGroupNodes;
 
 var _DiseaseComorbiditiesNetwork;
 
-var _DiseaseComorbiditiesNetworkMinRisk;
-var _DiseaseComorbiditiesNetworkMaxRisk;
-var _DiseaseComorbiditiesNetworkInitialCutoff;
+var _DiseaseComorbiditiesNetworkMinAbsRisk;
+var _DiseaseComorbiditiesNetworkMaxAbsRisk;
+var _DiseaseComorbiditiesNetworkInitialAbsCutoff;
 
 var _DiseaseComorbiditiesNetworkEdges;
 
@@ -106,24 +106,24 @@ export class Diseases {
 						};
 					});
 					
-					let minRisk = Infinity;
-					let maxRisk = -Infinity;
-					let initialCutoff = -Infinity;
+					let minAbsRisk = Infinity;
+					let maxAbsRisk = -Infinity;
+					let initialAbsCutoff = -Infinity;
 					if(_DiseaseComorbiditiesNetwork.length > 0) {
 						let dcme = [..._DiseaseComorbiditiesNetwork];
 						// jshint camelcase: false 
-						dcme.sort(function(e1,e2) { return e1.rel_risk - e2.rel_risk; });
-						minRisk = dcme[0].rel_risk;
-						maxRisk = dcme[dcme.length - 1].rel_risk;
+						dcme.sort(function(e1,e2) { return Math.abs(e1.rel_risk) - Math.abs(e2.rel_risk); });
+						minAbsRisk = Math.abs(dcme[0].rel_risk);
+						maxAbsRisk = Math.abs(dcme[dcme.length - 1].rel_risk);
 						
-						// Selecting the initial cutoff risk, based on the then biggest values
-						initialCutoff = dcme[Math.floor(dcme.length * 9 / 10)].rel_risk;
+						// Selecting the initial absolute cutoff risk, based on the then biggest values
+						initialAbsCutoff = Math.abs(dcme[Math.floor(dcme.length * 9 / 10)].rel_risk);
 					}
 					
 					// Saving the range and cutoff for later processing
-					_DiseaseComorbiditiesNetworkMinRisk = minRisk;
-					_DiseaseComorbiditiesNetworkMaxRisk = maxRisk;
-					_DiseaseComorbiditiesNetworkInitialCutoff = initialCutoff;
+					_DiseaseComorbiditiesNetworkMinAbsRisk = minAbsRisk;
+					_DiseaseComorbiditiesNetworkMaxAbsRisk = maxAbsRisk;
+					_DiseaseComorbiditiesNetworkInitialAbsCutoff = initialAbsCutoff;
 					
 					return _DiseaseComorbiditiesNetwork;
 				})
@@ -141,8 +141,12 @@ export class Diseases {
 		return _DiseaseComorbiditiesNetwork;
 	}
 	
-	getRelRiskRange() {
-		return [_DiseaseComorbiditiesNetworkMinRisk,_DiseaseComorbiditiesNetworkInitialCutoff,_DiseaseComorbiditiesNetworkMaxRisk];
+	getAbsRelRiskRange() {
+		return {
+			min: _DiseaseComorbiditiesNetworkMinAbsRisk,
+			initial: _DiseaseComorbiditiesNetworkInitialAbsCutoff,
+			max: _DiseaseComorbiditiesNetworkMaxAbsRisk
+		};
 	}
 	
 	getCYComorbiditiesNetwork() {
@@ -150,7 +154,7 @@ export class Diseases {
 			nodes: [
 				// jshint ignore:start
 				..._DiseaseNodes,
-				..._DiseaseGroupNodes
+				//..._DiseaseGroupNodes
 				// jshint ignore:end
 			],
 			edges: _DiseaseComorbiditiesNetworkEdges
