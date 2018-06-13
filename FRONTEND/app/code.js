@@ -237,12 +237,12 @@ class ComorbiditiesBrowser {
 				scale: 'logarithmic',
 				fn: () => this.cy.batch(() => this.filterEdgesOnAbsRisk())
 			},
-			{
-				label: 'Edge length',
-				param: 'edgeLengthVal',
-				min: 1,
-				max: 200
-			},
+			//{
+			//	label: 'Edge length',
+			//	param: 'edgeLengthVal',
+			//	min: 1,
+			//	max: 200
+			//},
 			{
 				label: 'Node spacing',
 				param: 'nodeSpacing',
