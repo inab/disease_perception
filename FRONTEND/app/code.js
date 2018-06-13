@@ -228,7 +228,7 @@ class ComorbiditiesBrowser {
 				min: absRelRiskData.min,
 				max: absRelRiskData.max,
 				scale: 'logarithmic',
-				fn: () => this.filterEdgesOnAbsRisk()
+				fn: () => this.cy.batch(() => this.filterEdgesOnAbsRisk())
 			},
 			{
 				label: 'Edge length',
@@ -375,7 +375,7 @@ class ComorbiditiesBrowser {
 		
 		// Applying the initial filtering
 		this.params = params;
-		this.filterEdgesOnAbsRisk();
+		this.cy.batch(() => this.filterEdgesOnAbsRisk());
 		
 		// Creation of the layout, setting the initial parameters
 		this.makeLayout();
