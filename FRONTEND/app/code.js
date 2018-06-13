@@ -358,10 +358,17 @@ class ComorbiditiesBrowser {
 				}
 			];
 			
-			if(icd10!=='-') {
-				links.push({
-					name: 'ICDList',
+			if(icd10 !== '-') {
+				links.unshift({
+					name: 'ICDList (ICD10)',
 					url: 'https://icdlist.com/icd-10/' + encodeURIComponent(icd10)
+				});
+			}
+			
+			if(icd9 !== '-') {
+				links.unshift({
+					name: 'ChrisEndres (ICD9)',
+					url: 'http://icd9.chrisendres.com/index.php?action=child&recordid=' + encodeURIComponent(icd9)
 				});
 			}
 			
