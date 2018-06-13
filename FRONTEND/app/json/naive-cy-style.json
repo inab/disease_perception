@@ -18,6 +18,31 @@
 		}
 	},
 	{
+		"selector": "node:selected",
+		"css": {
+			"border-width": "6px",
+			"border-color": "#AAD8FF",
+			"border-opacity": "0.5",
+			"text-outline-color": "#77828C"
+		}
+	},
+{
+  "selector": "node.highlighted",
+  "style": {
+    "border-width": "6px",
+    "border-color": "#AAD8FF",
+    "border-opacity": "0.5",
+    "background-color": "#394855",
+    "text-outline-color": "#394855"
+  }
+},
+{
+  "selector": "edge.filtered",
+  "style": {
+    "opacity": "0"
+  }
+},
+	{
 		"selector": "$node > node",
 		"css": {
 			"padding-top": "10px",
