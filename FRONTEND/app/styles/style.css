@@ -86,6 +86,48 @@ a:hover {
   right: 0;
 }
 
+/*
+ *	Vertical centering obtained from
+ * 
+ * 	https://codepen.io/dimbslmh/full/mKfCc
+ */
+.modal {
+  text-align: center;
+  padding: 0 !important;
+}
+
+.modal:before {
+  content: '';
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+  margin-right: -4px;
+}
+
+.modal-dialog {
+  display: inline-block;
+  text-align: left;
+  vertical-align: middle;
+}
+
+/*
+ * Obtained from https://github.com/cytoscape/cytoscape.js/tree/master/documentation/demos/tokyo-railways
+ */
+#comorbidities-loading {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  text-align: center;
+  margin-top: -0.5em;
+  font-size: 4em;
+  background-color: rgba(224,224,224,0.5);
+}
+
+#comorbidities-loading.loaded {
+  display: none;
+}
+
 @media (max-width: 600px){
   #graph {
     right: 0;

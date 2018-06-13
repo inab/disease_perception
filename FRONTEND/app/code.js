@@ -42,7 +42,7 @@ import { Drugs } from './drugs';
 import { Studies } from './studies';
 
 class ComorbiditiesBrowser {
-	constructor(graphEl,configEl,configToggleEl) {
+	constructor(graphEl,configEl,configToggleEl,modalEl,loadingEl) {
 		// The graph container
 		this.graphEl = graphEl;
 		this.$graph = $(this.graphEl);
@@ -51,6 +51,9 @@ class ComorbiditiesBrowser {
 		this.$config = $(configEl);
 		// The right panel toggle container
 		this.$configToggle = $(configToggleEl);
+		
+		this.$modal = $(modalEl);
+		this.$loading = $(loadingEl);
 	}
 
 	initialize() {
@@ -74,8 +77,12 @@ class ComorbiditiesBrowser {
 		this.studies.fetch().forEach((e) => fetchPromises.push(e));
 		
 		// Now, issuing the fetch itself, and then the layout
+		this.$loading.removeClass('loaded');
 		Promise.all(fetchPromises)
-		.then((dataArray) => this.doLayout(dataArray))
+		.then((dataArray) => {
+			this.$loading.addClass('loaded');
+			this.doLayout(dataArray);
+		})
 		.then(function() {
 			FastClick.attach( document.body );
 		});
@@ -181,7 +188,7 @@ class ComorbiditiesBrowser {
 		
 		// Applying the initial filtering
 		this.hiddenArcs = this.cy.edges((e) => {
-			return Math.abs(e.data('rel_risk')) < this.params.absRelRiskVal;
+			return e.data('abs_rel_risk') < this.params.absRelRiskVal;
 		}).remove();
 		
 		// And now, remove the orphaned nodes
@@ -289,6 +296,20 @@ class ComorbiditiesBrowser {
 				this.cy.resize();
 			}
 		});
+	}
+	
+	makeDiseaseComorbidityTooltipContent(edge) {
+		let content = document.createElement('div');
+		content.setAttribute('style','font-size: 1.3em;text-align: left;');
+		
+		let source = edge.source();
+		let target = edge.target();
+		
+		
+		content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
+			'<div><b>Source</b>: '+source.data('name') + '<br />\n' +
+			'<b>Target</b>: '+target.data('name')+'</div>';
+		return content;
 	}
 	
 	makeDiseaseTooltipContent(node) {
@@ -408,9 +429,10 @@ class ComorbiditiesBrowser {
 				multiple: true,
 				sticky: true,
 				size: 'large',
-				theme: 'light'
+				theme: 'light',
+				zIndex: 999
 			}).tooltips[0];
-
+			
 			node.on('tapdragover', () => {
 				tip.show();
 			});
@@ -419,6 +441,42 @@ class ComorbiditiesBrowser {
 				tip.hide();
 			});
 		});
+		
+		// Now, attach event handlers to each edge
+		try {
+			this.cy.edges().forEach((edge) => {
+				let ref = edge.popperRef(); // used only for positioning
+
+				// using tippy ^2.0.0
+				let tip = tippy(ref, { // tippy options:
+					html: this.makeDiseaseComorbidityTooltipContent(edge),
+					trigger: 'manual',
+					arrow: true,
+					arrowType: 'round',
+					placement: 'bottom',
+					animation: 'perspective',
+					delay: 2000,
+					multiple: true,
+					sticky: true,
+					theme: 'dark',
+					zIndex: 999
+				}).tooltips[0];
+				
+				edge.on('tapstart', () => {
+					tip.show();
+				});
+			});
+			
+			this.cy.on('select', () => {
+				let selected = this.cy.elements('node:selected');
+				if(selected.length===2) {
+					this.$modal.find('.modal-title').empty().append('Hola holita');
+					this.$modal.modal('show');
+				}
+			});
+		} catch(e) {
+			console.log('Unexpected error',e);
+		}
 	}
 	
 	fetch() {
@@ -455,7 +513,9 @@ $(document).ready(function() {
 	let graphEl = document.getElementById('graph');
 	let configEl = document.getElementById('config');
 	let configToggleEl = document.getElementById('config-toggle');
+	let modalEl = document.getElementById('modalGraphChange');
+	let loadingEl = document.getElementById('comorbidities-loading');
 
-	const browser = new ComorbiditiesBrowser(graphEl,configEl,configToggleEl);
+	const browser = new ComorbiditiesBrowser(graphEl,configEl,configToggleEl,modalEl,loadingEl);
 	browser.initialize();
 });
