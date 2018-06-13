@@ -4,7 +4,8 @@ import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap/dist/css/bootstrap-theme.css';
 import 'bootstrap-slider/dist/css/bootstrap-slider.css';
 import 'font-awesome/css/font-awesome.css';
-import 'qtip2/dist/jquery.qtip.css';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/dist/themes/light.css';
 import './styles/style.css';
 
 import $ from 'jquery';
@@ -23,15 +24,17 @@ import 'bootstrap-slider';
 import FastClick from 'fastclick';
 
 import cytoscape from 'cytoscape';
+
+// Graph layout
 import cycola from 'cytoscape-cola';
 cytoscape.use( cycola );
-//import cyqtip from 'cytoscape-qtip';
-//cyqtip( cytoscape, jQuery ); // register extension
-import qtip from 'cytoscape-qtip';
-cytoscape.use(qtip);
-//var qtip = require('cytoscape-qtip');
-//cytoscape.use( qtip );
 
+// Tooltips attached to graph elements
+import popper from 'cytoscape-popper';
+cytoscape.use( popper );
+import tippy from 'tippy.js';
+
+// Internal code
 import { Diseases } from './diseases';
 import { Patients } from './patients';
 import { Genes } from './genes';
@@ -288,6 +291,63 @@ class ComorbiditiesBrowser {
 		});
 	}
 	
+	makeDiseaseTooltipContent(node) {
+		let diseaseName = node.data('name');
+		let diseaseLower = diseaseName.replace(/ +/g,'-').toLowerCase();
+		let icd9 = node.data('icd9');
+		let icd10 = node.data('icd10');
+		let links = [
+			{
+				name: 'MedlinePlus',
+				url: 'https://vsearch.nlm.nih.gov/vivisimo/cgi-bin/query-meta?v%3Aproject=medlineplus&v%3Asources=medlineplus-bundle&query=' + encodeURIComponent(diseaseName)
+			},
+			{
+				name: 'Genetics Home Reference (search)',
+				url: 'https://ghr.nlm.nih.gov/search?query='+encodeURIComponent(diseaseName)
+			},
+			{
+				name: 'NORD (direct)',
+				url: 'https://rarediseases.org/rare-diseases/' + encodeURIComponent(diseaseLower) + '/'
+			},
+			{
+				name: 'Genetics Home Reference (direct)',
+				url: 'https://ghr.nlm.nih.gov/condition/' + encodeURIComponent(diseaseLower)
+			},
+			{
+				name: 'Wikipedia (direct)',
+				url: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(diseaseName)
+			}
+		];
+		
+		if(icd10 !== '-') {
+			links.unshift({
+				name: 'ICDList (ICD10)',
+				url: 'https://icdlist.com/icd-10/' + encodeURIComponent(icd10)
+			});
+		}
+		
+		if(icd9 !== '-') {
+			links.unshift({
+				name: 'ChrisEndres (ICD9)',
+				url: 'http://icd9.chrisendres.com/index.php?action=child&recordid=' + encodeURIComponent(icd9)
+			});
+		}
+		
+		let content = document.createElement('div');
+		content.setAttribute('style','font-size: 1.3em;');
+		
+		//content.innerHTML = 'Tippy content';
+		content.innerHTML = '<b>'+diseaseName+'</b><br />\n'+
+			'ICD9: '+icd9 + ' ICD10: ' + icd10 + '<br />\n' +
+			'<div style="text-align: left;">' +
+			links.map(function(link) {
+				return '<a target="_blank" href="' + link.url + '">' + link.name + '</a>';
+			}).join('<br />\n') +
+			'</div>';
+
+		return content;
+	}
+	
 	doLayout() {
 		// First, empty the container
 		this.$graph.empty();
@@ -330,65 +390,33 @@ class ComorbiditiesBrowser {
 		this.layout.run();
 		
 		// Now, attach event handlers to each node
-		this.cy.nodes().forEach((n) => {
-			let diseaseName = n.data('name');
-			let diseaseLower = diseaseName.replace(/ +/g,'-').toLowerCase();
-			let icd9 = n.data('icd9');
-			let icd10 = n.data('icd10');
-			let links = [
-				{
-					name: 'MedlinePlus',
-					url: 'https://vsearch.nlm.nih.gov/vivisimo/cgi-bin/query-meta?v%3Aproject=medlineplus&v%3Asources=medlineplus-bundle&query=' + encodeURIComponent(diseaseName)
-				},
-				{
-					name: 'Genetics Home Reference (search)',
-					url: 'https://ghr.nlm.nih.gov/search?query='+encodeURIComponent(diseaseName)
-				},
-				{
-					name: 'NORD (direct)',
-					url: 'https://rarediseases.org/rare-diseases/' + encodeURIComponent(diseaseLower) + '/'
-				},
-				{
-					name: 'Genetics Home Reference (direct)',
-					url: 'https://ghr.nlm.nih.gov/condition/' + encodeURIComponent(diseaseLower)
-				},
-				{
-					name: 'Wikipedia (direct)',
-					url: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(diseaseName)
-				}
-			];
+		this.cy.nodes().forEach((node) => {
+			let ref = node.popperRef(); // used only for positioning
+
+			// using tippy ^2.0.0
+			let tip = tippy(ref, { // tippy options:
+				html: this.makeDiseaseTooltipContent(node),
+				trigger: 'manual',
+				arrow: true,
+				arrowType: 'round',
+				placement: 'bottom',
+				animation: 'perspective',
+				interactive: true,
+				interactiveBorder: 5,
+				delay: 2000,
+				hideOnClick: false,
+				multiple: true,
+				sticky: true,
+				size: 'large',
+				theme: 'light'
+			}).tooltips[0];
+
+			node.on('tapdragover', () => {
+				tip.show();
+			});
 			
-			if(icd10 !== '-') {
-				links.unshift({
-					name: 'ICDList (ICD10)',
-					url: 'https://icdlist.com/icd-10/' + encodeURIComponent(icd10)
-				});
-			}
-			
-			if(icd9 !== '-') {
-				links.unshift({
-					name: 'ChrisEndres (ICD9)',
-					url: 'http://icd9.chrisendres.com/index.php?action=child&recordid=' + encodeURIComponent(icd9)
-				});
-			}
-			
-			n.qtip({
-				content: '<b>'+diseaseName+'</b><br />\n'+
-				'ICD9: '+icd9 + ' ICD10: ' + icd10 + '<br />\n' +
-					links.map(function(link) {
-					return '<a target="_blank" href="' + link.url + '">' + link.name + '</a>';
-				}).join('<br />\n'),
-				position: {
-					my: 'top center',
-					at: 'bottom center'
-				},
-				style: {
-					classes: 'qtip-bootstrap',
-					tip: {
-						width: 16,
-						height: 8
-					}
-				}
+			node.on('tapdragout', () => {
+				tip.hide();
 			});
 		});
 	}
