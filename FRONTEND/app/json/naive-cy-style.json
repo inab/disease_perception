@@ -59,11 +59,11 @@
 		"selector": "edge",
 		"css": {
 			"target-arrow-shape": "triangle",
-			"curve-style": "haystack",
+			"curve-style": "bezier",
 			"haystack-radius": "0.5",
 			"opacity": "0.4",
-			"line-color": "mapData(rel_risk, -10, 10, red, blue)",
-			"width": "mapData(rel_risk, 0, 50, 1, 8)",
+			"line-color": "mapData(rel_risk, -20, 20, red, blue)",
+			"width": "mapData(abs_rel_risk, 0, 50, 1, 8)",
 			"overlay-padding": "3px"
 		}
 	},

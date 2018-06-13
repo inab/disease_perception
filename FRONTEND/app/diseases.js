@@ -87,13 +87,15 @@ export class Diseases {
 					_DiseaseComorbiditiesNetwork = decodedJson;
 					
 					_DiseaseComorbiditiesNetworkEdges = _DiseaseComorbiditiesNetwork.map(function(dc,dci) {
+						// Will be used later
+						// jshint camelcase: false 
+						dc.abs_rel_risk = Math.abs(dc.rel_risk);
 						// Preparation
 						let retdc = {
 							// jshint ignore:start
 							...dc
 							// jshint ignore:end
 						};
-						// jshint camelcase: false 
 						// Unique identifiers
 						retdc.id = 'DC'+dci;
 						retdc.source = 'D'+dc.from_id;
@@ -111,13 +113,14 @@ export class Diseases {
 					let initialAbsCutoff = -Infinity;
 					if(_DiseaseComorbiditiesNetwork.length > 0) {
 						let dcme = [..._DiseaseComorbiditiesNetwork];
+						
 						// jshint camelcase: false 
-						dcme.sort(function(e1,e2) { return Math.abs(e1.rel_risk) - Math.abs(e2.rel_risk); });
-						minAbsRisk = Math.abs(dcme[0].rel_risk);
-						maxAbsRisk = Math.abs(dcme[dcme.length - 1].rel_risk);
+						dcme.sort(function(e1,e2) { return e1.abs_rel_risk - e2.abs_rel_risk; });
+						minAbsRisk = dcme[0].abs_rel_risk;
+						maxAbsRisk = dcme[dcme.length - 1].abs_rel_risk;
 						
 						// Selecting the initial absolute cutoff risk, based on the then biggest values
-						initialAbsCutoff = Math.abs(dcme[Math.floor(dcme.length * 9 / 10)].rel_risk);
+						initialAbsCutoff = dcme[Math.floor(dcme.length * 9 / 10)].abs_rel_risk;
 					}
 					
 					// Saving the range and cutoff for later processing
