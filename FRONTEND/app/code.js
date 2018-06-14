@@ -316,8 +316,10 @@ class ComorbiditiesBrowser {
 				
 				this.unHighlighted = this.cy.elements().not( nhood ).remove();
 			}
+			this.layout.stop();
+			this.makeLayout({ randomize: true});
+			this.layout.run();
 		});
-		this.layout.run();
 	}
 
 
@@ -438,6 +440,10 @@ class ComorbiditiesBrowser {
 					{
 						label: 'Cola',
 						value: 'cola'
+					},
+					{
+						label: 'COSE',
+						value: 'cose'
 					},
 					{
 						label: 'COSE Bilkent',
