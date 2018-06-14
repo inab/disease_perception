@@ -19,4 +19,5 @@ dbpath = os.path.join(api_root,'DB','net_comorbidity.db')
 app = libs.app.init_comorbidities_app(dbpath)
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	port = int(sys.argv[1])  if len(sys.argv) > 1  else 5000
+	app.run(debug=True,port=port)
