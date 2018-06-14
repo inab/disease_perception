@@ -42,6 +42,10 @@ module.exports = {
 				},
 				{
 					context: PATHS.app,
+					from: 'images/*.svg',
+				},
+				{
+					context: PATHS.app,
 					from: '*.html',
 				}
 		])
