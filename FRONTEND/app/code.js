@@ -25,9 +25,19 @@ import FastClick from 'fastclick';
 
 import cytoscape from 'cytoscape';
 
-// Graph layout
+// Pan/Zoom (disabled)
+//import panzoom from 'cytoscape-panzoom';
+//panzoom(cytoscape);
+
+// Graph layouts
 import cycola from 'cytoscape-cola';
 cytoscape.use( cycola );
+import cycosebilkent from 'cytoscape-cose-bilkent';
+cytoscape.use( cycosebilkent );
+import cydagre from 'cytoscape-dagre';
+cytoscape.use( cydagre );
+import cyklay from 'cytoscape-klay';
+cytoscape.use( cyklay );
 
 // Tooltips attached to graph elements
 import popper from 'cytoscape-popper';
@@ -42,21 +52,33 @@ import { Drugs } from './drugs';
 import { Studies } from './studies';
 
 class ComorbiditiesBrowser {
-	constructor(graphEl,configEl,configToggleEl,modalEl,loadingEl) {
+	constructor(setup) {
 		// The graph container
-		this.graphEl = graphEl;
+		this.graphEl = setup.graph;
 		this.$graph = $(this.graphEl);
 		
 		// The right panel container
-		this.$config = $(configEl);
+		this.$config = $(setup.configPanel);
 		// The right panel toggle container
-		this.$configToggle = $(configToggleEl);
+		this.$configToggle = $(setup.configPanelToggle);
 		
-		this.$modal = $(modalEl);
-		this.$loading = $(loadingEl);
+		this.$controls = $(setup.graphControls);
+		
+		this.$modal = $(setup.modal);
+		this.$loading = $(setup.loading);
+		this.$appLoading = $(setup.appLoading);
 	}
 
 	initialize() {
+		// Event handler to show/hide the config container
+		this.$configToggle.on('click', () => {
+			$('body').toggleClass('config-closed');
+			
+			if(this.cy) {
+				this.cy.resize();
+			}
+		});
+		
 		let cyContainer = this.$graph;
 		// Preparing the initial data fetch
 		let fetchPromises = this.fetch();
@@ -81,6 +103,7 @@ class ComorbiditiesBrowser {
 		Promise.all(fetchPromises)
 		.then((dataArray) => {
 			this.$loading.addClass('loaded');
+			this.$appLoading.addClass('loaded');
 			this.doLayout(dataArray);
 		})
 		.then(function() {
@@ -135,9 +158,13 @@ class ComorbiditiesBrowser {
 		let $param = $('<div class="param"></div>');
 		
 		$param.append('<span class="label label-default">'+ opts.label +'</span>');
+		
+		let initialValue = Math.round(this.params[ opts.param ]);
+		let $dataLabel = $('<span class="label label-info">'+ initialValue +'</span>');
+		$param.append($dataLabel);
 		$param.append($input);
 		
-		this.$config.append($param);
+		this.$controls.append($param);
 		
 		let scale = opts.scale === undefined ? 'linear' : opts.scale;
 		
@@ -145,9 +172,10 @@ class ComorbiditiesBrowser {
 			min: opts.min,
 			max: opts.max,
 			scale: scale,
-			value: this.params[ opts.param ]
-		}).on('change', _.throttle( () => {
+			value: initialValue
+		}).on('slideStop', _.throttle( () => {
 			this.params[ opts.param ] = p.getValue();
+			$dataLabel.html(p.getValue());
 			
 			this.layout.stop();
 			
@@ -160,12 +188,23 @@ class ComorbiditiesBrowser {
 		}, 16 ) ).data('slider');
 	}
 	
-	makeButton(opts) {
-		let $button = $('<button class="btn btn-default">'+ opts.label +'</button>');
+	makeButton(opts,btnParam) {
+		if(btnParam === undefined) {
+			btnParam = this.btnParam;
+		}
 		
-		this.btnParam.append( $button );
+		let optsLabel = opts.label ? opts.label : opts.value;
+		let $button = $('<button type="button" class="btn btn-default">' + optsLabel + '</button>');
+		
+		if(opts.value) {
+			$button.val(opts.value);
+		}
 		
 		$button.on('click', () => {
+			if(opts.param) {
+				this.params[ opts.param ] = $button.val();
+			}
+			
 			this.layout.stop();
 			
 			if(opts.fn) {
@@ -174,6 +213,84 @@ class ComorbiditiesBrowser {
 			
 			this.makeLayout(opts.layoutOpts);
 			this.layout.run();
+		});
+		
+		btnParam.append( $button );
+	}
+	
+	makeSelectButtons(opts,btnParam) {
+		if(btnParam === undefined) {
+			btnParam = this.btnParam;
+		}
+		
+		let $param = $('<div class="param"></div>');
+		
+		$param.append('<span class="label label-default">'+ opts.label +'</span>');
+		
+		let $buttonGroup = $('<div class="btn-group" role="group" aria-label="'+opts.label+'"></div>');
+		$param.append($buttonGroup);
+		
+		let iniVal = this.params[ opts.param ];
+		opts.options.forEach((opt) => {
+			opt.initiallyToggled = opt.value === iniVal;
+			
+			this.makeButton(opt,$buttonGroup);
+		});
+		btnParam.append( $param );
+	}
+	
+	makeSelectDropdown(opts,btnParam) {
+		if(btnParam === undefined) {
+			btnParam = this.btnParam;
+		}
+
+		btnParam.append('<span class="label label-default">'+ opts.label +'</span>');
+		
+		let $buttonGroup = $('<div class="btn-group" style="width: 100%; margin-bottom: 1em;" aria-label="'+opts.label+'"></div>');
+		btnParam.append($buttonGroup);
+		
+		let $dropdownButton = $('<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>');
+		$buttonGroup.append($dropdownButton);
+		
+		let $dropdownCaret = $('<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span><span class="sr-only">Toggle Dropdown</span></button>');
+		$buttonGroup.append($dropdownCaret);
+		
+		let $optList = $('<ul class="dropdown-menu"></ul>');
+		$buttonGroup.append($optList);
+		
+		let iniVal = this.params[ opts.param ];
+		opts.options.forEach((opt) => {
+			let optLabel = opt.label ? opt.label : opt.value;
+			if(opt.value === iniVal) {
+				$dropdownButton.html(optLabel);
+			}
+			
+			let $option = $('<li><a href="#">' + optLabel + '</li>');
+			$option.val(opt.value);
+			
+			$option.on('click', () => {
+				if(opt.param) {
+					this.params[ opt.param ] = opt.value;
+				} else if(opts.param) {
+					this.params[ opts.param ] = opt.value;
+				}
+				$dropdownButton.html($option.html());
+				
+				this.layout.stop();
+				
+				if(opts.fn) {
+					opts.fn();
+				}
+				
+				if(opt.fn) {
+					opt.fn();
+				}
+				
+				this.makeLayout(opts.layoutOpts);
+				this.layout.run();
+			});
+			
+			$optList.append( $option );
 		});
 	}
 	
@@ -219,12 +336,9 @@ class ComorbiditiesBrowser {
 		this.filterEdgesOnAbsRisk();
 	}
 	
-	initializeConfigContainer() {
-		let $config = this.$config;
-		$config.empty();
-		
-		this.btnParam = $('<div class="param"></div>');
-		$config.append( this.btnParam );
+	initializeControls() {
+		let $controls = this.$controls;
+		$controls.empty();
 		
 		let absRelRiskData = this.diseases.getAbsRelRiskRange();
 		
@@ -284,18 +398,39 @@ class ComorbiditiesBrowser {
 			}
 		];
 		
+		let selects = [
+			{
+				label: 'Graph Layouts',
+				param: 'name',
+				options: [
+					{
+						label: 'Cola',
+						value: 'cola'
+					},
+					{
+						label: 'COSE Bilkent',
+						value: 'cose-bilkent'
+					},
+					{
+						label: 'Dagre (slow)',
+						value: 'dagre'
+					},
+					{
+						label: 'Klay (slow)',
+						value: 'klay'
+					}
+				]
+			}
+		];
+		
+		selects.forEach((select) => this.makeSelectDropdown(select,this.$controls));
+		
 		sliders.forEach((slider) => this.makeSlider(slider));
 		
-		buttons.forEach((button) => this.makeButton(button));
+		this.btnParam = $('<div class="param"></div>');
+		$controls.append( this.btnParam );
 		
-		// Event handler to show/hide the config container
-		this.$configToggle.on('click', () => {
-			$('body').toggleClass('config-closed');
-			
-			if(this.cy) {
-				this.cy.resize();
-			}
-		});
+		buttons.forEach((button) => this.makeButton(button));
 	}
 	
 	makeDiseaseComorbidityTooltipContent(edge) {
@@ -379,13 +514,13 @@ class ComorbiditiesBrowser {
 		
 		// The shared params by this instance of cytoscape
 		let absRelRiskData = this.diseases.getAbsRelRiskRange();
-		console.log(absRelRiskData);
 		
 		let params = {
 			name: 'cola',
+			absRelRiskVal: absRelRiskData.initial,
+			// Specific from cola algorithm
 			nodeSpacing: 5,
 			edgeLengthVal: 45,
-			absRelRiskVal: absRelRiskData.initial,
 			animate: true,
 			randomize: false,
 			maxSimulationTime: 1500
@@ -404,8 +539,8 @@ class ComorbiditiesBrowser {
 		// Now, the hooks to the different interfaces
 		this.running = false;
 		
-		// Initializing the config panel
-		this.initializeConfigContainer();
+		// Initializing the graph controls
+		this.initializeControls();
 		
 		// First time the layout is run
 		this.layout.run();
@@ -511,11 +646,22 @@ class ComorbiditiesBrowser {
 
 $(document).ready(function() {
 	let graphEl = document.getElementById('graph');
-	let configEl = document.getElementById('config');
 	let configToggleEl = document.getElementById('config-toggle');
+	let configEl = document.getElementById('config');
 	let modalEl = document.getElementById('modalGraphChange');
-	let loadingEl = document.getElementById('comorbidities-loading');
+	let appLoadingEl = document.getElementById('comorbidities-loading');
+	let graphLoadingEl = document.getElementById('graph-loading');
+	let graphControlsEl = document.getElementById('graph-controls');
 
-	const browser = new ComorbiditiesBrowser(graphEl,configEl,configToggleEl,modalEl,loadingEl);
+	const browser = new ComorbiditiesBrowser({
+		'graph': graphEl,
+		'configPanel': configEl,
+		'configPanelToggle': configToggleEl,
+		'graphControls': graphControlsEl,
+		'modal': modalEl,
+		'appLoading': appLoadingEl,
+		'loading': graphLoadingEl
+	});
+	
 	browser.initialize();
 });

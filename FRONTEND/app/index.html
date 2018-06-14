@@ -1,52 +1,58 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset=utf-8 />
-    <meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
+	<head>
+		<meta charset=utf-8 />
+		<meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui" />
+		
+		<title>Disease Perception</title>
+		
+		<script src="bundle.js"></script>
+	</head>
+	<body>
+		<div id="graph"></div>
+		
+		<div id="comorbidities-loading" class="loading">
+			<img src="images/disease_perception_logo.svg" style="width:auto; height:70%;"/>
+		</div>
+		
+		<div id="graph-loading" class="loading">
+			<span class="fa fa-refresh fa-spin"></span>
+		</div>
+		
+		<div id="modalGraphChange" class="modal fade" tabindex="-1" role="dialog">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">Modal title</h4>
+					</div>
+					<div class="modal-body">
+						<p>One fine body&hellip;</p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary">Save changes</button>
+					</div>
+				</div><!-- /.modal-content -->
+			</div><!-- /.modal-dialog -->
+		</div><!-- /.modal -->
+		
+		<!-- Configuration panel switch button -->
+		<span class="fa fa-bars config-toggle" id="config-toggle"></span>
 
-    <title>BSC Comorbidities network prototype</title>
+		<div id="config" class="config">
+			<div class="preamble">
+				<span class="label label-info mini-title">Personalized Comorbidity Profile Generation</span>
 
-    <script src="bundle.js"></script>
-  </head>
-  <body>
-    <div id="graph"></div>
-	  <div id="comorbidities-loading">
-	    <img src="images/disease_perception_logo.svg" width="auto" height="70%"/><span class="fa fa-refresh fa-spin"></span>
-	  </div>
-	  <button id="clear">CLEAR</button>
-	<div id="modalGraphChange" class="modal fade" tabindex="-1" role="dialog">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-					<h4 class="modal-title">Modal title</h4>
-				</div>
-				<div class="modal-body">
-					<p>One fine body&hellip;</p>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-primary">Save changes</button>
-				</div>
-			</div><!-- /.modal-content -->
-		</div><!-- /.modal-dialog -->
-	</div><!-- /.modal -->
-
-    <span class="fa fa-bars config-toggle" id="config-toggle"></span>
-
-    <div id="config" class="config">
-
-      <div class="preamble">
-        <span class="label label-info">Cola.js/Cytoscape.js demo</span>
-
-        <p>This is a demo of a graph of gene-gene interactions that uses Cola.js for layout and Cytoscape.js for its graph model and visualisation.  Use the controls below to alter the Cola.js layout parameters.</p>
-        <p>
-          Data by <a href="http://genemania.org">GeneMANIA</a><br/>
-          Visualisation by <a href="http://js.cytoscape.org">Cytoscape.js</a><br/>
-          Layout by <a href="http://marvl.infotech.monash.edu/webcola/">Cola.js</a>
-        </p>
-      </div>
-
-    </div>
-  </body>
+				<p>This service helps to explore the comorbidity relations among different diseases from the experimental genomic data from a cohort of patients</p>
+				<p>
+				  Data gathered and processed by Jon Sánchez et al<br/>
+				  Visualisation by <a href="http://js.cytoscape.org">Cytoscape.js</a><br/>
+				  Supported layouts: <a href="http://marvl.infotech.monash.edu/webcola/">Cola.js</a>, COSE-Bilkent, dagre, klay
+				</p>
+			</div>
+			<div id="graph-controls">
+			</div>
+		</div>
+	</body>
 </html>

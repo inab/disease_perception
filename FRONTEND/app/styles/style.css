@@ -86,6 +86,12 @@ a:hover {
   right: 0;
 }
 
+.mini-title {
+	margin-right: 1.6em;
+	margin-left: 1.6em;
+	white-space: normal;
+}
+
 /*
  *	Vertical centering obtained from
  * 
@@ -111,20 +117,29 @@ a:hover {
 }
 
 /*
- * Obtained from https://github.com/cytoscape/cytoscape.js/tree/master/documentation/demos/tokyo-railways
+ * Inspired in https://github.com/cytoscape/cytoscape.js/tree/master/documentation/demos/tokyo-railways
+ * and https://codepen.io/dimbslmh/full/mKfCc
  */
-#comorbidities-loading {
+
+.loading {
   position: absolute;
   left: 0;
-  top: 50%;
+  height: 100%;
   width: 100%;
   text-align: center;
-  margin-top: -0.5em;
   font-size: 4em;
   background-color: rgba(224,224,224,0.5);
 }
 
-#comorbidities-loading.loaded {
+.loading:before {
+  content: '';
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+  margin-right: -4px;
+}
+
+.loading.loaded , .loading.loaded:before {
   display: none;
 }
 
