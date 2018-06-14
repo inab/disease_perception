@@ -51,6 +51,11 @@ import { Genes } from './genes';
 import { Drugs } from './drugs';
 import { Studies } from './studies';
 
+
+function sleep(millis) {
+	return new Promise((resolve) => setTimeout(resolve,millis));
+}
+
 class ComorbiditiesBrowser {
 	constructor(setup) {
 		// The graph container
@@ -294,7 +299,34 @@ class ComorbiditiesBrowser {
 		});
 	}
 	
+	highlight(nodes) {
+		// Restore what it was hidden
+		this.cy.batch(() => {
+			if(this.unHighlighted) {
+				this.unHighlighted.restore();
+				this.unHighlighted = null;
+			}
+			
+			if(nodes.length > 0) {
+				let nhood = nodes.closedNeighborhood();
+				
+				nhood.merge(nhood.edgesWith(nhood));
+				
+				this.lastHighlighted = nhood;
+				
+				this.unHighlighted = this.cy.elements().not( nhood ).remove();
+			}
+		});
+		this.layout.run();
+	}
+
+
 	filterEdgesOnAbsRisk() {
+		if(this.unHighlighted) {
+			this.unHighlighted.restore();
+			this.unHighlighted = null;
+		}
+		
 		if(this.hiddenNodes) {
 			this.hiddenNodes.restore();
 		}
@@ -602,12 +634,13 @@ class ComorbiditiesBrowser {
 				});
 			});
 			
-			this.cy.on('select', () => {
+			this.cy.on('select unselect', () => {
 				let selected = this.cy.elements('node:selected');
-				if(selected.length===2) {
-					this.$modal.find('.modal-title').empty().append('Hola holita');
-					this.$modal.modal('show');
-				}
+				this.highlight(selected);
+				//if(selected.length===2) {
+				//	this.$modal.find('.modal-title').empty().append('Hola holita');
+				//	this.$modal.modal('show');
+				//}
 			});
 		} catch(e) {
 			console.log('Unexpected error',e);
