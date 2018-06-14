@@ -120,7 +120,7 @@ export class Diseases {
 						maxAbsRisk = dcme[dcme.length - 1].abs_rel_risk;
 						
 						// Selecting the initial absolute cutoff risk, based on the then biggest values
-						initialAbsCutoff = dcme[Math.floor(dcme.length * 9 / 10)].abs_rel_risk;
+						initialAbsCutoff = dcme[Math.floor(dcme.length * 0.95)].abs_rel_risk;
 					}
 					
 					// Saving the range and cutoff for later processing
