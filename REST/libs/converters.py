@@ -12,7 +12,7 @@ class ListConverter(BaseConverter):
 		arguments.
 	"""
 
-	def __init__(self, map, sep='+',subconverterName='string',*subconverterParams):
+	def __init__(self, map, subconverterName='string', sep=',', *subconverterParams):
 		BaseConverter.__init__(self, map)
 		self.sep = sep
 		self.subconverterName = subconverterName
@@ -21,7 +21,7 @@ class ListConverter(BaseConverter):
 	def to_python(self, value):
 		# Lazy initialization of the subconverter instance
 		if not hasattr(self,'subconverter'):
-			self.subconverter = new self.map.converters[self.subconverterName](self.map,*self.subconverterParams)
+			self.subconverter = self.map.converters[self.subconverterName](self.map,*self.subconverterParams)
 		
 		results = [ self.subconverter.to_python(result) for result in value.split(self.sep) ]
 		
