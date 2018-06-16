@@ -245,11 +245,33 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
-	def diseases_patient_subgroups_comorbidities(self,disease_id_i,disease_id_j,min_subgroup_size=None):
+	def diseases_patient_subgroups_comorbidities(self,disease_ids,min_subgroup_size=None):
+		disease_ids_set = set(disease_ids)
+		if len(disease_ids_set) < 2:
+			self.api.abort(400, "You must provide at least two different disease ids")
+		
 		res = None
+		
 		cur = self._getCursor()
 		try:
-			query_all = '''
+			subquery_all = '''
+SELECT ps.id AS id, COUNT(p.id) AS ps_size
+FROM patient_subgroup ps, patient p
+WHERE ps.disease_id IN ({})
+AND ps.id = p.patient_subgroup_id
+GROUP BY ps.id
+			'''
+			
+			subquery_min = '''
+SELECT ps.id AS id, COUNT(p.id) AS ps_size
+FROM patient_subgroup ps, patient p
+WHERE ps.disease_id IN ({})
+AND ps.id = p.patient_subgroup_id
+GROUP BY ps.id
+HAVING ps_size >= ?
+			'''
+			
+			query_template = '''
 SELECT psd.patient_subgroup_a_id,
 	CASE
 		WHEN psd.patient_subgroup_a_id = dps_i.id THEN
@@ -265,77 +287,44 @@ SELECT psd.patient_subgroup_a_id,
 	psd.relative_risk
 FROM
 (
-	SELECT ps.id AS id, COUNT(p.id) AS ps_size
-	FROM patient_subgroup ps, patient p
-	WHERE ps.disease_id = :disease_id_i
-	AND ps.id = p.patient_subgroup_id
-	GROUP BY ps.id
+{0}
 ) AS dps_i,
 (
-	SELECT ps.id AS id, COUNT(p.id) AS ps_size
-	FROM patient_subgroup ps, patient p
-	WHERE ps.disease_id = :disease_id_j
-	AND ps.id = p.patient_subgroup_id
-	GROUP BY ps.id
+{0}
 ) AS dps_j,
 	patient_subgroup_digraph psd
-WHERE  ( psd.patient_subgroup_a_id = dps_i.id
+WHERE  dps_i.id <> dps_j.id
+AND
+	( psd.patient_subgroup_a_id = dps_i.id
 	AND psd.patient_subgroup_b_id = dps_j.id )
 OR
 	( psd.patient_subgroup_a_id = dps_j.id
 	AND psd.patient_subgroup_b_id = dps_i.id )
 			'''
-			query_min = '''
-SELECT psd.patient_subgroup_a_id,
-	CASE
-		WHEN psd.patient_subgroup_a_id = dps_i.id THEN
-		dps_i.ps_size
-		ELSE dps_j.ps_size
-	END,
-	psd.patient_subgroup_b_id,
-	CASE
-		WHEN psd.patient_subgroup_b_id = dps_i.id THEN
-		dps_i.ps_size
-		ELSE dps_j.ps_size
-	END,
-	psd.relative_risk
-FROM
-(
-	SELECT ps.id AS id, COUNT(p.id) AS ps_size
-	FROM patient_subgroup ps, patient p
-	WHERE ps.disease_id = :disease_id_i
-	AND ps.id = p.patient_subgroup_id
-	GROUP BY ps.id
-	HAVING ps_size >= :min_size
-) AS dps_i,
-(
-	SELECT ps.id AS id, COUNT(p.id) AS ps_size
-	FROM patient_subgroup ps, patient p
-	WHERE ps.disease_id = :disease_id_j
-	AND ps.id = p.patient_subgroup_id
-	GROUP BY ps.id
-	HAVING ps_size >= :min_size
-) AS dps_j,
-	patient_subgroup_digraph psd
-WHERE  ( psd.patient_subgroup_a_id = dps_i.id
-	AND psd.patient_subgroup_b_id = dps_j.id )
-OR
-	( psd.patient_subgroup_a_id = dps_j.id
-	AND psd.patient_subgroup_b_id = dps_i.id )
-			'''
-			query = query_all if min_subgroup_size is None else query_min
-			cur.execute(query,{
-				'disease_id_i': disease_id_i,
-				'disease_id_j': disease_id_j,
-				'min_size': min_subgroup_size
-			})
+			
+			
+			subquery_template = subquery_all if min_subgroup_size is None else subquery_min
+			subquery = subquery_template.format(','.join(['?']*len(disease_ids_set)))
+			query = query_template.format(subquery)
+			
+			query_param_list_base = list(disease_ids_set)
+			if min_subgroup_size is not None:
+				query_param_list_base.append(min_subgroup_size)
+			
+			query_param_list = []
+			# Yes, it must be done twice, due limitations in
+			# the positional parameters manageable by SQLite Python driver
+			query_param_list.extend(query_param_list_base)
+			query_param_list.extend(query_param_list_base)
+			
+			cur.execute(query,tuple(query_param_list))
 			res = []
 			while True:
 				pat_sub_co = cur.fetchmany()
 				if len(pat_sub_co) == 0:
 					# Empty dictionary?
 					if not res:
-						self.api.abort(404, "Diseases {} and {} have no patient subgroup comorbidities stored in the database".format(disease_id_i,disease_id_j))
+						self.api.abort(404, "No one of the {} different diseases have patient subgroup comorbidities stored in the database".format(len(disease_ids_set)))
 					break
 				
 				res.extend(map(lambda co: {'from_id': co[0], 'from_size':co[1], 'to_id': co[2], 'to_size': co[3], 'rel_risk': co[4] },pat_sub_co))

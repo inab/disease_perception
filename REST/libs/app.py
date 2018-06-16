@@ -63,12 +63,12 @@ def init_comorbidities_app(dbpath):
 	# Attaching the API to the app 
 	api = Api(
 		app=blueprint,
-		version='0.3',
-		title='Comorbidities Network REST API',
-		description='A simple comorbidites network exploring API which is used by the web explorer',
+		version='0.3.1',
+		title='Disease Perception REST API',
+		description='A simple comorbidites network exploring API which is used by the Disease Perception explorer',
 		default='cm',
 		license='AGPL-3',
-		default_label='Comorbidities network queries'
+		default_label='Disease Perception queries'
 	)
 	
 	# This is the singleton instance shared by all the resources
