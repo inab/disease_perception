@@ -43,16 +43,27 @@ class DiseaseComorbidities(CMResource):
 		return self.cmn.disease_comorbidities(id)
 
 @DISEASE_NS.response(404, 'Disease not found or with no known patient subgroup comorbidity')
-@DISEASE_NS.param('disease_id_i', 'The disease id "i"')
-@DISEASE_NS.param('disease_id_j', 'The disease id "j"')
+@DISEASE_NS.param('disease_ids', 'The disease ids (at least, two)')
 @DISEASE_NS.param('min_size', 'The minimum size of the subgroups')
 class DiseasePatientSubgroupComorbidities(CMResource):
 	'''Return the comorbidities of the patient subgroups of a couple of diseases'''
 	@DISEASE_NS.doc('disease_ps_comorbidities')
 	@DISEASE_NS.marshal_list_with(disease_patient_subgroup_comorbidity_model)
+	def get(self,disease_ids,min_size=None):
+		'''It lists disease comorbidities information'''
+		return self.cmn.diseases_patient_subgroups_comorbidities(disease_ids,min_size)
+
+@DISEASE_NS.response(404, 'Disease not found or with no known patient subgroup comorbidity')
+@DISEASE_NS.param('disease_id_i', 'The disease id "i"')
+@DISEASE_NS.param('disease_id_j', 'The disease id "j"')
+@DISEASE_NS.param('min_size', 'The minimum size of the subgroups')
+class DiseasePatientSubgroupComorbiditiesIJ(DiseasePatientSubgroupComorbidities):
+	'''Return the comorbidities of the patient subgroups of a couple of diseases'''
+	@DISEASE_NS.doc('disease_ps_comorbidities')
+	@DISEASE_NS.marshal_list_with(disease_patient_subgroup_comorbidity_model)
 	def get(self,disease_id_i,disease_id_j,min_size=None):
 		'''It lists disease comorbidities information'''
-		return self.cmn.diseases_patient_subgroups_comorbidities(disease_id_i,disease_id_j,min_size)
+		return super().get([disease_id_i,disease_id_j],min_size)
 
 
 class DiseaseGroupList(CMResource):
@@ -91,8 +102,9 @@ ROUTES={
 		(Disease,'/<int:id>'),
 		(DiseaseComorbidities,'/<int:id>/comorbidities'),
 		(ListDiseaseComorbidities,'/comorbidities'),
-		(DiseasePatientSubgroupComorbidities,'/<int:disease_id_i>/ps_comorbidities/<int:disease_id_j>'),
-		(DiseasePatientSubgroupComorbidities,'/<int:disease_id_i>/ps_comorbidities/<int:disease_id_j>/min_size/<int:min_size>'),
+		(DiseasePatientSubgroupComorbidities,'/ps_comorbidities/<list(int):disease'),
+		(DiseasePatientSubgroupComorbiditiesIJ,'/<int:disease_id_i>/ps_comorbidities/<int:disease_id_j>'),
+		(DiseasePatientSubgroupComorbiditiesIJ,'/<int:disease_id_i>/ps_comorbidities/<int:disease_id_j>/min_size/<int:min_size>'),
 		(DiseaseGroupList,'/groups'),
 		(DiseaseGroupDiseases,'/groups/<int:id>'),
 		(DiseaseGroup,'/groups/<int:id>/info')

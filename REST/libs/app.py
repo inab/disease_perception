@@ -37,6 +37,15 @@ def _register_cm_namespaces(api,res_kwargs):
 def init_comorbidities_app(dbpath):
 	#app = Flask('como_network',static_url_path='/',static_folder='static')
 	app = Flask('como_network')
+	
+	# It must be done after app is initialized
+	# in order to avoid circular dependencies
+	#
+	# https://explore-flask.readthedocs.io/en/latest/views.html#custom-converters
+	from .converters import ListConverter
+
+	app.url_map.converters['list'] = ListConverter
+
 	blueprint = Blueprint('api','como_network_api')
 	blueprint_static = Blueprint('frontend','como_network_frontend',static_url_path='/',static_folder='static')
 
