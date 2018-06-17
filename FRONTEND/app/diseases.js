@@ -152,7 +152,8 @@ export class Diseases {
 		};
 	}
 	
-	getCYComorbiditiesNetwork() {
+	// getCYComorbiditiesNetwork
+	getFetchedNetwork() {
 		return {
 			nodes: [
 				// jshint ignore:start
@@ -162,5 +163,95 @@ export class Diseases {
 			],
 			edges: _DiseaseComorbiditiesNetworkEdges
 		};
+	}
+	
+	getGraphSetup() {
+		if(this.params===undefined) {
+			let absRelRiskData = this.getAbsRelRiskRange();
+			
+			this.params = {
+				name: 'cola',
+				absRelRiskVal: absRelRiskData.initial,
+				// Specific from cola algorithm
+				nodeSpacing: 5,
+				edgeLengthVal: 45,
+				animate: true,
+				randomize: false,
+				maxSimulationTime: 1500
+			};
+		}
+		
+		return this.params;
+	}
+	
+	makeNodeTooltipContent(node) {
+		let diseaseName = node.data('name');
+		let diseaseLower = diseaseName.replace(/ +/g,'-').toLowerCase();
+		let icd9 = node.data('icd9');
+		let icd10 = node.data('icd10');
+		let links = [
+			{
+				name: 'MedlinePlus',
+				url: 'https://vsearch.nlm.nih.gov/vivisimo/cgi-bin/query-meta?v%3Aproject=medlineplus&v%3Asources=medlineplus-bundle&query=' + encodeURIComponent(diseaseName)
+			},
+			{
+				name: 'Genetics Home Reference (search)',
+				url: 'https://ghr.nlm.nih.gov/search?query='+encodeURIComponent(diseaseName)
+			},
+			{
+				name: 'NORD (direct)',
+				url: 'https://rarediseases.org/rare-diseases/' + encodeURIComponent(diseaseLower) + '/'
+			},
+			{
+				name: 'Genetics Home Reference (direct)',
+				url: 'https://ghr.nlm.nih.gov/condition/' + encodeURIComponent(diseaseLower)
+			},
+			{
+				name: 'Wikipedia (direct)',
+				url: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(diseaseName)
+			}
+		];
+		
+		if(icd10 !== '-') {
+			links.unshift({
+				name: 'ICDList (ICD10)',
+				url: 'https://icdlist.com/icd-10/' + encodeURIComponent(icd10)
+			});
+		}
+		
+		if(icd9 !== '-') {
+			links.unshift({
+				name: 'ChrisEndres (ICD9)',
+				url: 'http://icd9.chrisendres.com/index.php?action=child&recordid=' + encodeURIComponent(icd9)
+			});
+		}
+		
+		let content = document.createElement('div');
+		content.setAttribute('style','font-size: 1.3em;');
+		
+		//content.innerHTML = 'Tippy content';
+		content.innerHTML = '<b>'+diseaseName+'</b><br />\n'+
+			'ICD9: '+icd9 + ' ICD10: ' + icd10 + '<br />\n' +
+			'<div style="text-align: left;">' +
+			links.map(function(link) {
+				return '<a target="_blank" href="' + link.url + '">' + link.name + '</a>';
+			}).join('<br />\n') +
+			'</div>';
+
+		return content;
+	}
+	
+	makeEdgeTooltipContent(edge) {
+		let content = document.createElement('div');
+		content.setAttribute('style','font-size: 1.3em;text-align: left;');
+		
+		let source = edge.source();
+		let target = edge.target();
+		
+		
+		content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
+			'<div><b>Source</b>: '+source.data('name') + '<br />\n' +
+			'<b>Target</b>: '+target.data('name')+'</div>';
+		return content;
 	}
 }

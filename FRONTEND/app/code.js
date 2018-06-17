@@ -9,14 +9,6 @@ import 'tippy.js/dist/themes/light.css';
 import './styles/style.css';
 
 import $ from 'jquery';
-//var jQuery = require('jquery');
-//var $ = jQuery;
-//window.$ = $;
-//window.jQuery = $;
-//window.$ = $;
-//window.jQuery = jQuery;
-
-// import 'qtip2';
 
 import _ from 'lodash';
 import 'bootstrap';
@@ -60,7 +52,7 @@ class ComorbiditiesBrowser {
 	constructor(setup) {
 		// The graph container
 		this.graphEl = setup.graph;
-		this.$graph = $(this.graphEl);
+		let $graph = this.$graph = $(this.graphEl);
 		
 		// The right panel container
 		this.$config = $(setup.configPanel);
@@ -72,9 +64,7 @@ class ComorbiditiesBrowser {
 		this.$modal = $(setup.modal);
 		this.$loading = $(setup.loading);
 		this.$appLoading = $(setup.appLoading);
-	}
-
-	initialize() {
+		
 		// Event handler to show/hide the config container
 		this.$configToggle.on('click', () => {
 			$('body').toggleClass('config-closed');
@@ -84,24 +74,31 @@ class ComorbiditiesBrowser {
 			}
 		});
 		
-		let cyContainer = this.$graph;
+		// Fix for old mobile browsers
+		FastClick.attach( document.body );
+		
+		// Preparing the views
+		this.views = {
+			diseases: new Diseases($graph),
+			patients: new Patients($graph),
+			genes: new Genes($graph),
+			drugs: new Drugs($graph),
+			studies: new Studies($graph),
+		};
+	}
+
+	initialize(viewName, ...viewParams) {
+		if(!(viewName in this.views)) {
+			console.error('This should not happen!!!');
+		}
+		
+		this.viewName = viewName;
+		let currentView = this.currentView = this.views[viewName];
+		
 		// Preparing the initial data fetch
 		let fetchPromises = this.fetch();
 		
-		this.diseases = new Diseases(cyContainer);
-		this.diseases.fetch().forEach((e) => fetchPromises.push(e));
-		
-		this.patients = new Patients(cyContainer);
-		this.patients.fetch().forEach((e) => fetchPromises.push(e));
-		
-		this.genes = new Genes(cyContainer);
-		this.genes.fetch().forEach((e) => fetchPromises.push(e));
-		
-		this.drugs = new Drugs(cyContainer);
-		this.drugs.fetch().forEach((e) => fetchPromises.push(e));
-		
-		this.studies = new Studies(cyContainer);
-		this.studies.fetch().forEach((e) => fetchPromises.push(e));
+		currentView.fetch(...viewParams).forEach((e) => fetchPromises.push(e));
 		
 		// Now, issuing the fetch itself, and then the layout
 		this.$loading.removeClass('loaded');
@@ -110,9 +107,6 @@ class ComorbiditiesBrowser {
 			this.$loading.addClass('loaded');
 			this.$appLoading.addClass('loaded');
 			this.doLayout(dataArray);
-		})
-		.then(function() {
-			FastClick.attach( document.body );
 		});
 	}
 	
@@ -307,7 +301,9 @@ class ComorbiditiesBrowser {
 				this.unHighlighted = null;
 			}
 			
-			if(nodes.length > 0) {
+			this.prevHighlighted = nodes;
+			
+			if(nodes.nonempty()) {
 				let nhood = nodes.closedNeighborhood();
 				
 				nhood.merge(nhood.edgesWith(nhood));
@@ -324,7 +320,7 @@ class ComorbiditiesBrowser {
 
 
 	filterEdgesOnAbsRisk() {
-		if(this.unHighlighted) {
+		if(this.prevHighlighted && this.prevHighlighted.nonempty()) {
 			this.unHighlighted.restore();
 			this.unHighlighted = null;
 		}
@@ -342,11 +338,16 @@ class ComorbiditiesBrowser {
 			return e.data('abs_rel_risk') < this.params.absRelRiskVal;
 		}).remove();
 		
-		// And now, remove the orphaned nodes
+		// Now, remove the orphaned nodes
 		this.hiddenNodes = this.cy.nodes((n) => {
 			return !n.isParent() && (n.degree(true) === 0);
 			//return n.degree(true) === 0;
 		}).remove();
+		
+		// And, at last, highlight again
+		if(this.prevHighlighted && this.prevHighlighted.nonempty()) {
+			this.highlight(this.prevHighlighted);
+		}
 	}
 	
 	// This method is not working as expected, so disable it for now
@@ -374,7 +375,7 @@ class ComorbiditiesBrowser {
 		let $controls = this.$controls;
 		$controls.empty();
 		
-		let absRelRiskData = this.diseases.getAbsRelRiskRange();
+		let absRelRiskData = this.currentView.getAbsRelRiskRange();
 		
 		let sliders = [
 			{
@@ -471,104 +472,26 @@ class ComorbiditiesBrowser {
 		buttons.forEach((button) => this.makeButton(button));
 	}
 	
-	makeDiseaseComorbidityTooltipContent(edge) {
-		let content = document.createElement('div');
-		content.setAttribute('style','font-size: 1.3em;text-align: left;');
-		
-		let source = edge.source();
-		let target = edge.target();
-		
-		
-		content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
-			'<div><b>Source</b>: '+source.data('name') + '<br />\n' +
-			'<b>Target</b>: '+target.data('name')+'</div>';
-		return content;
-	}
-	
-	makeDiseaseTooltipContent(node) {
-		let diseaseName = node.data('name');
-		let diseaseLower = diseaseName.replace(/ +/g,'-').toLowerCase();
-		let icd9 = node.data('icd9');
-		let icd10 = node.data('icd10');
-		let links = [
-			{
-				name: 'MedlinePlus',
-				url: 'https://vsearch.nlm.nih.gov/vivisimo/cgi-bin/query-meta?v%3Aproject=medlineplus&v%3Asources=medlineplus-bundle&query=' + encodeURIComponent(diseaseName)
-			},
-			{
-				name: 'Genetics Home Reference (search)',
-				url: 'https://ghr.nlm.nih.gov/search?query='+encodeURIComponent(diseaseName)
-			},
-			{
-				name: 'NORD (direct)',
-				url: 'https://rarediseases.org/rare-diseases/' + encodeURIComponent(diseaseLower) + '/'
-			},
-			{
-				name: 'Genetics Home Reference (direct)',
-				url: 'https://ghr.nlm.nih.gov/condition/' + encodeURIComponent(diseaseLower)
-			},
-			{
-				name: 'Wikipedia (direct)',
-				url: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(diseaseName)
-			}
-		];
-		
-		if(icd10 !== '-') {
-			links.unshift({
-				name: 'ICDList (ICD10)',
-				url: 'https://icdlist.com/icd-10/' + encodeURIComponent(icd10)
-			});
-		}
-		
-		if(icd9 !== '-') {
-			links.unshift({
-				name: 'ChrisEndres (ICD9)',
-				url: 'http://icd9.chrisendres.com/index.php?action=child&recordid=' + encodeURIComponent(icd9)
-			});
-		}
-		
-		let content = document.createElement('div');
-		content.setAttribute('style','font-size: 1.3em;');
-		
-		//content.innerHTML = 'Tippy content';
-		content.innerHTML = '<b>'+diseaseName+'</b><br />\n'+
-			'ICD9: '+icd9 + ' ICD10: ' + icd10 + '<br />\n' +
-			'<div style="text-align: left;">' +
-			links.map(function(link) {
-				return '<a target="_blank" href="' + link.url + '">' + link.name + '</a>';
-			}).join('<br />\n') +
-			'</div>';
-
-		return content;
-	}
-	
 	doLayout() {
 		// First, empty the container
 		this.$graph.empty();
 		
 		// This is the graph data
-		let graphData = this.diseases.getCYComorbiditiesNetwork();
+		let graphData = this.currentView.getFetchedNetwork();
 		//let graphData = this.testData;
 		
 		// The shared params by this instance of cytoscape
-		let absRelRiskData = this.diseases.getAbsRelRiskRange();
-		
-		let params = {
-			name: 'cola',
-			absRelRiskVal: absRelRiskData.initial,
-			// Specific from cola algorithm
-			nodeSpacing: 5,
-			edgeLengthVal: 45,
-			animate: true,
-			randomize: false,
-			maxSimulationTime: 1500
-		};
+		let graphSetup = this.currentView.getGraphSetup();
 		
 		// Creation of the cytoscape instance
 		this.makeCy(this.graphEl,this.cyStyle,graphData);
 		
 		// Applying the initial filtering
-		this.params = params;
+		this.params = {
+			// jshint ignore:start
+			...graphSetup
+			// jshint ignore:end
+		};
 		this.cy.batch(() => this.filterEdgesOnAbsRisk());
 		
 		// Creation of the layout, setting the initial parameters
@@ -589,7 +512,7 @@ class ComorbiditiesBrowser {
 
 			// using tippy ^2.0.0
 			let tip = tippy(ref, { // tippy options:
-				html: this.makeDiseaseTooltipContent(node),
+				html: this.currentView.makeNodeTooltipContent(node),
 				trigger: 'manual',
 				arrow: true,
 				arrowType: 'round',
@@ -622,7 +545,7 @@ class ComorbiditiesBrowser {
 
 				// using tippy ^2.0.0
 				let tip = tippy(ref, { // tippy options:
-					html: this.makeDiseaseComorbidityTooltipContent(edge),
+					html: this.currentView.makeEdgeTooltipContent(edge),
 					trigger: 'manual',
 					arrow: true,
 					arrowType: 'round',
@@ -642,11 +565,13 @@ class ComorbiditiesBrowser {
 			
 			this.cy.on('select unselect', () => {
 				let selected = this.cy.elements('node:selected');
-				this.highlight(selected);
-				//if(selected.length===2) {
-				//	this.$modal.find('.modal-title').empty().append('Hola holita');
-				//	this.$modal.modal('show');
-				//}
+				if(!this.prevHighlighted || selected.symmetricDifference(this.prevHighlighted).nonempty()) {
+					this.highlight(selected);
+					//if(selected.length===2) {
+					//	this.$modal.find('.modal-title').empty().append('Hola holita');
+					//	this.$modal.modal('show');
+					//}
+				}
 			});
 		} catch(e) {
 			console.log('Unexpected error',e);
@@ -702,5 +627,5 @@ $(document).ready(function() {
 		'loading': graphLoadingEl
 	});
 	
-	browser.initialize();
+	browser.initialize('diseases');
 });
