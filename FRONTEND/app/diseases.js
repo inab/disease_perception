@@ -4,6 +4,7 @@ var _DiseaseNodes;
 
 var _DiseaseGroups;
 var _DiseaseGroupNodes;
+var _DiseaseGroupsHash;
 
 var _DiseaseComorbiditiesNetwork;
 
@@ -41,7 +42,7 @@ export class Diseases {
 						retdis.id = 'D'+dis.id;
 						// jshint camelcase: false 
 						retdis.parent = 'DG'+dis.disease_group_id;
-						delete retdis.disease_group_id;
+						
 						return {
 							data: retdis
 						};
@@ -72,6 +73,7 @@ export class Diseases {
 							data: retdg
 						};
 					});
+					
 					return _DiseaseGroups;
 				})
 			);
@@ -154,6 +156,19 @@ export class Diseases {
 	
 	// getCYComorbiditiesNetwork
 	getFetchedNetwork() {
+		// Post-processing was not applied to the diseases
+		if(!_DiseaseGroupsHash) {
+			_DiseaseGroupsHash = {};
+			_DiseaseGroups.forEach(function(dg) {
+				_DiseaseGroupsHash[dg.id] = dg;
+			});
+			
+			_DiseaseNodes.forEach(function(d) {
+				// jshint camelcase: false 
+				d.data.disease_group = _DiseaseGroupsHash[d.data.disease_group_id];
+			});
+		}
+		
 		return {
 			nodes: [
 				// jshint ignore:start
@@ -189,6 +204,7 @@ export class Diseases {
 		let diseaseLower = diseaseName.replace(/ +/g,'-').toLowerCase();
 		let icd9 = node.data('icd9');
 		let icd10 = node.data('icd10');
+		let dg = node.data('disease_group');
 		let links = [
 			{
 				name: 'MedlinePlus',
@@ -230,8 +246,8 @@ export class Diseases {
 		content.setAttribute('style','font-size: 1.3em;');
 		
 		//content.innerHTML = 'Tippy content';
-		content.innerHTML = '<b>'+diseaseName+'</b><br />\n'+
-			'ICD9: '+icd9 + ' ICD10: ' + icd10 + '<br />\n' +
+		content.innerHTML = '<b>'+diseaseName+'</b>'+' ICD9: '+icd9 + ' ICD10: ' + icd10 + '<br />\n'+
+			'('+'<i class="fa fa-circle" style="color: '+dg.color+';"></i> '+dg.name+')<br />\n'+
 			'<div style="text-align: left;">' +
 			links.map(function(link) {
 				return '<a target="_blank" href="' + link.url + '">' + link.name + '</a>';
