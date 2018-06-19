@@ -2,8 +2,8 @@
 var _Drugs;
 
 export class Drugs {
-	constructor(cyContainer) {
-		this.cyContainer = cyContainer;
+	constructor(cmBrowser) {
+		this.cmBrowser = cmBrowser;
 	}
 	
 	// This method returns an array of promises, ready to be run in parallel

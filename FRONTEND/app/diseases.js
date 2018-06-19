@@ -15,8 +15,8 @@ var _DiseaseComorbiditiesNetworkInitialAbsCutoff;
 var _DiseaseComorbiditiesNetworkEdges;
 
 export class Diseases {
-	constructor(cyContainer) {
-		this.cyContainer = cyContainer;
+	constructor(cmBrowser) {
+		this.cmBrowser = cmBrowser;
 	}
 	
 	// This method returns an array of promises, ready to be run in parallel
@@ -39,8 +39,9 @@ export class Diseases {
 							// jshint ignore:end
 						};
 						// Unique identifiers
-						retdis.id = 'D'+dis.id;
 						// jshint camelcase: false 
+						retdis.disease_id = dis.id;
+						retdis.id = 'D'+dis.id;
 						retdis.parent = 'DG'+dis.disease_group_id;
 						
 						return {
@@ -67,8 +68,9 @@ export class Diseases {
 							// jshint ignore:end
 						};
 						// Unique identifiers
-						retdg.id = 'DG'+dg.id;
 						// jshint camelcase: false 
+						retdg.disease_group_id = dg.id;
+						retdg.id = 'DG'+dg.id;
 						return {
 							data: retdg
 						};

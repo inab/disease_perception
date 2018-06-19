@@ -52,7 +52,7 @@ class ComorbiditiesBrowser {
 	constructor(setup) {
 		// The graph container
 		this.graphEl = setup.graph;
-		let $graph = this.$graph = $(this.graphEl);
+		this.$graph = $(this.graphEl);
 		
 		// The right panel container
 		this.$config = $(setup.configPanel);
@@ -79,11 +79,11 @@ class ComorbiditiesBrowser {
 		
 		// Preparing the views
 		this.views = {
-			diseases: new Diseases($graph),
-			patients: new Patients($graph),
-			genes: new Genes($graph),
-			drugs: new Drugs($graph),
-			studies: new Studies($graph),
+			diseases: new Diseases(this),
+			patients: new Patients(this),
+			genes: new Genes(this),
+			drugs: new Drugs(this),
+			studies: new Studies(this),
 		};
 	}
 
@@ -162,9 +162,7 @@ class ComorbiditiesBrowser {
 		let $dataLabel = $('<span class="label label-info">'+ initialValue +'</span>');
 		$param.append($dataLabel);
 		$param.append($input);
-		
-		this.$controls.append($param);
-		
+				
 		let scale = opts.scale === undefined ? 'linear' : opts.scale;
 		
 		let p = $input.slider({
@@ -185,6 +183,8 @@ class ComorbiditiesBrowser {
 			this.makeLayout();
 			this.layout.run();
 		}, 16 ) ).data('slider');
+		
+		return $param;
 	}
 	
 	makeButton(opts,btnParam) {
@@ -293,6 +293,84 @@ class ComorbiditiesBrowser {
 		});
 	}
 	
+	makeNodeOption(node,isInitiallyChecked) {
+		let $option = $('<div></div>');
+		let $nodeOption = $('<input type="checkbox"></input>');
+		$nodeOption.data('disease_id',node.data('disease_id'));
+		$nodeOption.button();
+		if(isInitiallyChecked) {
+			$nodeOption.attr('checked','checked');
+			$nodeOption.toggle();
+		}
+		$nodeOption.on('change',() => {
+			this.updateSelectedNodesCount($option.parent().find('input[type="checkbox"]:checked'));
+		});
+		
+		$option.append($nodeOption);
+		$option.append('<i class="fa fa-circle" style="color: '+node.data('color')+';"></i>');
+		$option.append(node.data('name'));
+		return $option;
+	}
+	
+	updateSelectedNodesCount(nodes) {
+		this.$nodeListLabel.html(nodes.length);
+	}
+	
+	makeSelectedNodesView(opts) {
+		let $selectedNodesView = this.$selectedNodesView = $('<div class="param"></div>');
+		$selectedNodesView.hide();
+		
+		// The title
+		$selectedNodesView.append('<span class="label label-default">' + opts.label + '</span>');
+		
+		// The number of selected nodes
+		let $nodeListLabel = this.$nodeListLabel = $('<span class="label label-info"></span>');
+		
+		$selectedNodesView.append($nodeListLabel);
+		
+		let $nodeListNextViewButton = $('<input type="button" class="btn btn-default btn-xs" value="'+opts.nextLabel+'" />');
+		$nodeListNextViewButton.on('click',opts.nextOnClick);
+		
+		$selectedNodesView.append($nodeListNextViewButton);
+		
+		this.$config.append($selectedNodesView);
+		
+		// The container of the selected nodes
+		let $nodeList = this.$nodeList = $('<div style="overflow-y:auto;max-height: 25%;background-color:white;color:black;"></div>');
+		$nodeList.hide();
+		
+		this.$config.append($nodeList);
+	}
+	
+	updateHighlightSubpanel(nodes) {
+		this.updateSelectedNodesCount(nodes);
+		if(nodes.nonempty()) {
+			this.$selectedNodesView.show();
+			this.$nodeList.show();
+			
+			this.$nodeListLabel.empty();
+			this.$nodeList.empty();
+			
+			this.updateSelectedNodesCount(nodes);
+			
+			nodes.forEach((n) => {
+				let $option = this.makeNodeOption(n,true);
+				
+				this.$nodeList.append($option);
+			});
+			
+			this.prevHighlighted.nodes().difference(nodes).forEach((n) => {
+				let $option = this.makeNodeOption(n);
+				
+				this.$nodeList.append($option);
+			});
+		} else {
+			this.$selectedNodesView.hide();
+			this.$nodeList.hide();
+		}
+	}
+	
+	
 	highlight(nodes) {
 		// Restore what it was hidden
 		this.cy.batch(() => {
@@ -308,11 +386,12 @@ class ComorbiditiesBrowser {
 				
 				nhood.merge(nhood.edgesWith(nhood));
 				
-				this.lastHighlighted = nhood;
+				this.prevHighlighted = nhood;
 				
 				this.unHighlighted = this.cy.elements().not( nhood ).remove();
 			}
 			this.layout.stop();
+			this.updateHighlightSubpanel(nodes);
 			this.makeLayout({ randomize: true});
 			this.layout.run();
 		});
@@ -464,12 +543,17 @@ class ComorbiditiesBrowser {
 		
 		selects.forEach((select) => this.makeSelectDropdown(select,this.$controls));
 		
-		sliders.forEach((slider) => this.makeSlider(slider));
+		sliders.forEach((slider) => {
+			let $slider = this.makeSlider(slider);
+			this.$controls.append($slider);
+		});
 		
 		this.btnParam = $('<div class="param"></div>');
 		$controls.append( this.btnParam );
 		
 		buttons.forEach((button) => this.makeButton(button));
+		
+		this.makeSelectedNodesView({ label: 'Visible diseases', nextLabel: 'See subgroups', nextOnClick: () => console.log('Hasta el infinito y más allá')});
 	}
 	
 	doLayout() {

@@ -2,8 +2,8 @@
 var _Genes;
 
 export class Genes {
-	constructor(cyContainer) {
-		this.cyContainer = cyContainer;
+	constructor(cmBrowser) {
+		this.cmBrowser = cmBrowser;
 	}
 	
 	// This method returns an array of promises, ready to be run in parallel
