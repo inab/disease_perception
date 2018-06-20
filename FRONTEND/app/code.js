@@ -672,14 +672,22 @@ class ComorbiditiesBrowser {
 					placement: 'bottom',
 					animation: 'perspective',
 					delay: 2000,
-					multiple: true,
+					multiple: false,
 					sticky: true,
 					theme: 'dark',
 					zIndex: 999
 				}).tooltips[0];
 				
-				edge.on('tapstart', () => {
-					tip.show();
+				edge.on('tapdragover', (e) => {
+					if(e.originalEvent.ctrlKey) {
+						tip.show();
+					}
+				});
+				
+				edge.on('tapdragout', () => {
+					if(tip.popperInstance) {
+						tip.hide();
+					}
 				});
 			});
 			
