@@ -36,12 +36,12 @@ export class PatientSubgroups {
 							// Unique identifiers
 							patient_subgroup_id: psg.id,
 							id: 'PSG'+psg.id,
-							parent: 'D'+psg.disease_id,
-							classes: 'PSG'
+							parent: 'D'+psg.disease_id
 						};
 						_PatientSubgroupsNodeHash[psg.id] = retpsg;
 						
 						return {
+							classes: 'PSG',
 							data: retpsg
 						};
 					});
@@ -169,6 +169,11 @@ export class PatientSubgroups {
 		}
 		
 		return this.params;
+	}
+	
+	getNextViewSetup() {
+		// No next view right now
+		return null;
 	}
 	
 	makeNodeTooltipContent(node) {
