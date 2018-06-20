@@ -18,20 +18,6 @@
 		}
 	},
 	{
-		"selector": "node.D",
-		"css": {
-			"shape": "roundrectangle"
-		}
-	},
-	{
-		"selector": "node.PSG",
-		"css": {
-			"shape": "diamond",
-			"width": "mapData(size,1,10,20,60)",
-			"height": "mapData(size,1,10,20,60)"
-		}
-	},
-	{
 		"selector": "node:selected",
 		"css": {
 			"border-width": "6px",
@@ -67,6 +53,20 @@
 			"text-halign": "center",
 			"border-color": "data(color)",
 			"background-opacity": "0"
+		}
+	},
+	{
+		"selector": "node.D",
+		"css": {
+			"shape": "roundrectangle"
+		}
+	},
+	{
+		"selector": "node.PSG",
+		"css": {
+			"shape": "diamond",
+			"width": "mapData(size,1,10,20,60)",
+			"height": "mapData(size,1,10,20,60)"
 		}
 	},
 	{
