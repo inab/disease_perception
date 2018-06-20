@@ -75,6 +75,10 @@ class ComorbiditiesBrowser {
 			}
 		});
 		
+		// The list of disposable configuration widgets
+		this.configWidgets = [];
+		this.hPanel = null;
+		
 		// Fix for old mobile browsers
 		FastClick.attach( document.body );
 		
@@ -320,25 +324,34 @@ class ComorbiditiesBrowser {
 	}
 	
 	updateSelectedNodesCount(nodes) {
-		this.$nodeListLabel.html(nodes.length);
-		this.$nodeListNextViewButton.prop('disabled', nodes.length < 2);
+		if(this.hPanel) {
+			let hPanel = this.hPanel;
+			hPanel.$nodeListLabel.html(nodes.length);
+			hPanel.$nodeListNextViewButton.prop('disabled', nodes.length < 2);
+		}
+	}
+	
+	registerConfigWidget($widget) {
+		this.$config.append($widget);
+		this.configWidgets.push($widget);
 	}
 	
 	makeSelectedNodesView(opts) {
-		let $selectedNodesView = this.$selectedNodesView = $('<div class="param"></div>');
+		let hPanel = this.hPanel = {};
+		let $selectedNodesView = hPanel.$selectedNodesView = $('<div class="param"></div>');
 		$selectedNodesView.hide();
 		
 		// The title
 		$selectedNodesView.append('<span class="label label-default">' + opts.label + '</span>');
 		
 		// The number of selected nodes
-		let $nodeListLabel = this.$nodeListLabel = $('<span class="label label-info"></span>');
+		let $nodeListLabel = hPanel.$nodeListLabel = $('<span class="label label-info"></span>');
 		
 		$selectedNodesView.append($nodeListLabel);
 		
-		let $nodeListNextViewButton = this.$nodeListNextViewButton = $('<input type="button" class="btn btn-default btn-xs" value="'+opts.nextLabel+'" />');
+		let $nodeListNextViewButton = hPanel.$nodeListNextViewButton = $('<input type="button" class="btn btn-default btn-xs" value="'+opts.nextLabel+'" />');
 		$nodeListNextViewButton.on('click',() => {
-			let nextViewIds = this.$nodeList.find('input[type="checkbox"]:checked').toArray().map((check) => {
+			let nextViewIds = hPanel.$nodeList.find('input[type="checkbox"]:checked').toArray().map((check) => {
 				let checkbox = $(check);
 				
 				return checkbox.data(opts.idPropertyName);
@@ -348,42 +361,47 @@ class ComorbiditiesBrowser {
 		
 		$selectedNodesView.append($nodeListNextViewButton);
 		
-		this.$config.append($selectedNodesView);
+		this.registerConfigWidget($selectedNodesView);
 		
 		// The container of the selected nodes
-		let $nodeList = this.$nodeList = $('<div style="overflow-y:auto;max-height: 25%;background-color:white;color:black;"></div>');
+		let $nodeList = hPanel.$nodeList = $('<div style="overflow-y:auto;max-height: 25%;background-color:white;color:black;"></div>');
 		$nodeList.data('opts',opts);
 		$nodeList.hide();
 		
-		this.$config.append($nodeList);
+		this.registerConfigWidget($nodeList);
 	}
 	
 	updateHighlightSubpanel(nodes) {
 		this.updateSelectedNodesCount(nodes);
-		if(nodes.nonempty()) {
-			this.$selectedNodesView.show();
-			this.$nodeList.show();
-			let opts = this.$nodeList.data('opts');
-			
-			this.$nodeListLabel.empty();
-			this.$nodeList.empty();
-			
-			this.updateSelectedNodesCount(nodes);
-			
-			nodes.forEach((n) => {
-				let $option = this.makeNodeOption(n,true,opts);
+		if(this.hPanel) {
+			let hPanel = this.hPanel;
+			if(nodes.nonempty()) {
+				hPanel.$selectedNodesView.show();
+				hPanel.$nodeList.show();
+				let opts = hPanel.$nodeList.data('opts');
 				
-				this.$nodeList.append($option);
-			});
-			
-			this.prevHighlighted.nodes().difference(nodes).forEach((n) => {
-				let $option = this.makeNodeOption(n,false,opts);
+				hPanel.$nodeListLabel.empty();
+				hPanel.$nodeList.empty();
 				
-				this.$nodeList.append($option);
-			});
-		} else {
-			this.$selectedNodesView.hide();
-			this.$nodeList.hide();
+				nodes.forEach((n) => {
+					if(!n.isParent()) {
+						let $option = this.makeNodeOption(n,true,opts);
+						
+						hPanel.$nodeList.append($option);
+					}
+				});
+				
+				this.prevHighlighted.nodes().difference(nodes).forEach((n) => {
+					if(!n.isParent()) {
+						let $option = this.makeNodeOption(n,false,opts);
+						
+						hPanel.$nodeList.append($option);
+					}
+				});
+			} else {
+				hPanel.$selectedNodesView.hide();
+				hPanel.$nodeList.hide();
+			}
 		}
 	}
 	
@@ -402,6 +420,7 @@ class ComorbiditiesBrowser {
 				let nhood = nodes.closedNeighborhood();
 				
 				nhood.merge(nhood.edgesWith(nhood));
+				nhood.merge(nhood.ancestors());
 				
 				this.prevHighlighted = nhood;
 				
@@ -470,6 +489,14 @@ class ComorbiditiesBrowser {
 	initializeControls() {
 		let $controls = this.$controls;
 		$controls.empty();
+		
+		if(this.configWidgets.length > 0) {
+			this.configWidgets.forEach(function($widget) {
+				$widget.remove();
+			});
+			
+			this.configWidgets = [];
+		}
 		
 		let absRelRiskData = this.currentView.getAbsRelRiskRange();
 		
@@ -570,7 +597,14 @@ class ComorbiditiesBrowser {
 		
 		buttons.forEach((button) => this.makeButton(button));
 		
-		this.makeSelectedNodesView({ label: 'Visible diseases', idPropertyName: 'disease_id', nextView: 'patient_subgroups', nextLabel: 'See subgroups'});
+		// The next view setup is only set when it is needed
+		let nextViewSetup = this.currentView.getNextViewSetup();
+		
+		if(nextViewSetup) {
+			this.makeSelectedNodesView(nextViewSetup);
+		} else {
+			this.hPanel = null;
+		}
 	}
 	
 	doLayout() {
@@ -587,25 +621,8 @@ class ComorbiditiesBrowser {
 		// Creation of the cytoscape instance
 		this.makeCy(this.graphEl,this.cyStyle,graphData);
 		
-		// Applying the initial filtering
-		this.params = {
-			// jshint ignore:start
-			...graphSetup
-			// jshint ignore:end
-		};
-		this.cy.batch(() => this.filterEdgesOnAbsRisk());
-		
-		// Creation of the layout, setting the initial parameters
-		this.makeLayout();
-		
-		// Now, the hooks to the different interfaces
-		this.running = false;
-		
-		// Initializing the graph controls
-		this.initializeControls();
-		
-		// First time the layout is run
-		this.layout.run();
+		// Next two handlers must be applied before any filtering is applied
+		// so no node is left behind
 		
 		// Now, attach event handlers to each node
 		this.cy.nodes().forEach((node) => {
@@ -679,6 +696,26 @@ class ComorbiditiesBrowser {
 		} catch(e) {
 			console.log('Unexpected error',e);
 		}
+		
+		// Applying the initial filtering
+		this.params = {
+			// jshint ignore:start
+			...graphSetup
+			// jshint ignore:end
+		};
+		this.cy.batch(() => this.filterEdgesOnAbsRisk());
+		
+		// Creation of the layout, setting the initial parameters
+		this.makeLayout();
+		
+		// Now, the hooks to the different interfaces
+		this.running = false;
+		
+		// Initializing the graph controls
+		this.initializeControls();
+		
+		// First time the layout is run
+		this.layout.run();
 	}
 	
 	fetch() {
