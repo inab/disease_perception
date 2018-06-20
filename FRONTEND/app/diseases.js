@@ -45,7 +45,8 @@ export class Diseases {
 						};
 						
 						return {
-							data: retdis
+							data: retdis,
+							classes: 'D'
 						};
 					});
 					return _Diseases;
@@ -108,7 +109,6 @@ export class Diseases {
 						delete retdc.to_id;
 						
 						return {
-							classes: 'D',
 							data: retdc
 						};
 					});
@@ -208,6 +208,10 @@ export class Diseases {
 		}
 		
 		return this.params;
+	}
+	
+	getNextViewSetup() {
+		return { label: 'Visible diseases', idPropertyName: 'disease_id', nextView: 'patient_subgroups', nextLabel: 'See subgroups'};
 	}
 	
 	makeNodeTooltipContent(node) {
