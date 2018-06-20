@@ -609,34 +609,36 @@ class ComorbiditiesBrowser {
 		
 		// Now, attach event handlers to each node
 		this.cy.nodes().forEach((node) => {
-			let ref = node.popperRef(); // used only for positioning
+			if(!node.isParent()) {
+				let ref = node.popperRef(); // used only for positioning
 
-			// using tippy ^2.0.0
-			let tip = tippy(ref, { // tippy options:
-				html: this.currentView.makeNodeTooltipContent(node),
-				trigger: 'manual',
-				arrow: true,
-				arrowType: 'round',
-				placement: 'bottom',
-				animation: 'perspective',
-				interactive: true,
-				interactiveBorder: 5,
-				delay: 2000,
-				hideOnClick: false,
-				multiple: true,
-				sticky: true,
-				size: 'large',
-				theme: 'light',
-				zIndex: 999
-			}).tooltips[0];
-			
-			node.on('tapdragover', () => {
-				tip.show();
-			});
-			
-			node.on('tapdragout', () => {
-				tip.hide();
-			});
+				// using tippy ^2.0.0
+				let tip = tippy(ref, { // tippy options:
+					html: this.currentView.makeNodeTooltipContent(node),
+					trigger: 'manual',
+					arrow: true,
+					arrowType: 'round',
+					placement: 'bottom',
+					animation: 'perspective',
+					interactive: true,
+					interactiveBorder: 5,
+					delay: 2000,
+					hideOnClick: false,
+					multiple: true,
+					sticky: true,
+					size: 'large',
+					theme: 'light',
+					zIndex: 999
+				}).tooltips[0];
+				
+				node.on('tapdragover', () => {
+					tip.show();
+				});
+				
+				node.on('tapdragout', () => {
+					tip.hide();
+				});
+			}
 		});
 		
 		// Now, attach event handlers to each edge
