@@ -28,10 +28,13 @@ export class PatientSubgroups {
 					_PatientSubgroupsNodeHash = {};
 					_PatientSubgroupNodes = _PatientSubgroups.map(function(psg) {
 						// jshint camelcase: false 
+						let name = 'Subgroup '+psg.name.split('.')[1];
 						let retpsg = {
 							color: '#008020',
 							// jshint ignore:start
 							...psg,
+							name: name,
+							label: psg.name,
 							// jshint ignore:end
 							// Unique identifiers
 							patient_subgroup_id: psg.id,
@@ -177,7 +180,7 @@ export class PatientSubgroups {
 	}
 	
 	makeNodeTooltipContent(node) {
-		let patientSubgroupName = node.data('name');
+		let patientSubgroupName = node.data('label');
 		
 		let content = document.createElement('div');
 		content.setAttribute('style','font-size: 1.3em;');
@@ -201,8 +204,8 @@ export class PatientSubgroups {
 		
 		
 		content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
-			'<div><b>Source</b>: '+source.data('name') + '<br />\n' +
-			'<b>Target</b>: '+target.data('name')+'</div>';
+			'<div><b>Source</b>: '+source.data('label') + '<br />\n' +
+			'<b>Target</b>: '+target.data('label')+'</div>';
 		return content;
 	}
 }
