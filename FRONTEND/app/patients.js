@@ -1,6 +1,5 @@
 // Singleton variables
 var _Patients;
-var _PatientSubgroups;
 
 export class Patients {
 	constructor(cmBrowser) {
@@ -20,19 +19,6 @@ export class Patients {
 				.then(function(decodedJson) {
 					_Patients = decodedJson;
 					return _Patients;
-				})
-			);
-		}
-		
-		if(_PatientSubgroups===undefined) {
-			fetchPromises.push(
-				fetch('api/patients/subgroups', {mode: 'no-cors'})
-				.then(function(res) {
-					return res.json();
-				})
-				.then(function(decodedJson) {
-					_PatientSubgroups = decodedJson;
-					return _PatientSubgroups;
 				})
 			);
 		}

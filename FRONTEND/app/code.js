@@ -39,6 +39,7 @@ import tippy from 'tippy.js';
 // Internal code
 import { Diseases } from './diseases';
 import { Patients } from './patients';
+import { PatientSubgroups } from './patient_subgroups';
 import { Genes } from './genes';
 import { Drugs } from './drugs';
 import { Studies } from './studies';
@@ -78,16 +79,18 @@ class ComorbiditiesBrowser {
 		FastClick.attach( document.body );
 		
 		// Preparing the views
+		// jshint camelcase: false 
 		this.views = {
 			diseases: new Diseases(this),
 			patients: new Patients(this),
+			patient_subgroups: new PatientSubgroups(this),
 			genes: new Genes(this),
 			drugs: new Drugs(this),
 			studies: new Studies(this),
 		};
 	}
 
-	initialize(viewName, ...viewParams) {
+	switchView(viewName, ...viewParams) {
 		if(!(viewName in this.views)) {
 			console.error('This should not happen!!!');
 		}
@@ -112,11 +115,15 @@ class ComorbiditiesBrowser {
 	
 	makeCy(container, style, graphData) {
 		if(this.cy) {
-			this.cy.destroy();
-			this.cy = null;
+			this.layout.stop();
+			this.layout.destroy();
 			this.layout = null;
+			this.unHighlighted = null;
+			this.prevHighlighted = null;
 			this.hiddenNodes = null;
 			this.hiddenArcs = null;
+			this.cy.destroy();
+			this.cy = null;
 		}
 		
 		this.cy = cytoscape({
@@ -166,8 +173,8 @@ class ComorbiditiesBrowser {
 		let scale = opts.scale === undefined ? 'linear' : opts.scale;
 		
 		let p = $input.slider({
-			min: opts.min,
-			max: opts.max,
+			min: Math.floor(opts.min),
+			max: Math.ceil(opts.max),
 			scale: scale,
 			value: initialValue
 		}).on('slideStop', _.throttle( () => {
@@ -293,10 +300,10 @@ class ComorbiditiesBrowser {
 		});
 	}
 	
-	makeNodeOption(node,isInitiallyChecked) {
+	makeNodeOption(node,isInitiallyChecked,opts) {
 		let $option = $('<div></div>');
 		let $nodeOption = $('<input type="checkbox"></input>');
-		$nodeOption.data('disease_id',node.data('disease_id'));
+		$nodeOption.data(opts.idPropertyName,node.data(opts.idPropertyName));
 		$nodeOption.button();
 		if(isInitiallyChecked) {
 			$nodeOption.attr('checked','checked');
@@ -314,6 +321,7 @@ class ComorbiditiesBrowser {
 	
 	updateSelectedNodesCount(nodes) {
 		this.$nodeListLabel.html(nodes.length);
+		this.$nodeListNextViewButton.prop('disabled', nodes.length < 2);
 	}
 	
 	makeSelectedNodesView(opts) {
@@ -328,8 +336,15 @@ class ComorbiditiesBrowser {
 		
 		$selectedNodesView.append($nodeListLabel);
 		
-		let $nodeListNextViewButton = $('<input type="button" class="btn btn-default btn-xs" value="'+opts.nextLabel+'" />');
-		$nodeListNextViewButton.on('click',opts.nextOnClick);
+		let $nodeListNextViewButton = this.$nodeListNextViewButton = $('<input type="button" class="btn btn-default btn-xs" value="'+opts.nextLabel+'" />');
+		$nodeListNextViewButton.on('click',() => {
+			let nextViewIds = this.$nodeList.find('input[type="checkbox"]:checked').toArray().map((check) => {
+				let checkbox = $(check);
+				
+				return checkbox.data(opts.idPropertyName);
+			});
+			this.switchView('patient_subgroups',nextViewIds);
+		});
 		
 		$selectedNodesView.append($nodeListNextViewButton);
 		
@@ -337,6 +352,7 @@ class ComorbiditiesBrowser {
 		
 		// The container of the selected nodes
 		let $nodeList = this.$nodeList = $('<div style="overflow-y:auto;max-height: 25%;background-color:white;color:black;"></div>');
+		$nodeList.data('opts',opts);
 		$nodeList.hide();
 		
 		this.$config.append($nodeList);
@@ -347,6 +363,7 @@ class ComorbiditiesBrowser {
 		if(nodes.nonempty()) {
 			this.$selectedNodesView.show();
 			this.$nodeList.show();
+			let opts = this.$nodeList.data('opts');
 			
 			this.$nodeListLabel.empty();
 			this.$nodeList.empty();
@@ -354,13 +371,13 @@ class ComorbiditiesBrowser {
 			this.updateSelectedNodesCount(nodes);
 			
 			nodes.forEach((n) => {
-				let $option = this.makeNodeOption(n,true);
+				let $option = this.makeNodeOption(n,true,opts);
 				
 				this.$nodeList.append($option);
 			});
 			
 			this.prevHighlighted.nodes().difference(nodes).forEach((n) => {
-				let $option = this.makeNodeOption(n);
+				let $option = this.makeNodeOption(n,false,opts);
 				
 				this.$nodeList.append($option);
 			});
@@ -553,7 +570,7 @@ class ComorbiditiesBrowser {
 		
 		buttons.forEach((button) => this.makeButton(button));
 		
-		this.makeSelectedNodesView({ label: 'Visible diseases', nextLabel: 'See subgroups', nextOnClick: () => console.log('Hasta el infinito y más allá')});
+		this.makeSelectedNodesView({ label: 'Visible diseases', idPropertyName: 'disease_id', nextView: 'patient_subgroups', nextLabel: 'See subgroups'});
 	}
 	
 	doLayout() {
@@ -711,5 +728,5 @@ $(document).ready(function() {
 		'loading': graphLoadingEl
 	});
 	
-	browser.initialize('diseases');
+	browser.switchView('diseases');
 });

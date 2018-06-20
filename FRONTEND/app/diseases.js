@@ -33,16 +33,16 @@ export class Diseases {
 				.then(function(decodedJson) {
 					_Diseases = decodedJson;
 					_DiseaseNodes = _Diseases.map(function(dis) {
+						// jshint camelcase: false 
 						let retdis = {
 							// jshint ignore:start
-							...dis
+							...dis,
 							// jshint ignore:end
+							// Unique identifiers
+							disease_id: dis.id,
+							id: 'D'+dis.id,
+							parent: 'DG'+dis.disease_group_id,
 						};
-						// Unique identifiers
-						// jshint camelcase: false 
-						retdis.disease_id = dis.id;
-						retdis.id = 'D'+dis.id;
-						retdis.parent = 'DG'+dis.disease_group_id;
 						
 						return {
 							data: retdis
@@ -62,15 +62,15 @@ export class Diseases {
 				.then(function(decodedJson) {
 					_DiseaseGroups = decodedJson;
 					_DiseaseGroupNodes = _DiseaseGroups.map(function(dg) {
+						// jshint camelcase: false 
 						let retdg = {
 							// jshint ignore:start
-							...dg
+							...dg,
 							// jshint ignore:end
+							disease_group_id: dg.id,
+							id: 'DG'+dg.id
 						};
 						// Unique identifiers
-						// jshint camelcase: false 
-						retdg.disease_group_id = dg.id;
-						retdg.id = 'DG'+dg.id;
 						return {
 							data: retdg
 						};
@@ -108,6 +108,7 @@ export class Diseases {
 						delete retdc.to_id;
 						
 						return {
+							classes: 'D',
 							data: retdc
 						};
 					});
@@ -144,6 +145,27 @@ export class Diseases {
 		return _Diseases;
 	}
 	
+	getDiseaseNodes() {
+		// Post-processing was not applied to the diseases
+		if(!_DiseaseGroupsHash) {
+			_DiseaseGroupsHash = {};
+			_DiseaseGroups.forEach(function(dg) {
+				_DiseaseGroupsHash[dg.id] = dg;
+			});
+			
+			_DiseaseNodes.forEach(function(d) {
+				// jshint camelcase: false 
+				d.data.disease_group = _DiseaseGroupsHash[d.data.disease_group_id];
+			});
+		}
+		
+		return _DiseaseNodes;
+	}
+	
+	getDiseaseGroupNodes() {
+		return _DiseaseGroupNodes;
+	}
+	
 	getComorbiditiesNetwork() {
 		return _DiseaseComorbiditiesNetwork;
 	}
@@ -158,24 +180,11 @@ export class Diseases {
 	
 	// getCYComorbiditiesNetwork
 	getFetchedNetwork() {
-		// Post-processing was not applied to the diseases
-		if(!_DiseaseGroupsHash) {
-			_DiseaseGroupsHash = {};
-			_DiseaseGroups.forEach(function(dg) {
-				_DiseaseGroupsHash[dg.id] = dg;
-			});
-			
-			_DiseaseNodes.forEach(function(d) {
-				// jshint camelcase: false 
-				d.data.disease_group = _DiseaseGroupsHash[d.data.disease_group_id];
-			});
-		}
-		
 		return {
 			nodes: [
 				// jshint ignore:start
-				..._DiseaseNodes,
-				//..._DiseaseGroupNodes
+				...this.getDiseaseNodes(),
+				//...this.getDiseaseGroupNodes()
 				// jshint ignore:end
 			],
 			edges: _DiseaseComorbiditiesNetworkEdges
