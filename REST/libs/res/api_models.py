@@ -190,7 +190,8 @@ simple_patient_model = patient_model
 patient_subgroup_model = PATIENT_NS.model('PatientSubgroup',{
 	'id': fields.Integer(required=True, description = 'The internal id of the patient subgroup'),
 	'name': fields.String(required=True, description = 'The patient subgroup symbolic name'),
-	'disease_id': fields.Integer(required=True, description = 'The internal id of the disease this patient subgroup is related to')
+	'disease_id': fields.Integer(required=True, description = 'The internal id of the disease this patient subgroup is related to'),
+	'size': fields.Integer(required=True, description = 'The number of patients in this subgroup')
 })
 
 simple_patient_subgroup_model = patient_subgroup_model

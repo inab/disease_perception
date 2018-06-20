@@ -294,12 +294,8 @@ FROM
 ) AS dps_j,
 	patient_subgroup_digraph psd
 WHERE  dps_i.id <> dps_j.id
-AND
-	( psd.patient_subgroup_a_id = dps_i.id
-	AND psd.patient_subgroup_b_id = dps_j.id )
-OR
-	( psd.patient_subgroup_a_id = dps_j.id
-	AND psd.patient_subgroup_b_id = dps_i.id )
+AND psd.patient_subgroup_a_id = dps_i.id
+AND psd.patient_subgroup_b_id = dps_j.id
 			'''
 			
 			
@@ -373,9 +369,22 @@ OR
 		cur = self._getCursor()
 		try:
 			if patient_subgroup_id is not None:
-				cur.execute('SELECT id,name,disease_id FROM patient_subgroup WHERE id = ?',(patient_subgroup_id,))
+				query = '''
+SELECT ps.id AS id, ps.name AS name, ps.disease_id AS id, COUNT(p.id) AS size
+FROM patient_subgroup ps, patient p
+WHERE ps.id = ?
+AND ps.id = p.patient_subgroup_id
+GROUP BY ps.id,ps.name,ps.disease_id
+				'''
+				cur.execute(query,(patient_subgroup_id,))
 			else:
-				cur.execute('SELECT id,name,disease_id FROM patient_subgroup')
+				query = '''
+SELECT ps.id AS id, ps.name AS name, ps.disease_id AS id, COUNT(p.id) AS size
+FROM patient_subgroup ps, patient p
+WHERE ps.id = p.patient_subgroup_id
+GROUP BY ps.id,ps.name,ps.disease_id
+				'''
+				cur.execute(query)
 			while True:
 				patient_subgroups = cur.fetchmany()
 				if len(patient_subgroups)==0:
@@ -386,7 +395,7 @@ OR
 							self.api.abort(500,"Empty comorbidities database")
 					break
 				
-				res.extend(map(lambda ps: {'id': ps[0],'name': ps[1],'disease_id': ps[2]},patient_subgroups))
+				res.extend(map(lambda ps: {'id': ps[0],'name': ps[1],'disease_id': ps[2], 'size': ps[3]},patient_subgroups))
 		finally:
 			# Assuring the cursor is properly closed
 			cur.close()
