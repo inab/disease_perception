@@ -1,3 +1,5 @@
-# Disease PERCEPTION - PERsonalized Comorbidity ExPloraTION
+# Disease PERCEPTION
 
-![Disease PERCEPTION logo](docs/disease_perception_curves.svg)
+## PERsonalized Comorbidity ExPloraTION
+
+<img src="docs/disease_perception_curves.svg" alt="Disease PERCEPTION logo" width="200" />
