@@ -1,3 +1,5 @@
+'use strict';
+
 import { Diseases } from './diseases';
 
 // Singleton variables

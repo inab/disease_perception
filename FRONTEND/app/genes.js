@@ -1,3 +1,5 @@
+'use strict';
+
 // Singleton variables
 var _Genes;
 
