@@ -98,13 +98,13 @@ export class Diseases {
 						// Preparation
 						let retdc = {
 							// jshint ignore:start
-							...dc
+							...dc,
 							// jshint ignore:end
+							// Unique identifiers
+							id: 'DC'+dci,
+							source: 'D'+dc.from_id,
+							target: 'D'+dc.to_id,
 						};
-						// Unique identifiers
-						retdc.id = 'DC'+dci;
-						retdc.source = 'D'+dc.from_id;
-						retdc.target = 'D'+dc.to_id;
 						delete retdc.from_id;
 						delete retdc.to_id;
 						
