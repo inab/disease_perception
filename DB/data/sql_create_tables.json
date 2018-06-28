@@ -34,7 +34,7 @@
 		"indexes": [
 			["disease_id"]
 		],
-		"datafile": "patient_subgroup.tsv.gz"
+		"datafile": "patient_subgroup.tsv"
 	},
 	{
 		"table": "gene",
@@ -58,7 +58,7 @@
 			["patient_subgroup_id"],
 			["study_id"]
 		],
-		"datafile": "patient.tsv.gz"
+		"datafile": "patient.tsv"
 	},
 	{
 		"table": "patient_drug_maps",
@@ -89,7 +89,7 @@
 	},
 	{
 		"table": "disease_digraph",
-		"sql_ddl": "CREATE TABLE disease_digraph ( id INTEGER PRIMARY KEY, disease_a_id INTEGER, disease_b_id INTEGER, relative_risk FLOAT, FOREIGN KEY(disease_a_id) REFERENCES disease(id), FOREIGN KEY(disease_b_id) REFERENCES disease(id) ); ",
+		"sql_ddl": "CREATE TABLE disease_digraph ( id INTEGER PRIMARY KEY, disease_a_id INTEGER, disease_b_id INTEGER, relative_risk DOUBLE PRECISION, FOREIGN KEY(disease_a_id) REFERENCES disease(id), FOREIGN KEY(disease_b_id) REFERENCES disease(id) ); ",
 		"indexes": [
 			["disease_a_id"],
 			["disease_b_id"]
@@ -98,12 +98,12 @@
 	},
 	{
 		"table": "patient_subgroup_digraph",
-		"sql_ddl": "CREATE TABLE patient_subgroup_digraph ( id INTEGER PRIMARY KEY, patient_subgroup_a_id INTEGER, patient_subgroup_b_id INTEGER, relative_risk FLOAT, FOREIGN KEY(patient_subgroup_a_id) REFERENCES patient_subgroup(id), FOREIGN KEY(patient_subgroup_b_id) REFERENCES patient_subgroup(id) );",
+		"sql_ddl": "CREATE TABLE patient_subgroup_digraph ( id INTEGER PRIMARY KEY, patient_subgroup_a_id INTEGER, patient_subgroup_b_id INTEGER, relative_risk DOUBLE PRECISION, FOREIGN KEY(patient_subgroup_a_id) REFERENCES patient_subgroup(id), FOREIGN KEY(patient_subgroup_b_id) REFERENCES patient_subgroup(id) );",
 		"indexes": [
 			["patient_subgroup_a_id"],
 			["patient_subgroup_b_id"]
 		],
-		"datafile": "patient_subgroup_digraph.tsv.gz"
+		"datafile": "patient_subgroup_digraph.tsv"
 	},
 	{
 		"table": "patient_subgroup_drug_intersect",
