@@ -297,7 +297,7 @@ export class ComorbiditiesBrowser {
 	}
 	
 	makeNodeOption(node,isInitiallyChecked,opts) {
-		let $option = $('<div></div>');
+		let $option = $('<div style="display: flex;"></div>');
 		let $nodeOption = $('<input type="checkbox"></input>');
 		$nodeOption.data(opts.idPropertyName,node.data(opts.idPropertyName));
 		$nodeOption.button();
@@ -309,16 +309,23 @@ export class ComorbiditiesBrowser {
 			this.updateSelectedNodesCount($option.parent().find('input[type="checkbox"]:checked'));
 		});
 		
-		$option.append($nodeOption);
-		$option.append('<i class="fa fa-circle" style="color: '+node.data('color')+';"></i>');
-		$option.append(node.data('name'));
+		let $cont = $('<div style="white-space: nowrap"></div>');
+		$cont.append($nodeOption);
+		$cont.append('<i class="fa fa-circle" style="vertical-align: text-top; color: '+node.data('color')+';"></i>');
+		$option.append($cont);
+		
+		//$option.append($nodeOption);
+		//$option.append('<i class="fa fa-circle" style="color: '+node.data('color')+';"></i>');
+		
+		$option.append('<div>'+node.data('name')+'</div>');
 		return $option;
 	}
 	
 	updateSelectedNodesCount(nodes) {
 		if(this.hPanel) {
 			let hPanel = this.hPanel;
-			hPanel.$nodeListLabel.html(nodes.length);
+			hPanel.$nodeListLabel.empty();
+			hPanel.$nodeListLabel.append(nodes.length);
 			hPanel.$nodeListNextViewButton.prop('disabled', nodes.length < 2);
 		}
 	}
@@ -372,7 +379,6 @@ export class ComorbiditiesBrowser {
 				hPanel.$nodeList.show();
 				let opts = hPanel.$nodeList.data('opts');
 				
-				hPanel.$nodeListLabel.empty();
 				hPanel.$nodeList.empty();
 				
 				nodes.forEach((n) => {
@@ -599,6 +605,26 @@ export class ComorbiditiesBrowser {
 		}
 	}
 	
+	onSelectHandler(evt) {
+		let selected = this.cy.nodes('node:selected');
+		let selectedEdges = this.cy.edges('edge:selected');
+		if(selectedEdges.nonempty()) {
+			let connectedEdgesNodes = selectedEdges.connectedNodes();
+			if(connectedEdgesNodes.nonempty()) {
+				connectedEdgesNodes.select();
+				selected.merge(connectedEdgesNodes);
+			}
+			selectedEdges.unselect();
+		}
+		if((!this.prevHighlighted && selected.nonempty()) || selected.symmetricDifference(this.prevHighlighted).nonempty()) {
+			this.highlight(selected);
+			//if(selected.length===2) {
+			//	this.$modal.find('.modal-title').empty().append('Hola holita');
+			//	this.$modal.modal('show');
+			//}
+		}
+	}
+	
 	doLayout() {
 		// First, empty the container
 		this.$graph.empty();
@@ -683,16 +709,7 @@ export class ComorbiditiesBrowser {
 				});
 			});
 			
-			this.cy.on('select unselect', () => {
-				let selected = this.cy.elements('node:selected');
-				if(!this.prevHighlighted || selected.symmetricDifference(this.prevHighlighted).nonempty()) {
-					this.highlight(selected);
-					//if(selected.length===2) {
-					//	this.$modal.find('.modal-title').empty().append('Hola holita');
-					//	this.$modal.modal('show');
-					//}
-				}
-			});
+			this.cy.on('select unselect', this.onSelectHandler.bind(this));
 		} catch(e) {
 			console.log('Unexpected error',e);
 		}
