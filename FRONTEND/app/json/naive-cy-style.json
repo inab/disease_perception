@@ -6,7 +6,6 @@
 			"text-valign": "center",
 			"text-halign": "center",
 			"text-wrap": "wrap",
-			"text-max-width": "5em",
 			"background-color": "data(color)",
 			"font-size": "0.7em",
 			"text-outline-color": "#555",
@@ -43,21 +42,12 @@
   }
 },
 	{
-		"selector": "$node > node",
-		"css": {
-			"padding-top": "10px",
-			"padding-left": "10px",
-			"padding-bottom": "10px",
-			"padding-right": "10px",
-			"text-valign": "top",
-			"text-halign": "center",
-			"border-color": "data(color)",
-			"background-opacity": "0"
-		}
-	},
-	{
 		"selector": "node.D",
 		"css": {
+			"content": "data(label)",
+			"padding": "0.25em",
+			"width": "label",
+			"height": "label",
 			"shape": "roundrectangle"
 		}
 	},
@@ -67,6 +57,21 @@
 			"shape": "diamond",
 			"width": "mapData(size,1,10,20,60)",
 			"height": "mapData(size,1,10,20,60)"
+		}
+	},
+	{
+		"selector": "$node > node",
+		"css": {
+			"content": "data(name)",
+			"text-wrap": "wrap",
+			"padding-top": "10px",
+			"padding-left": "10px",
+			"padding-bottom": "10px",
+			"padding-right": "10px",
+			"text-valign": "top",
+			"text-halign": "center",
+			"border-color": "data(color)",
+			"background-opacity": "0"
 		}
 	},
 	{
@@ -88,6 +93,12 @@
 			"line-color": "black",
 			"target-arrow-color": "black",
 			"source-arrow-color": "black"
+		}
+	},
+	{
+		"selector": "edge.highlighted",
+		"css": {
+			"color": "#7F7F7F"
 		}
 	}
 ]
