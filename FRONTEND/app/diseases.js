@@ -16,6 +16,10 @@ var _DiseaseComorbiditiesNetworkInitialAbsCutoff;
 
 var _DiseaseComorbiditiesNetworkEdges;
 
+function distinctFilter(value,index,self) {
+	return index === 0 || self.lastIndexOf(value,index-1) < 0;
+}
+
 export class Diseases {
 	constructor(cmBrowser) {
 		this.cmBrowser = cmBrowser;
@@ -35,12 +39,14 @@ export class Diseases {
 				.then(function(decodedJson) {
 					_Diseases = decodedJson;
 					_DiseaseNodes = _Diseases.map(function(dis) {
-						// jshint camelcase: false 
+						// jshint camelcase: false
+						let label = dis.name.replace(/ +/g,'\n');
 						let retdis = {
 							// jshint ignore:start
 							...dis,
 							// jshint ignore:end
 							// Unique identifiers
+							label: label,
 							disease_id: dis.id,
 							id: 'D'+dis.id,
 							parent: 'DG'+dis.disease_group_id,
@@ -66,10 +72,12 @@ export class Diseases {
 					_DiseaseGroups = decodedJson;
 					_DiseaseGroupNodes = _DiseaseGroups.map(function(dg) {
 						// jshint camelcase: false 
+						let label = dg.name.replace(/ +/g,'\n');
 						let retdg = {
 							// jshint ignore:start
 							...dg,
 							// jshint ignore:end
+							label: label,
 							disease_group_id: dg.id,
 							id: 'DG'+dg.id
 						};
@@ -119,15 +127,17 @@ export class Diseases {
 					let maxAbsRisk = -Infinity;
 					let initialAbsCutoff = -Infinity;
 					if(_DiseaseComorbiditiesNetwork.length > 0) {
-						let dcme = [..._DiseaseComorbiditiesNetwork];
+						// jshint camelcase: false
+						let dcme = _DiseaseComorbiditiesNetwork.map((e) => e.abs_rel_risk);
 						
 						// jshint camelcase: false 
-						dcme.sort(function(e1,e2) { return e1.abs_rel_risk - e2.abs_rel_risk; });
-						minAbsRisk = dcme[0].abs_rel_risk;
-						maxAbsRisk = dcme[dcme.length - 1].abs_rel_risk;
+						dcme.sort(function(e1,e2) { return e1 - e2; });
+						dcme = dcme.filter(distinctFilter);
+						minAbsRisk = dcme[0];
+						maxAbsRisk = dcme[dcme.length - 1];
 						
 						// Selecting the initial absolute cutoff risk, based on the then biggest values
-						initialAbsCutoff = dcme[Math.floor(dcme.length * 0.95)].abs_rel_risk;
+						initialAbsCutoff = dcme[Math.floor(dcme.length * 0.95)];
 					}
 					
 					// Saving the range and cutoff for later processing
@@ -195,13 +205,9 @@ export class Diseases {
 	
 	getGraphSetup() {
 		if(this.params===undefined) {
-			let absRelRiskData = this.getAbsRelRiskRange();
-			
 			this.params = {
 				name: 'cola',
-				absRelRiskVal: absRelRiskData.initial,
 				// Specific from cola algorithm
-				nodeSpacing: 5,
 				edgeLengthVal: 45,
 				animate: true,
 				randomize: false,
@@ -212,8 +218,89 @@ export class Diseases {
 		return this.params;
 	}
 	
+	// Controls and their associated filters
+	getControlsSetup() {
+		let absRelRiskData = this.getAbsRelRiskRange();
+		
+		let initialAbsRelRiskVal = absRelRiskData.initial.toFixed(1);
+		
+		let controlsDesc = [
+			{
+				filter: 'edges',
+				attr: 'abs_rel_risk',
+				filterfn:  function(attrVal,paramVal) { return attrVal < paramVal; },
+				filterOnCtx: true,
+				type: 'slider',
+				label: 'Cut-off on |Relative risk|',
+				param: 'absRelRiskVal',
+				min: absRelRiskData.min,
+				max: absRelRiskData.max,
+				initial: initialAbsRelRiskVal,
+				scale: 'logarithmic',
+				step: 0.1,
+				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
+			},
+			//{
+			//	type: 'slider',
+			//	label: 'Edge length',
+			//	param: 'edgeLengthVal',
+			//	min: 1,
+			//	max: 200,
+			//	initial: 45,
+			//},
+			{
+				type: 'slider',
+				label: 'Node spacing',
+				param: 'nodeSpacing',
+				min: 1,
+				max: 50,
+				// Specific from cola algorithm
+				initial: 5,
+			},
+			{
+				type: 'button-group',
+			},
+			//{
+			//	type: 'button',
+			//	label: '<i class="fa fa-object-group"></i>',
+			//	layoutOpts: {
+			//		randomize: true
+			//	},
+			//	fn: () => this.toggleDiseaseGroups()
+			//},
+			//{
+			//	type: 'button',
+			//	label: '<i class="fa fa-object-ungroup"></i>',
+			//	layoutOpts: {
+			//		randomize: true
+			//	},
+			//	fn: () => this.toggleDiseaseGroups()
+			//},
+			{
+				type: 'button',
+				label: '<i class="fa fa-random"></i>',
+				layoutOpts: {
+					randomize: true,
+					flow: null
+				}
+			},
+			{
+				type: 'button',
+				label: '<i class="fa fa-long-arrow-down"></i>',
+				layoutOpts: {
+					flow: {
+						axis: 'y',
+						minSeparation: 30
+					}
+				}
+			}
+		];
+		
+		return controlsDesc;
+	}
+	
 	getNextViewSetup() {
-		return { label: 'Visible diseases', idPropertyName: 'disease_id', nextView: 'patient_subgroups', nextLabel: 'See subgroups'};
+		return { label: 'Selected diseases', idPropertyName: 'disease_id', nextView: 'patient_subgroups', nextLabel: 'See subgroups'};
 	}
 	
 	makeNodeTooltipContent(node) {

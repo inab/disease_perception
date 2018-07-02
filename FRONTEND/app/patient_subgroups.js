@@ -7,7 +7,12 @@ var _PatientSubgroups;
 var _PatientSubgroupNodes;
 var _PendingColorPropagation = true;
 
+var _PatientSubgroupsHash;
 var _PatientSubgroupsNodeHash;
+
+function distinctFilter(value,index,self) {
+	return index === 0 || self.lastIndexOf(value,index-1) < 0;
+}
 
 export class PatientSubgroups {
 	constructor(cmBrowser) {
@@ -27,23 +32,25 @@ export class PatientSubgroups {
 				})
 				.then(function(decodedJson) {
 					_PatientSubgroups = decodedJson;
+					_PatientSubgroupsHash = {};
 					_PatientSubgroupsNodeHash = {};
 					_PatientSubgroupNodes = _PatientSubgroups.map(function(psg) {
 						// jshint camelcase: false 
-						let name = 'Subgroup '+psg.name.split('.')[1];
+						let name = 'Subgroup\n'+psg.name.split('.')[1];
 						let retpsg = {
 							color: '#008020',
 							// jshint ignore:start
 							...psg,
+							// jshint ignore:end
 							name: name,
 							label: psg.name,
-							// jshint ignore:end
 							// Unique identifiers
 							patient_subgroup_id: psg.id,
 							id: 'PSG'+psg.id,
 							parent: 'D'+psg.disease_id
 						};
-						_PatientSubgroupsNodeHash[psg.id] = retpsg;
+						_PatientSubgroupsHash[psg.id] = retpsg;
+						_PatientSubgroupsNodeHash[retpsg.id] = retpsg;
 						
 						return {
 							classes: 'PSG',
@@ -59,17 +66,19 @@ export class PatientSubgroups {
 		let commaDiseaseIds = diseaseIds.join(',');
 		
 		fetchPromises.push(
-			fetch('api/diseases/ps_comorbidities/'+encodeURIComponent(commaDiseaseIds)+'/min_size/'+minClusterSize, {mode: 'no-cors'})
+			//fetch('api/diseases/ps_comorbidities/'+encodeURIComponent(commaDiseaseIds)+'/min_size/'+minClusterSize, {mode: 'no-cors'})
+			fetch('api/diseases/ps_comorbidities/'+encodeURIComponent(commaDiseaseIds), {mode: 'no-cors'})
 			.then(function(res) {
 				return res.json();
 			})
 			.then((decodedJson) => {
+				// jshint camelcase: false
 				this.diseaseIds = [ ...diseaseIds ];
+				this.initialMinClusterSize = minClusterSize;
 				let dPSCN = this.diseasePatientSubgroupComorbidityNetwork = decodedJson;
 				
 				this.patientSubgroupComorbidityNetworkEdges = dPSCN.map(function(psgc,psgci) {
 					// Will be used later
-					// jshint camelcase: false 
 					psgc.abs_rel_risk = Math.abs(psgc.rel_risk);
 					// Preparation
 					let retpsgc = {
@@ -81,27 +90,28 @@ export class PatientSubgroups {
 						source: 'PSG'+psgc.from_id,
 						target: 'PSG'+psgc.to_id
 					};
-					delete retpsgc.from_id;
-					delete retpsgc.to_id;
+					//delete retpsgc.from_id;
+					//delete retpsgc.to_id;
 					
 					return {
 						data: retpsgc
 					};
 				});
+				this.pendingIntraDiseaseCheck = true;
 				
 				let minAbsRisk = Infinity;
 				let maxAbsRisk = -Infinity;
 				let initialAbsCutoff = -Infinity;
 				if(dPSCN.length > 0) {
-					let dPSCNe = [...dPSCN];
+					let dPSCNe = dPSCN.map((e) => e.abs_rel_risk);
 					
-					// jshint camelcase: false
-					dPSCNe.sort(function(e1,e2) { return e1.abs_rel_risk - e2.abs_rel_risk; });
-					minAbsRisk = dPSCNe[0].abs_rel_risk;
-					maxAbsRisk = dPSCNe[dPSCNe.length - 1].abs_rel_risk;
+					dPSCNe.sort(function(e1,e2) { return e1 - e2; });
+					dPSCNe = dPSCNe.filter(distinctFilter);
+					minAbsRisk = dPSCNe[0];
+					maxAbsRisk = dPSCNe[dPSCNe.length - 1];
 					
 					// Selecting the initial absolute cutoff risk, based on the then biggest values
-					initialAbsCutoff = dPSCNe[Math.floor(dPSCNe.length * 0.95)].abs_rel_risk;
+					initialAbsCutoff = dPSCNe[Math.floor(dPSCNe.length * 0.5)];
 				}
 				
 				// Saving the range and cutoff for later processing
@@ -140,6 +150,38 @@ export class PatientSubgroups {
 			_PendingColorPropagation = false;
 		}
 		
+		// Labelling intra-disease commorbidities
+		// Getting minimum and maximum cluster sizes
+		if(this.pendingIntraDiseaseCheck) {
+			this.minClusterSize = +Infinity;
+			this.maxClusterSize = -Infinity;
+			this.patientSubgroupComorbidityNetworkEdges.forEach((edge) => {
+				let fromPSG = _PatientSubgroupsHash[edge.data.from_id];
+				let toPSG = _PatientSubgroupsHash[edge.data.to_id];
+				
+				// Getting minimum and maximum cluster sizes
+				if(fromPSG.size > this.maxClusterSize) {
+					this.maxClusterSize = fromPSG.size;
+				}
+				
+				if(toPSG.size > this.maxClusterSize) {
+					this.maxClusterSize = toPSG.size;
+				}
+				
+				if(fromPSG.size < this.minClusterSize) {
+					this.minClusterSize = fromPSG.size;
+				}
+				
+				if(toPSG.size < this.minClusterSize) {
+					this.minClusterSize = toPSG.size;
+				}
+				
+				// Labelling intra-disease commorbidities
+				edge.data.isIntraDisease = fromPSG.disease_id === toPSG.disease_id;
+			});
+			this.pendingIntraDiseaseCheck = false;
+		}
+		
 		let setDiseaseIds = new Set(this.diseaseIds);
 		let selectedDiseases = diseaseNodes.filter((d) => setDiseaseIds.has(d.data.disease_id));
 		let setDiseaseGroupIds = new Set(selectedDiseases.map((d) => d.data.disease_group_id));
@@ -159,13 +201,9 @@ export class PatientSubgroups {
 	
 	getGraphSetup() {
 		if(this.params===undefined) {
-			let absRelRiskData = this.getAbsRelRiskRange();
-			
 			this.params = {
-				name: 'cola',
-				absRelRiskVal: absRelRiskData.initial,
+				name: 'cose-bilkent',
 				// Specific from cola algorithm
-				nodeSpacing: 5,
 				edgeLengthVal: 45,
 				animate: true,
 				randomize: false,
@@ -174,6 +212,100 @@ export class PatientSubgroups {
 		}
 		
 		return this.params;
+	}
+	
+	// Controls and their associated filters
+	getControlsSetup() {
+		let absRelRiskData = this.getAbsRelRiskRange();
+		let initialAbsRelRiskVal = Math.round(absRelRiskData.initial);	
+		
+		let controlsDesc = [
+			{
+				filter: 'edges',
+				attr: 'abs_rel_risk',
+				filterfn:  function(attrVal,paramVal) { return attrVal < paramVal; },
+				filterOnCtx: true,
+				type: 'slider',
+				label: 'Cut-off on |Relative risk|',
+				param: 'absRelRiskVal',
+				min: absRelRiskData.min,
+				max: absRelRiskData.max,
+				initial: initialAbsRelRiskVal,
+				scale: 'logarithmic',
+				step: 0.1,
+				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
+			},
+			{
+				filter: 'nodes',
+				attr: 'size',
+				filterfn: function(attrVal,paramVal) { return attrVal < paramVal; },
+				filterOnCtx: true,
+				type: 'slider',
+				label: 'Cut-off on cluster size',
+				param: 'clusterSizeVal',
+				min: this.minClusterSize,
+				max: this.maxClusterSize,
+				initial: this.initialMinClusterSize,
+				scale: 'logarithmic',
+				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
+			},
+			//{
+			//	type: 'slider',
+			//	label: 'Edge length',
+			//	param: 'edgeLengthVal',
+			//	min: 1,
+			//	max: 200,
+			//	initial: 45,
+			//},
+			{
+				type: 'slider',
+				label: 'Node spacing',
+				param: 'nodeSpacing',
+				min: 1,
+				max: 50,
+				// Specific from cola algorithm
+				initial: 5
+			},
+			{
+				type: 'button-group',
+			},
+			//{
+			//	type: 'button',
+			//	label: '<i class="fa fa-object-group"></i>',
+			//	layoutOpts: {
+			//		randomize: true
+			//	},
+			//	fn: () => this.toggleDiseaseGroups()
+			//},
+			//{
+			//	type: 'button',
+			//	label: '<i class="fa fa-object-ungroup"></i>',
+			//	layoutOpts: {
+			//		randomize: true
+			//	},
+			//	fn: () => this.toggleDiseaseGroups()
+			//},
+			{
+				type: 'button',
+				label: '<i class="fa fa-random"></i>',
+				layoutOpts: {
+					randomize: true,
+					flow: null
+				}
+			},
+			{
+				type: 'button',
+				label: '<i class="fa fa-long-arrow-down"></i>',
+				layoutOpts: {
+					flow: {
+						axis: 'y',
+						minSeparation: 30
+					}
+				}
+			}
+		];
+		
+		return controlsDesc;
 	}
 	
 	getNextViewSetup() {

@@ -36,10 +36,10 @@ import { Genes } from './genes';
 import { Drugs } from './drugs';
 import { Studies } from './studies';
 
-
-function sleep(millis) {
-	return new Promise((resolve) => setTimeout(resolve,millis));
-}
+// Sleeping with promises
+//function sleep(millis) {
+//	return new Promise((resolve) => setTimeout(resolve,millis));
+//}
 
 export class ComorbiditiesBrowser {
 	constructor(setup) {
@@ -118,18 +118,28 @@ export class ComorbiditiesBrowser {
 			this.prevHighlighted = null;
 			this.hiddenNodes = null;
 			this.hiddenArcs = null;
+			this.filtersDesc = null;
 			this.cy.destroy();
 			this.cy = null;
+			this.ctxHandlers = null;
 		}
+		
+		this.filtersDesc = {
+			edges: [],
+			nodes: []
+		};
+		
+		this.ctxHandlers = {
+			edges: [],
+			nodes: []
+		};
 		
 		this.cy = cytoscape({
 			container: container,
 			//style: style,
 			style: [
-			//	// jshint ignore:start
 			//	...graphData.style,
 				...style
-			//	// jshint ignore:end
 			],
 			elements: graphData
 		});
@@ -155,23 +165,32 @@ export class ComorbiditiesBrowser {
 	}
 	
 		
-	makeSlider(opts) {
+	makeSlider(opts,$parent) {
 		let $input = $('<input></input>');
 		let $param = $('<div class="param"></div>');
 		
 		$param.append('<span class="label label-default">'+ opts.label +'</span>');
 		
-		let initialValue = Math.round(this.params[ opts.param ]);
+		let initialValue = opts.initial;
+		// Setting the initial value
+		this.params[ opts.param ] = initialValue;
 		let $dataLabel = $('<span class="label label-info">'+ initialValue +'</span>');
 		$param.append($dataLabel);
 		$param.append($input);
 				
 		let scale = opts.scale === undefined ? 'linear' : opts.scale;
+		let step = opts.step ? opts.step : 1;
+		
+		let minVal = Math.floor(opts.min);
+		let maxVal = Math.ceil(opts.max);
 		
 		let p = $input.slider({
-			min: Math.floor(opts.min),
-			max: Math.ceil(opts.max),
+			min: minVal,
+			max: maxVal,
+			//ticks: [minVal,initialValue,maxVal],
+			//ticks_labels: [minVal,initialValue,maxVal],
 			scale: scale,
+			step: step,
 			value: initialValue
 		}).on('slideStop', _.throttle( () => {
 			this.params[ opts.param ] = p.getValue();
@@ -187,16 +206,18 @@ export class ComorbiditiesBrowser {
 			this.layout.run();
 		}, 16 ) ).data('slider');
 		
-		return $param;
+		$parent.append($param);
+		
+		// The control itself is more useful
+		return $input;
 	}
 	
 	makeButton(opts,btnParam) {
-		if(btnParam === undefined) {
-			btnParam = this.btnParam;
-		}
-		
 		let optsLabel = opts.label ? opts.label : opts.value;
 		let $button = $('<button type="button" class="btn btn-default">' + optsLabel + '</button>');
+		if(opts.classes) {
+			$button.addClass(opts.classes);
+		}
 		
 		if(opts.value) {
 			$button.val(opts.value);
@@ -213,18 +234,18 @@ export class ComorbiditiesBrowser {
 				opts.fn();
 			}
 			
-			this.makeLayout(opts.layoutOpts);
-			this.layout.run();
+			if(opts.layoutOpts) {
+				this.makeLayout(opts.layoutOpts);
+				this.layout.run();
+			}
 		});
 		
 		btnParam.append( $button );
+		
+		return $button;
 	}
 	
 	makeSelectButtons(opts,btnParam) {
-		if(btnParam === undefined) {
-			btnParam = this.btnParam;
-		}
-		
 		let $param = $('<div class="param"></div>');
 		
 		$param.append('<span class="label label-default">'+ opts.label +'</span>');
@@ -239,13 +260,11 @@ export class ComorbiditiesBrowser {
 			this.makeButton(opt,$buttonGroup);
 		});
 		btnParam.append( $param );
+		
+		return $param;
 	}
 	
 	makeSelectDropdown(opts,btnParam) {
-		if(btnParam === undefined) {
-			btnParam = this.btnParam;
-		}
-
 		btnParam.append('<span class="label label-default">'+ opts.label +'</span>');
 		
 		let $buttonGroup = $('<div class="btn-group" style="width: 100%; margin-bottom: 1em;" aria-label="'+opts.label+'"></div>');
@@ -294,6 +313,8 @@ export class ComorbiditiesBrowser {
 			
 			$optList.append( $option );
 		});
+		
+		return $buttonGroup;
 	}
 	
 	makeNodeOption(node,isInitiallyChecked,opts) {
@@ -316,8 +337,11 @@ export class ComorbiditiesBrowser {
 		
 		//$option.append($nodeOption);
 		//$option.append('<i class="fa fa-circle" style="color: '+node.data('color')+';"></i>');
-		
-		$option.append('<div>'+node.data('name')+'</div>');
+		let $label = $('<div>'+node.data('name')+'</div>');
+		if(!isInitiallyChecked) {
+			$label.css('font-style','italic');
+		}
+		$option.append($label);
 		return $option;
 	}
 	
@@ -348,9 +372,33 @@ export class ComorbiditiesBrowser {
 		
 		$selectedNodesView.append($nodeListLabel);
 		
+		// The container of the selected nodes
+		let $nodeList = hPanel.$nodeList = $('<div style="overflow-y:auto;max-height: 25%;background-color:white;color:black;"></div>');
+		$nodeList.data('opts',opts);
+		$nodeList.hide();
+		
+		// This button should check or uncheck all the elements
+		// jshint unused:false
+		let $selectAll = this.makeButton({
+				classes: 'btn-xs',
+				label: '<i class="fa fa-check"></i>',
+				fn: () => {
+					$nodeList.find('input[type="checkbox"]').prop('checked',true);
+					this.updateSelectedNodesCount($nodeList.find('input[type="checkbox"]:checked'));
+				},
+			},$selectedNodesView);
+		let $selectNone = this.makeButton({
+				classes: 'btn-xs',
+				label: '<i class="fa fa-unchecked"></i>',
+				fn: () => {
+					$nodeList.find('input[type="checkbox"]').prop('checked',false);
+					this.updateSelectedNodesCount($nodeList.find('input[type="checkbox"]:checked'));
+				},
+			},$selectedNodesView);
+		
 		let $nodeListNextViewButton = hPanel.$nodeListNextViewButton = $('<input type="button" class="btn btn-default btn-xs" value="'+opts.nextLabel+'" />');
 		$nodeListNextViewButton.on('click',() => {
-			let nextViewIds = hPanel.$nodeList.find('input[type="checkbox"]:checked').toArray().map((check) => {
+			let nextViewIds = $nodeList.find('input[type="checkbox"]:checked').toArray().map((check) => {
 				let checkbox = $(check);
 				
 				return checkbox.data(opts.idPropertyName);
@@ -362,11 +410,7 @@ export class ComorbiditiesBrowser {
 		
 		this.registerConfigWidget($selectedNodesView);
 		
-		// The container of the selected nodes
-		let $nodeList = hPanel.$nodeList = $('<div style="overflow-y:auto;max-height: 25%;background-color:white;color:black;"></div>');
-		$nodeList.data('opts',opts);
-		$nodeList.hide();
-		
+		// The container must go here
 		this.registerConfigWidget($nodeList);
 	}
 	
@@ -432,7 +476,7 @@ export class ComorbiditiesBrowser {
 	}
 
 
-	filterEdgesOnAbsRisk() {
+	filterOnConditions() {
 		if(this.prevHighlighted && this.prevHighlighted.nonempty()) {
 			this.unHighlighted.restore();
 			this.unHighlighted = null;
@@ -447,15 +491,39 @@ export class ComorbiditiesBrowser {
 		}
 		
 		// Applying the initial filtering
-		this.hiddenArcs = this.cy.edges((e) => {
-			return e.data('abs_rel_risk') < this.params.absRelRiskVal;
-		}).remove();
 		
-		// Now, remove the orphaned nodes
-		this.hiddenNodes = this.cy.nodes((n) => {
+		// On nodes
+		if(this.filtersDesc && this.filtersDesc.nodes) {
+			this.hiddenNodes = this.cy.nodes((e) => {
+				return this.filtersDesc.nodes.some((f) => {
+					return f.filterfn(e.data(f.attr),this.params[f.param]);
+				});
+			});
+			
+			this.hiddenArcs = this.hiddenNodes.connectedEdges();
+		} else {
+			this.hiddenNodes = this.cy.collection();
+			this.hiddenArcs = this.cy.collection();
+		}
+		
+		// On arcs
+		if(this.filtersDesc && this.filtersDesc.edges) {
+			this.hiddenArcs.merge(this.cy.edges((e) => {
+				return this.filtersDesc.edges.some((f) => {
+					return f.filterfn(e.data(f.attr),this.params[f.param]);
+				});
+			}));
+		}
+		
+		this.hiddenArcs.remove();
+		
+		// Now, remove the filtered or orphaned nodes
+		this.hiddenNodes.merge(this.cy.nodes((n) => {
 			return !n.isParent() && (n.degree(true) === 0);
 			//return n.degree(true) === 0;
-		}).remove();
+		}));
+		
+		this.hiddenNodes.remove();
 		
 		// And, at last, highlight again
 		if(this.prevHighlighted && this.prevHighlighted.nonempty()) {
@@ -481,7 +549,7 @@ export class ComorbiditiesBrowser {
 			this.hiddenDiseaseGroups.filter((n) => { return !n.isParent(); }).restore();
 		}
 		
-		this.filterEdgesOnAbsRisk();
+		this.filterOnConditions();
 	}
 	
 	initializeControls() {
@@ -496,104 +564,82 @@ export class ComorbiditiesBrowser {
 			this.configWidgets = [];
 		}
 		
-		let absRelRiskData = this.currentView.getAbsRelRiskRange();
-		
-		let sliders = [
-			{
-				label: 'Cut-off on |Relative risk|',
-				param: 'absRelRiskVal',
-				min: absRelRiskData.min,
-				max: absRelRiskData.max,
-				scale: 'logarithmic',
-				fn: () => this.cy.batch(() => this.filterEdgesOnAbsRisk())
-			},
-			//{
-			//	label: 'Edge length',
-			//	param: 'edgeLengthVal',
-			//	min: 1,
-			//	max: 200
-			//},
-			{
-				label: 'Node spacing',
-				param: 'nodeSpacing',
-				min: 1,
-				max: 50
-			}
-		];
-		
-		let buttons = [
-			//{
-			//	label: '<i class="fa fa-object-group"></i>',
-			//	layoutOpts: {
-			//		randomize: true
-			//	},
-			//	fn: () => this.toggleDiseaseGroups()
-			//},
-			//{
-			//	label: '<i class="fa fa-object-ungroup"></i>',
-			//	layoutOpts: {
-			//		randomize: true
-			//	},
-			//	fn: () => this.toggleDiseaseGroups()
-			//},
-			{
-				label: '<i class="fa fa-random"></i>',
-				layoutOpts: {
-					randomize: true,
-					flow: null
+		let graphLayoutSelect = {
+			label: 'Graph Layouts',
+			param: 'name',
+			options: [
+				{
+					label: 'Cola',
+					value: 'cola'
+				},
+				{
+					label: 'COSE',
+					value: 'cose'
+				},
+				{
+					label: 'COSE Bilkent',
+					value: 'cose-bilkent'
+				},
+				{
+					label: 'Top to bottom (dagre)',
+					value: 'dagre'
+				},
+				{
+					label: 'Left to right (klay)',
+					value: 'klay'
 				}
-			},
-			{
-				label: '<i class="fa fa-long-arrow-down"></i>',
-				layoutOpts: {
-					flow: {
-						axis: 'y',
-						minSeparation: 30
+			]
+		};
+		
+		this.makeSelectDropdown(graphLayoutSelect,$controls);
+		
+		let controlsDesc = this.currentView.getControlsSetup();
+		let btnParam;
+		controlsDesc.forEach((ctrlDesc) => {
+			let $ctrl = null;
+			let filterOnCtxHandler = null;
+			switch(ctrlDesc.type) {
+				case 'select':
+					$ctrl = this.makeSelectDropdown(ctrlDesc,$controls);
+					break;
+				case 'slider':
+					$ctrl = this.makeSlider(ctrlDesc,$controls);
+					
+					// Should we generate a context handler for this control?
+					if(ctrlDesc.filterOnCtx) {
+						filterOnCtxHandler = function(ele) {
+							$ctrl.data('slider').setValue(ele.data(ctrlDesc.attr).toFixed(1));
+							$ctrl.trigger('slideStop');
+						};
+					}
+					break;
+				case 'button-group':
+					btnParam = $ctrl = $('<div class="param"></div>');
+					$controls.append(btnParam);
+					break;
+				case 'button':
+					if(btnParam === undefined) {
+						btnParam = $('<div class="param"></div>');
+						$controls.append(btnParam);
+					}
+					$ctrl = this.makeButton(ctrlDesc,btnParam);
+					break;
+			}
+			
+			// Could the control be created?
+			if($ctrl) {
+				// Now, register whether it filters
+				if(ctrlDesc.filter in this.filtersDesc) {
+					this.filtersDesc[ctrlDesc.filter].push(ctrlDesc);
+					
+					if(filterOnCtxHandler) {
+						this.ctxHandlers[ctrlDesc.filter].push(filterOnCtxHandler);
 					}
 				}
+			} else {
+				console.error('ASSERTION on component creation!');
 			}
-		];
-		
-		let selects = [
-			{
-				label: 'Graph Layouts',
-				param: 'name',
-				options: [
-					{
-						label: 'Cola',
-						value: 'cola'
-					},
-					{
-						label: 'COSE',
-						value: 'cose'
-					},
-					{
-						label: 'COSE Bilkent',
-						value: 'cose-bilkent'
-					},
-					{
-						label: 'Dagre (slow)',
-						value: 'dagre'
-					},
-					{
-						label: 'Klay (slow)',
-						value: 'klay'
-					}
-				]
-			}
-		];
-		
-		selects.forEach((select) => this.makeSelectDropdown(select,this.$controls));
-		
-		sliders.forEach((slider) => {
-			let $slider = this.makeSlider(slider);
-			this.$controls.append($slider);
 		});
-		
-		this.btnParam = $('<div class="param"></div>');
-		$controls.append( this.btnParam );
-		
-		buttons.forEach((button) => this.makeButton(button));
 		
 		// The next view setup is only set when it is needed
 		let nextViewSetup = this.currentView.getNextViewSetup();
@@ -606,6 +652,7 @@ export class ComorbiditiesBrowser {
 	}
 	
 	onSelectHandler(evt) {
+		// jshint unused:false
 		let selected = this.cy.nodes('node:selected');
 		let selectedEdges = this.cy.edges('edge:selected');
 		if(selectedEdges.nonempty()) {
@@ -639,10 +686,28 @@ export class ComorbiditiesBrowser {
 		// Creation of the cytoscape instance
 		this.makeCy(this.graphEl,this.cyStyle,graphData);
 		
+		// Registering the initial filtering conditions
+		this.params = {
+			// jshint ignore:start
+			...graphSetup
+			// jshint ignore:end
+		};
+		
+		// Initializing the graph controls (and some values)
+		this.initializeControls();
+		
 		// Next two handlers must be applied before any filtering is applied
 		// so no node is left behind
 		
 		// Now, attach event handlers to each node
+		let $ctxNodeHandler = this.ctxHandlers.nodes.length > 0 ?
+			(evt) => {
+				// Filter by this edge
+				this.ctxHandlers.nodes.forEach((ctxNodeHandler) => ctxNodeHandler(evt.target));
+			}
+			:
+			null;
+		
 		this.cy.nodes().forEach((node) => {
 			if(!node.isParent()) {
 				let ref = node.popperRef(); // used only for positioning
@@ -667,17 +732,33 @@ export class ComorbiditiesBrowser {
 				}).tooltips[0];
 				
 				node.on('tapdragover', () => {
-					tip.show();
+					if(!tip.state.visible) {
+						tip.show();
+					}
 				});
 				
 				node.on('tapdragout', () => {
-					tip.hide();
+					if(tip.state.visible) {
+						tip.hide();
+					}
 				});
+				
+				if($ctxNodeHandler) {
+					node.on('cxttap',$ctxNodeHandler);
+				}
 			}
 		});
 		
 		// Now, attach event handlers to each edge
 		try {
+			let $ctxEdgeHandler = this.ctxHandlers.edges.length > 0 ?
+				(evt) => {
+					// Filter by this edge
+					this.ctxHandlers.edges.forEach((ctxEdgeHandler) => ctxEdgeHandler(evt.target));
+				}
+				:
+				null;
+			
 			this.cy.edges().forEach((edge) => {
 				let ref = edge.popperRef(); // used only for positioning
 
@@ -689,6 +770,7 @@ export class ComorbiditiesBrowser {
 					arrowType: 'round',
 					placement: 'bottom',
 					animation: 'perspective',
+					followCursor: true,
 					delay: 2000,
 					multiple: false,
 					sticky: true,
@@ -697,16 +779,22 @@ export class ComorbiditiesBrowser {
 				}).tooltips[0];
 				
 				edge.on('tapdragover', (e) => {
-					if(e.originalEvent.ctrlKey) {
+					if(!tip.state.visible && (this.unHighlighted || e.originalEvent.ctrlKey)) {
+						edge.flashClass('highlighted');
+						edge.connectedNodes().flashClass('highlighted');
 						tip.show();
 					}
 				});
 				
 				edge.on('tapdragout', () => {
-					if(tip.popperInstance) {
+					if(tip.state.visible) {
 						tip.hide();
 					}
 				});
+				
+				if($ctxEdgeHandler) {
+					edge.on('cxttap',$ctxEdgeHandler);
+				}
 			});
 			
 			this.cy.on('select unselect', this.onSelectHandler.bind(this));
@@ -714,13 +802,8 @@ export class ComorbiditiesBrowser {
 			console.log('Unexpected error',e);
 		}
 		
-		// Applying the initial filtering
-		this.params = {
-			// jshint ignore:start
-			...graphSetup
-			// jshint ignore:end
-		};
-		this.cy.batch(() => this.filterEdgesOnAbsRisk());
+		// Initializing the graph view (filtering)
+		this.cy.batch(() => this.filterOnConditions());
 		
 		// Creation of the layout, setting the initial parameters
 		this.makeLayout();
@@ -728,11 +811,14 @@ export class ComorbiditiesBrowser {
 		// Now, the hooks to the different interfaces
 		this.running = false;
 		
-		// Initializing the graph controls
-		this.initializeControls();
-		
 		// First time the layout is run
 		this.layout.run();
+	}
+	
+	batch(fn) {
+		if(this.cy && fn) {
+			this.cy.batch(fn);
+		}
 	}
 	
 	fetch() {
