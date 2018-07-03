@@ -2,6 +2,7 @@
 
 // Singleton variables
 var _Genes;
+var _GeneNodes;
 
 export class Genes {
 	constructor(cmBrowser) {
@@ -20,11 +21,35 @@ export class Genes {
 				})
 				.then(function(decodedJson) {
 					_Genes = decodedJson;
+					_GeneNodes = _Genes.map(function(gene) {
+						// jshint camelcase: false
+						let retgene = {
+							// jshint ignore:start
+							...gene,
+							// jshint ignore:end
+							// Unique identifiers
+							name: gene.gene_symbol,
+							id: gene.gene_symbol
+						};
+						
+						return {
+							data: retgene,
+							classes: 'G'
+						};
+					});
 					return _Genes;
 				})
 			);
 		}
 		
 		return fetchPromises;
+	}
+	
+	getGenes() {
+		return _Genes;
+	}
+	
+	getGeneNodes() {
+		return _GeneNodes;
 	}
 }
