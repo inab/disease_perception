@@ -87,9 +87,20 @@ a:hover {
 }
 
 .mini-title {
-	margin-right: 1.6em;
-	margin-left: 1.6em;
 	white-space: normal;
+}
+
+.mini-title .label {
+	font-size: 1.2vw;
+}
+
+.logo {
+	float: left;
+	clear: left;
+}
+
+.logo img {
+	margin-right: 1vw;
 }
 
 /*

@@ -46,6 +46,10 @@ module.exports = {
 				},
 				{
 					context: PATHS.app,
+					from: 'images/*.png',
+				},
+				{
+					context: PATHS.app,
 					from: 'images/*.ico',
 				},
 				{
