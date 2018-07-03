@@ -119,7 +119,8 @@ export class Diseases {
 						delete retdc.to_id;
 						
 						return {
-							data: retdc
+							data: retdc,
+							classes: 'CM'
 						};
 					});
 					
