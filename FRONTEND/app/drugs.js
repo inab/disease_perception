@@ -2,6 +2,7 @@
 
 // Singleton variables
 var _Drugs;
+var _DrugNodes;
 
 export class Drugs {
 	constructor(cmBrowser) {
@@ -20,11 +21,35 @@ export class Drugs {
 				})
 				.then(function(decodedJson) {
 					_Drugs = decodedJson;
+					_DrugNodes = _Drugs.map(function(drug) {
+						// jshint camelcase: false
+						let retdrug = {
+							// jshint ignore:start
+							...drug,
+							// jshint ignore:end
+							// Unique identifiers
+							drug_id: drug.id,
+							id: 'Dr'+drug.id,
+						};
+						
+						return {
+							data: retdrug,
+							classes: 'Dr'
+						};
+					});
 					return _Drugs;
 				})
 			);
 		}
 		
 		return fetchPromises;
+	}
+	
+	getDrugs() {
+		return _Drugs;
+	}
+	
+	getDrugNodes() {
+		return _DrugNodes;
 	}
 }
