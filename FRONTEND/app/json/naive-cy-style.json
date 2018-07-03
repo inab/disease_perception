@@ -60,6 +60,30 @@
 		}
 	},
 	{
+		"selector": "node.Dr",
+		"css": {
+			"shape": "ellipse",
+			"width": "label",
+			"height": "label"
+		}
+	},
+	{
+		"selector": "node.G",
+		"css": {
+			"shape": "hexagon",
+			"width": "label",
+			"height": "label"
+		}
+	},
+	{
+		"selector": "node.P",
+		"css": {
+			"shape": "triangle",
+			"width": "label",
+			"height": "label"
+		}
+	},
+	{
 		"selector": "$node > node",
 		"css": {
 			"content": "data(name)",
