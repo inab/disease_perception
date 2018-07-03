@@ -63,7 +63,7 @@ def init_comorbidities_app(dbpath):
 	# Attaching the API to the app 
 	api = Api(
 		app=blueprint,
-		version='0.4',
+		version='0.4.0',
 		title='Disease PERCEPTION REST API',
 		description='A simple comorbidites network exploring API which is used by the Disease PERCEPTION explorer',
 		default='cm',

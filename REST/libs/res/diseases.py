@@ -4,7 +4,7 @@
 
 import sys, os
 
-from .api_models import CMResource, DISEASE_NS, disease_model, disease_comorbidity_model, disease_patient_subgroup_comorbidity_model, simple_disease_group_model, disease_group_model
+from .api_models import CMResource, DISEASE_NS, disease_model, disease_comorbidity_model, disease_patient_subgroup_comorbidity_model, simple_disease_group_model, disease_group_model, patient_subgroup_intersect_genes_model, patient_subgroup_intersect_drugs_model
 
 class DiseaseList(CMResource):
 	'''Shows a list of all the diseases'''
@@ -54,6 +54,26 @@ class DiseasePatientSubgroupComorbidities(CMResource):
 		'''It lists disease comorbidities information'''
 		return self.cmn.diseases_patient_subgroups_comorbidities(disease_ids,min_size)
 
+@DISEASE_NS.response(404, 'No disease found or with no known patient subgroup comorbidity')
+@DISEASE_NS.param('disease_ids', 'The disease ids (at least, two), separated by commas')
+class DiseasePatientSubgroupIntersectGenes(CMResource):
+	'''Return the genes which intersect with the patient subgroups from the diseases'''
+	@DISEASE_NS.doc('disease_ps_genes')
+	@DISEASE_NS.marshal_list_with(patient_subgroup_intersect_genes_model)
+	def get(self,disease_ids):
+		'''It gets the intersected genes for each patient subgroup related to the input diseases'''
+		return self.cmn.patient_subgroup_intersect_genes(disease_ids=disease_ids)
+
+@DISEASE_NS.response(404, 'No disease found or with no known patient subgroup comorbidity')
+@DISEASE_NS.param('disease_ids', 'The disease ids (at least, two), separated by commas')
+class DiseasePatientSubgroupIntersectDrugs(CMResource):
+	'''Return the drugs which intersect with the patient subgroups from the diseases'''
+	@DISEASE_NS.doc('disease_ps_drugs')
+	@DISEASE_NS.marshal_list_with(patient_subgroup_intersect_drugs_model)
+	def get(self,disease_ids):
+		'''It gets the intersected drugs for each patient subgroup related to the input diseases'''
+		return self.cmn.patient_subgroup_intersect_drugs(disease_ids=disease_ids)
+
 
 class DiseaseGroupList(CMResource):
 	'''Shows a list of all the disease groups'''
@@ -91,8 +111,10 @@ ROUTES={
 		(Disease,'/<int:id>'),
 		(DiseaseComorbidities,'/<int:id>/comorbidities'),
 		(ListDiseaseComorbidities,'/comorbidities'),
-		(DiseasePatientSubgroupComorbidities,'/ps_comorbidities/<list(int,sep=","):disease_ids>'),
-		(DiseasePatientSubgroupComorbidities,'/ps_comorbidities/<list(int,sep=","):disease_ids>/min_size/<int:min_size>'),
+		(DiseasePatientSubgroupComorbidities,'/<list(int,sep=","):disease_ids>/patients/subgroups/comorbidities'),
+		(DiseasePatientSubgroupComorbidities,'/<list(int,sep=","):disease_ids>/patients/subgroups/comorbidities/min_size/<int:min_size>'),
+		(DiseasePatientSubgroupIntersectGenes,'/<list(int,sep=","):disease_ids>/patients/subgroups/genes'),
+		(DiseasePatientSubgroupIntersectDrugs,'/<list(int,sep=","):disease_ids>/patients/subgroups/drugs'),
 		(DiseaseGroupList,'/groups'),
 		(DiseaseGroupDiseases,'/groups/<int:id>'),
 		(DiseaseGroup,'/groups/<int:id>/info')
