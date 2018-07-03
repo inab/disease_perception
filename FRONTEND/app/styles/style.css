@@ -20,19 +20,22 @@ body {
 
 .config {
   position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 17em;
-  background: rgba(0, 0, 0, 0.75);
   box-sizing: border-box;
-  padding: 1em;
-  color: #fff;
   transition-property: opacity;
   transition-duration: 250ms;
   transition-timing-function: ease-out;
   overflow: auto;
   z-index: 1;
+}
+
+.config-panel {
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 17em;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 1em;
+  color: #fff;
 }
 
 .param {
@@ -91,7 +94,7 @@ a:hover {
 }
 
 .mini-title .label {
-	font-size: 1.2vw;
+	font-size: 0.9em;
 }
 
 .logo {
@@ -100,7 +103,7 @@ a:hover {
 }
 
 .logo img {
-	margin-right: 1vw;
+	margin-right: 0.6em;
 }
 
 /*
