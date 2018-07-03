@@ -63,9 +63,9 @@ def init_comorbidities_app(dbpath):
 	# Attaching the API to the app 
 	api = Api(
 		app=blueprint,
-		version='0.3.1',
-		title='Disease Perception REST API',
-		description='A simple comorbidites network exploring API which is used by the Disease Perception explorer',
+		version='0.4',
+		title='Disease PERCEPTION REST API',
+		description='A simple comorbidites network exploring API which is used by the Disease PERCEPTION explorer',
 		default='cm',
 		license='AGPL-3',
 		default_label='Disease Perception queries'

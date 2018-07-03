@@ -196,3 +196,43 @@ patient_subgroup_model = PATIENT_NS.model('PatientSubgroup',{
 
 simple_patient_subgroup_model = patient_subgroup_model
 
+patients_interaction_model = PATIENT_NS.model('PatientsInteraction', {
+	'patient_i_id': fields.Integer(required=True, description = 'The internal id of patient I'),
+	'patient_j_id': fields.Integer(required=True, description = 'The internal id of patient J'),
+	'interaction_sign': fields.Integer(required=True, description = 'The interaction sign between I and J')
+})
+
+intersect_genes_model = PATIENT_NS.model('IntersectGenes',{
+	'gene_symbol': fields.String(required=True, description = 'The gene symbol'),
+	'regulation_sign': fields.Integer(required=True, description = 'The regulation sign of this gene for this patient or patient subgroup')
+})
+map_genes_model = intersect_genes_model
+
+
+intersect_drugs_model = PATIENT_NS.model('IntersectDrugs',{
+	'drug_id': fields.Integer(required=True, description = 'The internal drug id'),
+	'regulation_sign': fields.Integer(required=True, description = 'The regulation sign of this drug for this patient or patient subgroup')
+})
+map_drugs_model = intersect_drugs_model
+
+patient_subgroup_intersect_genes_model = PATIENT_NS.model('PatientSubgroupIntersectGenes',{
+	'patient_subgroup_id': fields.Integer(required=True, description = 'The internal id of the patient subgroup'),
+	'genes': fields.List(fields.Nested(intersect_genes_model), required=True, description = 'The list of genes with common behavior in this patient subgroup')
+})
+
+
+patient_subgroup_intersect_drugs_model = PATIENT_NS.model('PatientSubgroupIntersectDrugs',{
+	'patient_subgroup_id': fields.Integer(required=True, description = 'The internal id of the patient subgroup'),
+	'drugs': fields.List(fields.Nested(intersect_drugs_model), required=True, description = 'The list of drugs with common behavior in this patient subgroup')
+})
+
+patient_map_genes_model = PATIENT_NS.model('PatientMapGenes',{
+	'patient_id': fields.Integer(required=True, description = 'The internal id of the patient'),
+	'genes': fields.List(fields.Nested(map_genes_model), required=True, description = 'The list of genes with common behavior in this patient')
+})
+
+
+patient_map_drugs_model = PATIENT_NS.model('PatientMapDrugs',{
+	'patient_id': fields.Integer(required=True, description = 'The internal id of the patient'),
+	'drugs': fields.List(fields.Nested(map_drugs_model), required=True, description = 'The list of drugs with common behavior in this patient')
+})

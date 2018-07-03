@@ -405,3 +405,318 @@ GROUP BY ps.id,ps.name,ps.disease_id
 	def patient_subgroup(self,patient_subgroup_id):
 		res = self.patient_subgroups(patient_subgroup_id=patient_subgroup_id)
 		return res[0]
+	
+	def patient_subgroup_intersect_genes(self,patient_subgroup_ids):
+		if len(patient_subgroup_ids) == 0:
+			self.api.abort(400, "You must provide at least a patient subgroup")
+		
+		patient_subgroup_ids_set = set(patient_subgroup_ids)
+		
+		res = None
+		
+		cur = self._getCursor()
+		try:
+			query_template = '''
+SELECT pig.patient_subgroup_id, g.gene_symbol, pig.regulation_sign
+FROM patient_subgroup_gene_intersect pig, gene g
+WHERE
+	pig.patient_subgroup_id IN ({})
+AND
+	pig.gene_id = g.id
+ORDER BY 1,2
+			'''
+			
+			query = query_template.format(','.join(['?']*len(patient_subgroup_ids_set)))
+			
+			query_param_list = list(patient_subgroup_ids_set)
+			
+			cur.execute(query,tuple(query_param_list))
+			res = []
+			grouping_id = None
+			grouping_list = None
+			while True:
+				pat_sub_gen = cur.fetchmany()
+				if len(pat_sub_gen) == 0:
+					# Empty dictionary?
+					if not res:
+						self.api.abort(404, "No one of the {} different patient subgroups have common behavioring genes to all their patients stored in the database".format(len(patient_subgroup_ids)))
+					break
+				
+				for inter in pat_sub_gen:
+					if grouping_id != inter[0]:
+						grouping_id = inter[0]
+						grouping_list = []
+						res.append({
+							'patient_subgroup_id': grouping_id,
+							'genes': grouping_list
+						})
+					grouping_list.append({'gene_symbol': inter[1],'regulation_sign': inter[2]})
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+
+	
+	def patient_subgroup_intersect_drugs(self,patient_subgroup_ids):
+		if len(patient_subgroup_ids) == 0:
+			self.api.abort(400, "You must provide at least a patient subgroup")
+		
+		patient_subgroup_ids_set = set(patient_subgroup_ids)
+		
+		res = None
+		
+		cur = self._getCursor()
+		try:
+			query_template = '''
+SELECT patient_subgroup_id, drug_id, regulation_sign
+FROM patient_subgroup_drug_intersect
+WHERE
+	patient_subgroup_id IN ({})
+ORDER BY 1,2
+			'''
+			
+			query = query_template.format(','.join(['?']*len(patient_subgroup_ids_set)))
+			
+			query_param_list = list(patient_subgroup_ids_set)
+			
+			cur.execute(query,tuple(query_param_list))
+			res = []
+			grouping_id = None
+			grouping_list = None
+			while True:
+				pat_sub_drug = cur.fetchmany()
+				if len(pat_sub_drug) == 0:
+					# Empty dictionary?
+					if not res:
+						self.api.abort(404, "No one of the {} different patient subgroups have common behavioring drugs to all their patients stored in the database".format(len(patient_subgroup_ids)))
+					break
+				
+				for inter in pat_sub_drug:
+					if grouping_id != inter[0]:
+						grouping_id = inter[0]
+						grouping_list = []
+						res.append({
+							'patient_subgroup_id': grouping_id,
+							'drugs': grouping_list
+						})
+					grouping_list.append({'drug_id': inter[1],'regulation_sign': inter[2]})
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+
+	
+	def patient_map_genes(self,patient_subgroup_ids=None,patient_ids=None):
+		if patient_subgroup_ids is not None and patient_ids is not None:
+			self.api.abort(400, "You must provide either a list of patient subgroups or a list of patients, not both")
+		
+		if patient_subgroup_ids is not None:
+			if len(patient_subgroup_ids) == 0:
+				self.api.abort(400, "You must provide at least a patient subgroup")
+			query_ids_set = set(patient_subgroup_ids)
+			query_template = '''
+SELECT pgm.patient_id, g.gene_symbol, pgm.regulation_sign
+FROM patient p, patient_gene_maps pgm, gene g
+WHERE
+	p.patient_subgroup_id IN ({})
+AND
+	p.id = pgm.patient_id
+AND
+	pgm.gene_id = g.id
+ORDER BY 1,2
+			'''
+		elif patient_ids is not None:
+			if len(patient_ids) == 0:
+				self.api.abort(400, "You must provide at least a patient")
+			query_ids_set = set(patient_ids)
+			query_template = '''
+SELECT pgm.patient_id, g.gene_symbol, pgm.regulation_sign
+FROM patient_gene_maps pgm, gene g
+WHERE
+	pgm.patient_id IN ({})
+AND
+	pgm.gene_id = g.id
+ORDER BY 1,2
+			'''
+		else:
+			self.api.abort(400, "You must provide at least a list of patient subgroups or a list of patients")
+		
+		res = None
+		
+		cur = self._getCursor()
+		try:
+			query = query_template.format(','.join(['?']*len(query_ids_set)))
+			
+			query_param_list = list(query_ids_set)
+			
+			cur.execute(query,tuple(query_param_list))
+			res = []
+			grouping_id = None
+			grouping_list = None
+			while True:
+				pat_gen = cur.fetchmany()
+				if len(pat_gen) == 0:
+					# Empty dictionary?
+					if not res:
+						if patient_ids is not None:
+							self.api.abort(404, "No one of the {} different patients has common behavioring genes on their analyses".format(len(query_param_list)))
+						elif patient_subgroup_ids is not None:
+							self.api.abort(404, "No patient from the {} different patient subgroups has common behavioring genes on their analyses".format(len(query_param_list)))
+					break
+				
+				for inter in pat_gen:
+					if grouping_id != inter[0]:
+						grouping_id = inter[0]
+						grouping_list = []
+						res.append({
+							'patient_id': grouping_id,
+							'genes': grouping_list
+						})
+					grouping_list.append({'gene_symbol': inter[1],'regulation_sign': inter[2]})
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+
+	
+	def patient_map_drugs(self,patient_subgroup_ids=None,patient_ids=None):
+		if patient_subgroup_ids is not None and patient_ids is not None:
+			self.api.abort(400, "You must provide either a list of patient subgroups or a list of patients, not both")
+		
+		if patient_subgroup_ids is not None:
+			if len(patient_subgroup_ids) == 0:
+				self.api.abort(400, "You must provide at least a patient subgroup")
+			query_ids_set = set(patient_subgroup_ids)
+			query_template = '''
+SELECT pdm.patient_id, pdm.drug_id, pdm.regulation_sign
+FROM patient p, patient_drug_maps pdm
+WHERE
+	p.patient_subgroup_id IN ({})
+AND
+	p.id = pdm.patient_id
+ORDER BY 1,2
+			'''
+		elif patient_ids is not None:
+			if len(patient_ids) == 0:
+				self.api.abort(400, "You must provide at least a patient")
+			query_ids_set = set(patient_ids)
+			query_template = '''
+SELECT patient_id, drug_id, regulation_sign
+FROM patient_drug_maps
+WHERE
+	patient_id IN ({})
+ORDER BY 1,2
+			'''
+		else:
+			self.api.abort(400, "You must provide at least a list of patient subgroups or a list of patients")
+		
+		res = None
+		
+		cur = self._getCursor()
+		try:
+			query = query_template.format(','.join(['?']*len(query_ids_set)))
+			
+			query_param_list = list(query_ids_set)
+			
+			cur.execute(query,tuple(query_param_list))
+			res = []
+			grouping_id = None
+			grouping_list = None
+			while True:
+				pat_drug = cur.fetchmany()
+				if len(pat_drug) == 0:
+					# Empty dictionary?
+					if not res:
+						if patient_ids is not None:
+							self.api.abort(404, "No one of the {} different patients has common behavioring drugs on their analyses".format(len(query_param_list)))
+						elif patient_subgroup_ids is not None:
+							self.api.abort(404, "No patient from the {} different patient subgroups has common behavioring drugs on their analyses".format(len(query_param_list)))
+					break
+				
+				for inter in pat_drug:
+					if grouping_id != inter[0]:
+						grouping_id = inter[0]
+						grouping_list = []
+						res.append({
+							'patient_id': grouping_id,
+							'drugs': grouping_list
+						})
+					grouping_list.append({'drug_id': inter[1],'regulation_sign': inter[2]})
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
+
+	
+	def patients_interactions(self,patient_subgroup_ids=None,patient_ids=None):
+		if patient_subgroup_ids is not None and patient_ids is not None:
+			self.api.abort(400, "You must provide either a list of patient subgroups or a list of patients, not both")
+		
+		if patient_subgroup_ids is not None:
+			if len(patient_subgroup_ids) == 0:
+				self.api.abort(400, "You must provide at least a patient subgroup")
+			query_ids_set = set(patient_subgroup_ids)
+			query_template = '''
+SELECT pg.patient_a_id, pg.patient_b_id, pg.interaction_sign
+FROM patient p_i, patient p_j, patient_graph pg
+WHERE
+	p_i.patient_subgroup_id IN ({0})
+AND
+	p_j.patient_subgroup_id IN ({0})
+AND
+	p_i.id = pg.patient_a_id
+AND
+	p_j.id = pg.patient_b_id
+			'''
+		elif patient_ids is not None:
+			if len(patient_ids) < 2:
+				self.api.abort(400, "You must provide at least two patients")
+			query_ids_set = set(patient_ids)
+			query_template = '''
+SELECT patient_a_id, patient_b_id, interaction_sign
+FROM patient_graph
+WHERE
+	patient_a_id IN ({0})
+AND
+	patient_b_id IN ({0})
+			'''
+		else:
+			self.api.abort(400, "You must provide at least a list of patient subgroups or a list of patients")
+		
+		res = None
+		
+		cur = self._getCursor()
+		try:
+			placeholders = ','.join(['?']*len(query_ids_set))
+			query = query_template.format(placeholders)
+			
+			in_query_param_list = list(query_ids_set)
+			query_param_list = []
+			
+			# It must be done twice, as it is repeated
+			query_param_list.extend(in_query_param_list)
+			query_param_list.extend(in_query_param_list)
+			
+			cur.execute(query,tuple(query_param_list))
+			res = []
+			while True:
+				pat_int = cur.fetchmany()
+				if len(pat_int) == 0:
+					# Empty dictionary?
+					if not res:
+						if patient_ids is not None:
+							self.api.abort(404, "No interactions among the {} different patients, based on their analyses".format(len(in_query_param_list)))
+						elif patient_subgroup_ids is not None:
+							self.api.abort(404, "No interactions among the patients from the {} different patient subgroups, based on their analyses".format(len(in_query_param_list)))
+					break
+				
+				res.extend(map(lambda pi: {'patient_i_id': pi[0],'patient_j_id': pi[1],'interaction_sign': pi[2]},pat_int))
+		finally:
+			# Assuring the cursor is properly closed
+			cur.close()
+		
+		return res
