@@ -101,12 +101,8 @@
 	{
 		"selector": "edge",
 		"css": {
-			"target-arrow-shape": "triangle",
-			"curve-style": "bezier",
 			"haystack-radius": "0.5",
 			"opacity": "0.4",
-			"line-color": "mapData(rel_risk, -20, 20, red, blue)",
-			"width": "mapData(abs_rel_risk, 0, 50, 1, 8)",
 			"overlay-padding": "3px"
 		}
 	},
@@ -123,6 +119,40 @@
 		"selector": "edge.highlighted",
 		"css": {
 			"color": "#7F7F7F"
+		}
+	},
+	{
+		"selector": "edge.CM",
+		"css": {
+			"target-arrow-shape": "triangle",
+			"curve-style": "bezier",
+			"haystack-radius": "0.5",
+			"opacity": "0.4",
+			"line-color": "mapData(rel_risk, -20, 20, red, blue)",
+			"width": "mapData(abs_rel_risk, 0, 50, 1, 8)",
+			"overlay-padding": "3px"
+		}
+	},
+	{
+		"selector": "edge.GI",
+		"css": {
+			"curve-style": "bezier",
+			"haystack-radius": "0.5",
+			"opacity": "0.3",
+			"line-color": "mapData(sign, -1, 1, green, orange)",
+			"width": "1",
+			"overlay-padding": "3px"
+		}
+	},
+	{
+		"selector": "edge.DI",
+		"css": {
+			"curve-style": "bezier",
+			"haystack-radius": "0.5",
+			"opacity": "0.3",
+			"line-color": "mapData(sign, -1, 1, lightgray, gray)",
+			"width": "1",
+			"overlay-padding": "3px"
 		}
 	}
 ]
