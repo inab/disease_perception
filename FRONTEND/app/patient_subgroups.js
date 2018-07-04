@@ -251,19 +251,27 @@ export class PatientSubgroups {
 				
 				// Some stats propagation
 				if(psn.data.patient_subgroup_id in dPSDIHash) {
-					psn.data.drugsUp = Array.from(dPSDIHash[psn.data.patient_subgroup_id].upSet);
-					psn.data.drugsDown = Array.from(dPSDIHash[psn.data.patient_subgroup_id].downSet);
+					psn.data.drugs = {
+						up: Array.from(dPSDIHash[psn.data.patient_subgroup_id].upSet),
+						down: Array.from(dPSDIHash[psn.data.patient_subgroup_id].downSet)
+					};
 				} else {
-					psn.data.drugsUp = [];
-					psn.data.drugsDown = [];
+					psn.data.drugs = {
+						up: [],
+						down: []
+					};
 				}
 				
 				if(psn.data.patient_subgroup_id in dPSGIHash) {
-					psn.data.genesUp = Array.from(dPSGIHash[psn.data.patient_subgroup_id].upSet);
-					psn.data.genesDown = Array.from(dPSGIHash[psn.data.patient_subgroup_id].downSet);
+					psn.data.genes = {
+						up: Array.from(dPSGIHash[psn.data.patient_subgroup_id].upSet),
+						down: Array.from(dPSGIHash[psn.data.patient_subgroup_id].downSet)
+					};
 				} else {
-					psn.data.genesUp = [];
-					psn.data.genesDown = [];
+					psn.data.genes = {
+						up: [],
+						down: []
+					};
 				}
 			});
 			
@@ -305,22 +313,30 @@ export class PatientSubgroups {
 					let fromDrugSets = dPSDIHash[edge.data.from_id];
 					let toDrugSets = dPSDIHash[edge.data.to_id];
 					
-					edge.data.drugsUp = Array.from(fromDrugSets.upSet.intersection(toDrugSets.upSet));
-					edge.data.drugsDown = Array.from(fromDrugSets.downSet.intersection(toDrugSets.downSet));
+					edge.data.drugs = {
+						up: Array.from(fromDrugSets.upSet.intersection(toDrugSets.upSet)),
+						down: Array.from(fromDrugSets.downSet.intersection(toDrugSets.downSet))
+					};
 				} else {
-					edge.data.drugsUp = [];
-					edge.data.drugsDown = [];
+					edge.data.drugs = {
+						up: [],
+						down: []
+					};
 				}
 				
 				if(edge.data.from_id in dPSGIHash && edge.data.to_id in dPSGIHash) {
 					let fromGeneSets = dPSGIHash[edge.data.from_id];
 					let toGeneSets = dPSGIHash[edge.data.to_id];
 					
-					edge.data.genesUp = Array.from(fromGeneSets.upSet.intersection(toGeneSets.upSet));
-					edge.data.genesDown = Array.from(fromGeneSets.downSet.intersection(toGeneSets.downSet));
+					edge.data.genes = {
+						up: Array.from(fromGeneSets.upSet.intersection(toGeneSets.upSet)),
+						down: Array.from(fromGeneSets.downSet.intersection(toGeneSets.downSet))
+					};
 				} else {
-					edge.data.genesUp = [];
-					edge.data.genesDown = [];
+					edge.data.genes = {
+						up: [],
+						down: []
+					};
 				}
 			});
 			this.pendingEdgeStats = false;
@@ -419,6 +435,26 @@ export class PatientSubgroups {
 				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
 			},
 			{
+				filter: 'edges',
+				attr: 'drugs',
+				filterfn:  function(attrVal,paramVal) { return paramVal && attrVal.up.length === 0 && attrVal.down.length === 0; },
+				filterOnCtx: false,
+				type: 'checkbox',
+				label: 'Hide edges without common drugs',
+				param: 'hideDruglessEdgesVal',
+				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
+			},
+			{
+				filter: 'edges',
+				attr: 'genes',
+				filterfn:  function(attrVal,paramVal) { return paramVal && attrVal.up.length === 0 && attrVal.down.length === 0; },
+				filterOnCtx: false,
+				type: 'checkbox',
+				label: 'Hide edges without common genes',
+				param: 'hideGenelessEdgesVal',
+				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
+			},
+			{
 				type: 'button-group',
 			},
 			//{
@@ -478,8 +514,8 @@ export class PatientSubgroups {
 		;
 		try {
 			cInner += '<br/>' +
-				'Drugs (+/-): ' + node.data('drugsUp').length + ' / ' + node.data('drugsDown').length + '<br/>' +
-				'Genes (+/-): ' + node.data('genesUp').length + ' / ' + node.data('genesDown').length;
+				'Drugs: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' + node.data('drugs').up.length + ' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + node.data('drugs').down.length + '<br/>' +
+				'Genes: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' + node.data('genes').up.length + ' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + node.data('genes').down.length;
 		} catch(e) {
 			// DoNothing(R)
 		}
@@ -501,8 +537,8 @@ export class PatientSubgroups {
 		content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
 			'<div><b>Source</b>: '+source.data('label') + '<br />\n' +
 			'<b>Target</b>: '+target.data('label')+'<br />\n'+
-			'<b>Common drugs (+/-)</b>: ' + edge.data('drugsUp').length + ' / ' + edge.data('drugsDown').length + '<br/>' +
-			'<b>Common genes (+/-)</b>: ' + edge.data('genesUp').length + ' / ' + edge.data('genesDown').length +
+			'<b>Common drugs</b>: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' + edge.data('drugs').up.length + ' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + edge.data('drugs').down.length + '<br/>' +
+			'<b>Common genes</b>: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' + edge.data('genes').up.length + ' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + edge.data('genes').down.length +
 			'</div>';
 		return content;
 	}
