@@ -822,7 +822,8 @@ export class ComorbiditiesBrowser {
 				}).tooltips[0];
 				
 				edge.on('tapdragover', (e) => {
-					if(!tip.state.visible && (this.unHighlighted || e.originalEvent.ctrlKey)) {
+					//if(!tip.state.visible && (this.unHighlighted || e.originalEvent.ctrlKey)) {
+					if(!tip.state.visible) {
 						edge.flashClass('highlighted');
 						edge.connectedNodes().flashClass('highlighted');
 						tip.show();
