@@ -1,4 +1,4 @@
-# Install instructions of comorbidities REST API
+# Install instructions of Disease PERCEPTION REST API
 
 The source code of this API is written for Python 3.5 or later. It depends on standard libreries, plus the ones declared in [requirements.txt](requirements.txt).
 

@@ -1,6 +1,6 @@
-# Comorbidities REST API
+# Disease PERCEPTION REST API
 
-* Before running the comorbidities REST API, please follow the instructions in [INSTALL.md](INSTALL.md), and populate the database using the instructions available in [../DB/INSTALL.md](../DB/INSTALL.md).
+* Before running the Disease PERCEPTION REST API, please follow the instructions in [INSTALL.md](INSTALL.md), and populate the database using the instructions available in [../DB/INSTALL.md](../DB/INSTALL.md).
 
 
 * The API can be run at http://localhost:5000 in debug mode using the next command line:
