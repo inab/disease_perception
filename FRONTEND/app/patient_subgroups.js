@@ -7,10 +7,22 @@ import { Drugs } from './drugs';
 // Singleton variables
 var _PatientSubgroups;
 var _PatientSubgroupNodes;
-var _PendingColorPropagation = true;
+var _PendingNodePropagation = true;
 
 var _PatientSubgroupsHash;
 var _PatientSubgroupsNodeHash;
+
+// Adding useful method
+Set.prototype.intersection = function(setB) {
+	let intersection = new Set();
+	setB.forEach((elem) => {
+		if(this.has(elem)) {
+			intersection.add(elem);
+		}
+	});
+	
+	return intersection;
+};
 
 function distinctFilter(value,index,self) {
 	return index === 0 || self.lastIndexOf(value,index-1) < 0;
@@ -102,7 +114,7 @@ export class PatientSubgroups {
 						classes: 'CM'
 					};
 				});
-				this.pendingIntraDiseaseCheck = true;
+				this.pendingEdgeStats = true;
 				
 				let minAbsRisk = Infinity;
 				let maxAbsRisk = -Infinity;
@@ -140,13 +152,23 @@ export class PatientSubgroups {
 				let dPSDI = this.diseasePatientSubgroupDrugIntersect = decodedJson;
 				let dPSDIE = this.diseasePatientSubgroupDrugIntersectEdges = [];
 				
+				let dPSDIHash = this.diseasePatientSubgroupDrugIntersectHash = {};
+				
 				dPSDI.forEach(function(psd,psdi) {
+					dPSDIHash[psd.patient_subgroup_id] = psd;
+					let upList = [];
+					let downList = [];
 					psd.drugs.forEach(function(psde,psdei) {
+						if(psde.regulation_sign > 0) {
+							upList.push(psde.drug_id);
+						} else {
+							downList.push(psde.drug_id);
+						}
 						let retpsd = {
 							// Unique identifiers
 							id: 'PSDC'+psdi+'_'+psdei,
 							source: 'Dr'+psde.drug_id,
-							target: 'PSD'+psd.disease_group_id,
+							target: 'PSD'+psd.patient_subgroup_id,
 							sign: psde.regulation_sign
 						};
 						
@@ -155,6 +177,8 @@ export class PatientSubgroups {
 							classes: 'DI'
 						});
 					});
+					psd.upSet = new Set(upList);
+					psd.downSet = new Set(downList);
 				});
 			})
 		);
@@ -169,13 +193,23 @@ export class PatientSubgroups {
 				let dPSGI = this.diseasePatientSubgroupGeneIntersect = decodedJson;
 				let dPSGIE = this.diseasePatientSubgroupGeneIntersectEdges = [];
 				
+				let dPSGIHash = this.diseasePatientSubgroupGeneIntersectHash = {};
+				
 				dPSGI.forEach(function(psg,psgi) {
+					dPSGIHash[psg.patient_subgroup_id] = psg;
+					let upList = [];
+					let downList = [];
 					psg.genes.forEach(function(psge,psgei) {
+						if(psge.regulation_sign > 0) {
+							upList.push(psge.gene_symbol);
+						} else {
+							downList.push(psge.gene_symbol);
+						}
 						let retpsg = {
 							// Unique identifiers
 							id: 'PSGC'+psgi+'_'+psgei,
 							source: psge.gene_symbol,
-							target: 'PSD'+psg.disease_group_id,
+							target: 'PSD'+psg.patient_subgroup_id,
 							sign: psge.regulation_sign
 						};
 						
@@ -184,6 +218,8 @@ export class PatientSubgroups {
 							classes: 'GI'
 						});
 					});
+					psg.upSet = new Set(upList);
+					psg.downSet = new Set(downList);
 				});
 			})
 		);
@@ -200,7 +236,11 @@ export class PatientSubgroups {
 		// Fixups from diseases
 		// jshint camelcase: false
 		let diseaseNodes = this.diseases.getDiseaseNodes();
-		if(_PendingColorPropagation) {
+			
+		let dPSGIHash = this.diseasePatientSubgroupGeneIntersectHash;
+		let dPSDIHash = this.diseasePatientSubgroupDrugIntersectHash;
+		
+		if(_PendingNodePropagation) {
 			let diseaseColorsHash = {};
 			
 			diseaseNodes.forEach((dn) => {
@@ -208,16 +248,34 @@ export class PatientSubgroups {
 			});
 			_PatientSubgroupNodes.forEach((psn) => {
 				psn.data.color = diseaseColorsHash[psn.data.disease_id];
+				
+				// Some stats propagation
+				if(psn.data.patient_subgroup_id in dPSDIHash) {
+					psn.data.drugsUp = Array.from(dPSDIHash[psn.data.patient_subgroup_id].upSet);
+					psn.data.drugsDown = Array.from(dPSDIHash[psn.data.patient_subgroup_id].downSet);
+				} else {
+					psn.data.drugsUp = [];
+					psn.data.drugsDown = [];
+				}
+				
+				if(psn.data.patient_subgroup_id in dPSGIHash) {
+					psn.data.genesUp = Array.from(dPSGIHash[psn.data.patient_subgroup_id].upSet);
+					psn.data.genesDown = Array.from(dPSGIHash[psn.data.patient_subgroup_id].downSet);
+				} else {
+					psn.data.genesUp = [];
+					psn.data.genesDown = [];
+				}
 			});
 			
-			_PendingColorPropagation = false;
+			_PendingNodePropagation = false;
 		}
 		
 		// Labelling intra-disease commorbidities
 		// Getting minimum and maximum cluster sizes
-		if(this.pendingIntraDiseaseCheck) {
+		if(this.pendingEdgeStats) {
 			this.minClusterSize = +Infinity;
 			this.maxClusterSize = -Infinity;
+			
 			this.patientSubgroupComorbidityNetworkEdges.forEach((edge) => {
 				let fromPSG = _PatientSubgroupsHash[edge.data.from_id];
 				let toPSG = _PatientSubgroupsHash[edge.data.to_id];
@@ -241,8 +299,31 @@ export class PatientSubgroups {
 				
 				// Labelling intra-disease commorbidities
 				edge.data.isIntraDisease = fromPSG.disease_id === toPSG.disease_id;
+				
+				// Adding some edge stats
+				if((edge.data.from_id in dPSDIHash) && (edge.data.to_id in dPSDIHash)) {
+					let fromDrugSets = dPSDIHash[edge.data.from_id];
+					let toDrugSets = dPSDIHash[edge.data.to_id];
+					
+					edge.data.drugsUp = Array.from(fromDrugSets.upSet.intersection(toDrugSets.upSet));
+					edge.data.drugsDown = Array.from(fromDrugSets.downSet.intersection(toDrugSets.downSet));
+				} else {
+					edge.data.drugsUp = [];
+					edge.data.drugsDown = [];
+				}
+				
+				if(edge.data.from_id in dPSGIHash && edge.data.to_id in dPSGIHash) {
+					let fromGeneSets = dPSGIHash[edge.data.from_id];
+					let toGeneSets = dPSGIHash[edge.data.to_id];
+					
+					edge.data.genesUp = Array.from(fromGeneSets.upSet.intersection(toGeneSets.upSet));
+					edge.data.genesDown = Array.from(fromGeneSets.downSet.intersection(toGeneSets.downSet));
+				} else {
+					edge.data.genesUp = [];
+					edge.data.genesDown = [];
+				}
 			});
-			this.pendingIntraDiseaseCheck = false;
+			this.pendingEdgeStats = false;
 		}
 		
 		let setDiseaseIds = new Set(this.diseaseIds);
@@ -391,11 +472,20 @@ export class PatientSubgroups {
 		content.setAttribute('style','font-size: 1.3em;');
 		
 		//content.innerHTML = 'Tippy content';
-		content.innerHTML = '<b>'+patientSubgroupName+'</b>'+
+		let cInner = '<b>'+patientSubgroupName+'</b>'+
 			'<div style="text-align: left;">' +
-			'Number of patients: ' + node.data('size') +
-			'</div>';
-		
+			'Number of patients: ' + node.data('size')
+		;
+		try {
+			cInner += '<br/>' +
+				'Drugs (+/-): ' + node.data('drugsUp').length + ' / ' + node.data('drugsDown').length + '<br/>' +
+				'Genes (+/-): ' + node.data('genesUp').length + ' / ' + node.data('genesDown').length;
+		} catch(e) {
+			// DoNothing(R)
+		}
+		cInner += '</div>';
+			
+		content.innerHTML = cInner;
 
 		return content;
 	}
@@ -410,7 +500,10 @@ export class PatientSubgroups {
 		
 		content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
 			'<div><b>Source</b>: '+source.data('label') + '<br />\n' +
-			'<b>Target</b>: '+target.data('label')+'</div>';
+			'<b>Target</b>: '+target.data('label')+'<br />\n'+
+			'<b>Common drugs (+/-)</b>: ' + edge.data('drugsUp').length + ' / ' + edge.data('drugsDown').length + '<br/>' +
+			'<b>Common genes (+/-)</b>: ' + edge.data('genesUp').length + ' / ' + edge.data('genesDown').length +
+			'</div>';
 		return content;
 	}
 }
