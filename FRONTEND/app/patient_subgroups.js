@@ -309,34 +309,66 @@ export class PatientSubgroups {
 				edge.data.isIntraDisease = fromPSG.disease_id === toPSG.disease_id;
 				
 				// Adding some edge stats
-				if((edge.data.from_id in dPSDIHash) && (edge.data.to_id in dPSDIHash)) {
-					let fromDrugSets = dPSDIHash[edge.data.from_id];
-					let toDrugSets = dPSDIHash[edge.data.to_id];
+				if(edge.data.rel_risk > 0) {
+					if((edge.data.from_id in dPSDIHash) && (edge.data.to_id in dPSDIHash)) {
+						let fromDrugSets = dPSDIHash[edge.data.from_id];
+						let toDrugSets = dPSDIHash[edge.data.to_id];
+						
+						edge.data.drugs = {
+							up: Array.from(fromDrugSets.upSet.intersection(toDrugSets.upSet)),
+							down: Array.from(fromDrugSets.downSet.intersection(toDrugSets.downSet))
+						};
+					} else {
+						edge.data.drugs = {
+							up: [],
+							down: []
+						};
+					}
 					
-					edge.data.drugs = {
-						up: Array.from(fromDrugSets.upSet.intersection(toDrugSets.upSet)),
-						down: Array.from(fromDrugSets.downSet.intersection(toDrugSets.downSet))
-					};
+					if(edge.data.from_id in dPSGIHash && edge.data.to_id in dPSGIHash) {
+						let fromGeneSets = dPSGIHash[edge.data.from_id];
+						let toGeneSets = dPSGIHash[edge.data.to_id];
+						
+						edge.data.genes = {
+							up: Array.from(fromGeneSets.upSet.intersection(toGeneSets.upSet)),
+							down: Array.from(fromGeneSets.downSet.intersection(toGeneSets.downSet))
+						};
+					} else {
+						edge.data.genes = {
+							up: [],
+							down: []
+						};
+					}
 				} else {
-					edge.data.drugs = {
-						up: [],
-						down: []
-					};
-				}
-				
-				if(edge.data.from_id in dPSGIHash && edge.data.to_id in dPSGIHash) {
-					let fromGeneSets = dPSGIHash[edge.data.from_id];
-					let toGeneSets = dPSGIHash[edge.data.to_id];
+					if((edge.data.from_id in dPSDIHash) && (edge.data.to_id in dPSDIHash)) {
+						let fromDrugSets = dPSDIHash[edge.data.from_id];
+						let toDrugSets = dPSDIHash[edge.data.to_id];
+						
+						edge.data.drugs = {
+							up: Array.from(fromDrugSets.upSet.intersection(toDrugSets.downSet)),
+							down: Array.from(fromDrugSets.downSet.intersection(toDrugSets.upSet))
+						};
+					} else {
+						edge.data.drugs = {
+							up: [],
+							down: []
+						};
+					}
 					
-					edge.data.genes = {
-						up: Array.from(fromGeneSets.upSet.intersection(toGeneSets.upSet)),
-						down: Array.from(fromGeneSets.downSet.intersection(toGeneSets.downSet))
-					};
-				} else {
-					edge.data.genes = {
-						up: [],
-						down: []
-					};
+					if(edge.data.from_id in dPSGIHash && edge.data.to_id in dPSGIHash) {
+						let fromGeneSets = dPSGIHash[edge.data.from_id];
+						let toGeneSets = dPSGIHash[edge.data.to_id];
+						
+						edge.data.genes = {
+							up: Array.from(fromGeneSets.upSet.intersection(toGeneSets.downSet)),
+							down: Array.from(fromGeneSets.downSet.intersection(toGeneSets.upSet))
+						};
+					} else {
+						edge.data.genes = {
+							up: [],
+							down: []
+						};
+					}
 				}
 			});
 			this.pendingEdgeStats = false;
@@ -533,13 +565,33 @@ export class PatientSubgroups {
 		let source = edge.source();
 		let target = edge.target();
 		
-		
-		content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
-			'<div><b>Source</b>: '+source.data('label') + '<br />\n' +
-			'<b>Target</b>: '+target.data('label')+'<br />\n'+
-			'<b>Common drugs</b>: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' + edge.data('drugs').up.length + ' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + edge.data('drugs').down.length + '<br/>' +
-			'<b>Common genes</b>: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' + edge.data('genes').up.length + ' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + edge.data('genes').down.length +
-			'</div>';
+		if(edge.data('rel_risk') > 0) {
+			content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
+				'<div><b>Source</b>: '+source.data('label') + '<br />\n' +
+				'<b>Target</b>: '+target.data('label')+'<br />\n'+
+				'<b>Common drugs</b>: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' +
+					edge.data('drugs').up.length +
+					' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' +
+					edge.data('drugs').down.length + '<br/>' +
+				'<b>Common genes</b>: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' +
+					edge.data('genes').up.length +
+					' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' +
+					edge.data('genes').down.length +
+				'</div>';
+		} else {
+			content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
+				'<div><b>Source</b>: '+source.data('label') + '<br />\n' +
+				'<b>Target</b>: '+target.data('label')+'<br />\n'+
+				'<b>Inverse drugs</b>: <i class="fa fa-random" aria-hidden="true"></i> ' +
+					edge.data('drugs').up.length +
+					' <i class="fa fa-random fa-rotate-180" aria-hidden="true"></i> ' +
+					edge.data('drugs').down.length + '<br/>' +
+				'<b>Inverse genes</b>: <i class="fa fa-random" aria-hidden="true"></i> ' +
+					edge.data('genes').up.length +
+					' <i class="fa fa-random fa-rotate-180" aria-hidden="true"></i> ' +
+					edge.data('genes').down.length +
+				'</div>';
+		}
 		return content;
 	}
 }
