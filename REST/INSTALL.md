@@ -22,3 +22,24 @@ if [ ! -d .pyRESTenv/lib/python3.5/site-packages/flask_restplus/static ] ; then
 fi
 ```
 
+## API integration into Apache
+
+This API can be integrated into an Apache instance. The instance must have the module [FCGID](https://httpd.apache.org/mod_fcgid/) installed (package `libapache2-mod-fcgid` in Ubuntu).
+
+```bash
+sudo apt install apache2 libapache2-mod-fcgid
+sudo a2enmod mod-fcgid
+sudo service apache2 restart
+sudo service apache2 enable
+```
+
+```apache
+	FcgidMaxProcessesPerClass	5
+	ScriptAlias / "/path/to/disease_perception.fcgi/"
+
+	<Location />
+		SetHandler fcgid-script
+		Options +ExecCGI
+		Require all granted
+	</Location>
+```
