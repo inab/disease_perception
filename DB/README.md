@@ -1,4 +1,4 @@
-# Comorbidities database population
+# Disease PERCEPTION database population
 
 * Before running the comorbidities database population program, please follow the instructions in [INSTALL.md](INSTALL.md).
 

@@ -1,4 +1,4 @@
-# Install instructions of comorbidities database population program
+# Install instructions of Disease PERCEPTION database population program
 
 This program is written for Python 3.5 or later. It depends on standard libreries, plus the ones declared in [requirements.txt](requirements.txt).
 
