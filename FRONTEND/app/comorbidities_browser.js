@@ -116,8 +116,7 @@ export class ComorbiditiesBrowser {
 			this.layout = null;
 			this.unHighlighted = null;
 			this.prevHighlighted = null;
-			this.hiddenNodes = null;
-			this.hiddenArcs = null;
+			this.filteredEles = null;
 			this.filtersDesc = null;
 			this.cy.destroy();
 			this.cy = null;
@@ -212,6 +211,45 @@ export class ComorbiditiesBrowser {
 		return $input;
 	}
 	
+	makeCheckbox(opts,btnParam) {
+		let checkedVal = ('checkedVal' in opts) ? opts.checkedVal : true;
+		let uncheckedVal = ('uncheckedVal' in opts) ? opts.uncheckedVal : false;
+		
+		let $checkboxContainer = $('<div style="display: flex;"></div>');
+		let $checkbox = $('<input type="checkbox"></input>');
+		$checkbox.button();
+		if(opts.initial) {
+			$checkbox.attr('checked','checked');
+			$checkbox.toggle();
+		}
+		$checkbox.on('change',() => {
+			this.params[ opts.param ] = $checkbox.is(':checked') ? checkedVal : uncheckedVal;
+			
+			if(opts.layoutOpts) {
+				this.layout.stop();
+			}
+			
+			if(opts.fn) {
+				opts.fn();
+			}
+			
+			if(opts.layoutOpts) {
+				this.makeLayout(opts.layoutOpts);
+				this.layout.run();
+			}
+		});
+		
+		let $cont = $('<div style="white-space: nowrap"></div>');
+		$cont.append($checkbox);
+		$checkboxContainer.append($cont);
+		
+		let $label = $('<div>'+opts.label+'</div>');
+		$checkboxContainer.append($label);
+		btnParam.append( $checkboxContainer );
+		
+		return $checkbox;
+	}
+	
 	makeButton(opts,btnParam) {
 		let optsLabel = opts.label ? opts.label : opts.value;
 		let $button = $('<button type="button" class="btn btn-default">' + optsLabel + '</button>');
@@ -228,7 +266,9 @@ export class ComorbiditiesBrowser {
 				this.params[ opts.param ] = $button.val();
 			}
 			
-			this.layout.stop();
+			if(opts.layoutOpts) {
+				this.layout.stop();
+			}
 			
 			if(opts.fn) {
 				opts.fn();
@@ -381,7 +421,7 @@ export class ComorbiditiesBrowser {
 		// jshint unused:false
 		let $selectAll = this.makeButton({
 				classes: 'btn-xs',
-				label: '<i class="fa fa-check"></i>',
+				label: '<i class="fa fa-check-square-o"></i>',
 				fn: () => {
 					$nodeList.find('input[type="checkbox"]').prop('checked',true);
 					this.updateSelectedNodesCount($nodeList.find('input[type="checkbox"]:checked'));
@@ -389,7 +429,7 @@ export class ComorbiditiesBrowser {
 			},$selectedNodesView);
 		let $selectNone = this.makeButton({
 				classes: 'btn-xs',
-				label: '<i class="fa fa-unchecked"></i>',
+				label: '<i class="fa fa-square-o"></i>',
 				fn: () => {
 					$nodeList.find('input[type="checkbox"]').prop('checked',false);
 					this.updateSelectedNodesCount($nodeList.find('input[type="checkbox"]:checked'));
@@ -482,48 +522,38 @@ export class ComorbiditiesBrowser {
 			this.unHighlighted = null;
 		}
 		
-		if(this.hiddenNodes) {
-			this.hiddenNodes.restore();
-		}
-		
-		if(this.hiddenArcs) {
-			this.hiddenArcs.restore();
+		if(this.filteredEles && this.filteredEles.nonempty()) {
+			this.filteredEles.restore();
+			this.filteredEles = null;
 		}
 		
 		// Applying the initial filtering
 		
 		// On nodes
 		if(this.filtersDesc && this.filtersDesc.nodes) {
-			this.hiddenNodes = this.cy.nodes((e) => {
+			this.filteredEles = this.cy.nodes((e) => {
 				return this.filtersDesc.nodes.some((f) => {
 					return f.filterfn(e.data(f.attr),this.params[f.param]);
 				});
-			});
-			
-			this.hiddenArcs = this.hiddenNodes.connectedEdges();
+			}).remove();
 		} else {
-			this.hiddenNodes = this.cy.collection();
-			this.hiddenArcs = this.cy.collection();
+			this.filteredEles = this.cy.collection();
 		}
 		
 		// On arcs
 		if(this.filtersDesc && this.filtersDesc.edges) {
-			this.hiddenArcs.merge(this.cy.edges((e) => {
+			this.filteredEles.merge(this.cy.edges((e) => {
 				return this.filtersDesc.edges.some((f) => {
 					return f.filterfn(e.data(f.attr),this.params[f.param]);
 				});
-			}));
+			}).remove());
 		}
 		
-		this.hiddenArcs.remove();
-		
 		// Now, remove the filtered or orphaned nodes
-		this.hiddenNodes.merge(this.cy.nodes((n) => {
+		this.filteredEles.merge(this.cy.nodes((n) => {
 			return !n.isParent() && (n.degree(true) === 0);
 			//return n.degree(true) === 0;
-		}));
-		
-		this.hiddenNodes.remove();
+		}).remove());
 		
 		// And, at last, highlight again
 		if(this.prevHighlighted && this.prevHighlighted.nonempty()) {
@@ -538,9 +568,9 @@ export class ComorbiditiesBrowser {
 			this.hiddenDiseaseGroups = null;
 		} else {
 			// There could be disease groups in hidden nodes
-			if(this.hiddenNodes) {
-				this.hiddenNodes.restore();
-				this.hiddenNodes = null;
+			if(this.filteredEles) {
+				this.filteredEles.restore();
+				this.filteredEles = null;
 			}
 			
 			this.hiddenDiseaseGroups = this.cy.nodes((n) => {
@@ -616,6 +646,9 @@ export class ComorbiditiesBrowser {
 							$ctrl.trigger('slideStop');
 						};
 					}
+					break;
+				case 'checkbox':
+					$ctrl = this.makeCheckbox(ctrlDesc,$controls);
 					break;
 				case 'button-group':
 					btnParam = $ctrl = $('<div class="param"></div>');

@@ -1,6 +1,8 @@
 'use strict';
 
 import { Diseases } from './diseases';
+import { Genes } from './genes';
+import { Drugs } from './drugs';
 
 // Singleton variables
 var _PatientSubgroups;
@@ -18,11 +20,13 @@ export class PatientSubgroups {
 	constructor(cmBrowser) {
 		this.cmBrowser = cmBrowser;
 		this.diseases = new Diseases(cmBrowser);
+		this.genes = new Genes(cmBrowser);
+		this.drugs = new Drugs(cmBrowser);
 	}
 	
 	// This method returns an array of promises, ready to be run in parallel
 	fetch(diseaseIds,minClusterSize=4) {
-		let fetchPromises = this.diseases.fetch();
+		let fetchPromises = [].concat(this.diseases.fetch(),this.genes.fetch(),this.drugs.fetch());
 		
 		if(_PatientSubgroups===undefined) {
 			fetchPromises.push(
@@ -63,18 +67,18 @@ export class PatientSubgroups {
 			);
 		}
 		
+		this.diseaseIds = [ ...diseaseIds ];
+		this.initialMinClusterSize = minClusterSize;
 		let commaDiseaseIds = diseaseIds.join(',');
 		
 		fetchPromises.push(
-			//fetch('api/diseases/ps_comorbidities/'+encodeURIComponent(commaDiseaseIds)+'/min_size/'+minClusterSize, {mode: 'no-cors'})
-			fetch('api/diseases/ps_comorbidities/'+encodeURIComponent(commaDiseaseIds), {mode: 'no-cors'})
+			//fetch('api/diseases/'+encodeURIComponent(commaDiseaseIds)+'/patients/subgroups/comorbidities/min_size/'+minClusterSize, {mode: 'no-cors'})
+			fetch('api/diseases/'+encodeURIComponent(commaDiseaseIds)+'/patients/subgroups/comorbidities', {mode: 'no-cors'})
 			.then(function(res) {
 				return res.json();
 			})
 			.then((decodedJson) => {
 				// jshint camelcase: false
-				this.diseaseIds = [ ...diseaseIds ];
-				this.initialMinClusterSize = minClusterSize;
 				let dPSCN = this.diseasePatientSubgroupComorbidityNetwork = decodedJson;
 				
 				this.patientSubgroupComorbidityNetworkEdges = dPSCN.map(function(psgc,psgci) {
@@ -94,7 +98,8 @@ export class PatientSubgroups {
 					//delete retpsgc.to_id;
 					
 					return {
-						data: retpsgc
+						data: retpsgc,
+						classes: 'CM'
 					};
 				});
 				this.pendingIntraDiseaseCheck = true;
@@ -122,6 +127,64 @@ export class PatientSubgroups {
 				};
 				
 				return decodedJson;
+			})
+		);
+		
+		fetchPromises.push(
+			fetch('api/diseases/'+encodeURIComponent(commaDiseaseIds)+'/patients/subgroups/drugs', {mode: 'no-cors'})
+			.then(function(res) {
+				return res.json();
+			})
+			.then((decodedJson) => {
+				// jshint camelcase: false
+				let dPSDI = this.diseasePatientSubgroupDrugIntersect = decodedJson;
+				let dPSDIE = this.diseasePatientSubgroupDrugIntersectEdges = [];
+				
+				dPSDI.forEach(function(psd,psdi) {
+					psd.drugs.forEach(function(psde,psdei) {
+						let retpsd = {
+							// Unique identifiers
+							id: 'PSDC'+psdi+'_'+psdei,
+							source: 'Dr'+psde.drug_id,
+							target: 'PSD'+psd.disease_group_id,
+							sign: psde.regulation_sign
+						};
+						
+						dPSDIE.push({
+							data: retpsd,
+							classes: 'DI'
+						});
+					});
+				});
+			})
+		);
+		
+		fetchPromises.push(
+			fetch('api/diseases/'+encodeURIComponent(commaDiseaseIds)+'/patients/subgroups/genes', {mode: 'no-cors'})
+			.then(function(res) {
+				return res.json();
+			})
+			.then((decodedJson) => {
+				// jshint camelcase: false
+				let dPSGI = this.diseasePatientSubgroupGeneIntersect = decodedJson;
+				let dPSGIE = this.diseasePatientSubgroupGeneIntersectEdges = [];
+				
+				dPSGI.forEach(function(psg,psgi) {
+					psg.genes.forEach(function(psge,psgei) {
+						let retpsg = {
+							// Unique identifiers
+							id: 'PSGC'+psgi+'_'+psgei,
+							source: psge.gene_symbol,
+							target: 'PSD'+psg.disease_group_id,
+							sign: psge.regulation_sign
+						};
+						
+						dPSGIE.push({
+							data: retpsg,
+							classes: 'GI'
+						});
+					});
+				});
 			})
 		);
 		
@@ -189,11 +252,9 @@ export class PatientSubgroups {
 		
 		return {
 			nodes: [
-				// jshint ignore:start
 				..._PatientSubgroupNodes,
 				...selectedDiseases,
 				...selectedDiseaseGroups
-				// jshint ignore:end
 			],
 			edges: this.patientSubgroupComorbidityNetworkEdges
 		};
@@ -257,14 +318,24 @@ export class PatientSubgroups {
 			//	max: 200,
 			//	initial: 45,
 			//},
+			//{
+			//	type: 'slider',
+			//	label: 'Node spacing',
+			//	param: 'nodeSpacing',
+			//	min: 1,
+			//	max: 50,
+			//	// Specific from cola algorithm
+			//	initial: 5
+			//},
 			{
-				type: 'slider',
-				label: 'Node spacing',
-				param: 'nodeSpacing',
-				min: 1,
-				max: 50,
-				// Specific from cola algorithm
-				initial: 5
+				filter: 'edges',
+				attr: 'isIntraDisease',
+				filterfn:  function(attrVal,paramVal) { return paramVal && attrVal; },
+				filterOnCtx: false,
+				type: 'checkbox',
+				label: 'Hide internal edges',
+				param: 'hideInternalEdgesVal',
+				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
 			},
 			{
 				type: 'button-group',

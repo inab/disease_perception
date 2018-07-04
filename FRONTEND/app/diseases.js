@@ -249,15 +249,15 @@ export class Diseases {
 			//	max: 200,
 			//	initial: 45,
 			//},
-			{
-				type: 'slider',
-				label: 'Node spacing',
-				param: 'nodeSpacing',
-				min: 1,
-				max: 50,
-				// Specific from cola algorithm
-				initial: 5,
-			},
+			//{
+			//	type: 'slider',
+			//	label: 'Node spacing',
+			//	param: 'nodeSpacing',
+			//	min: 1,
+			//	max: 50,
+			//	// Specific from cola algorithm
+			//	initial: 5,
+			//},
 			{
 				type: 'button-group',
 			},
