@@ -4,6 +4,7 @@ Flask==1.0.2
 Flask-Compress==1.4.0
 Flask-Cors==3.0.4
 flask-restplus==0.11.0
+flup==1.0.3
 itsdangerous==0.24
 Jinja2==2.10
 jsonschema==2.6.0

@@ -2,3 +2,4 @@ flask
 flask-cors
 flask-restplus
 flask-compress
+flup
