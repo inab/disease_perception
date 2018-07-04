@@ -569,6 +569,10 @@ export class ComorbiditiesBrowser {
 			param: 'name',
 			options: [
 				{
+					label: 'Concentric',
+					value: 'concentric'
+				},
+				{
 					label: 'Cola',
 					value: 'cola'
 				},
@@ -689,8 +693,14 @@ export class ComorbiditiesBrowser {
 		// Registering the initial filtering conditions
 		this.params = {
 			// jshint ignore:start
-			...graphSetup
+			...graphSetup,
 			// jshint ignore:end
+			concentric: function( node ){
+			  return node.degree();
+			},
+			levelWidth: function( nodes ){
+			  return 2;
+			}
 		};
 		
 		// Initializing the graph controls (and some values)

@@ -207,7 +207,7 @@ export class Diseases {
 	getGraphSetup() {
 		if(this.params===undefined) {
 			this.params = {
-				name: 'cola',
+				name: 'concentric',
 				// Specific from cola algorithm
 				edgeLengthVal: 45,
 				animate: true,
