@@ -1,4 +1,4 @@
-# Install instructions of BSC Comorbidities browser
+# Install instructions of Disease PERCEPTION Comorbidities browser
 
 The source code of this browser is written for Javascript ES6. It depends on the libraries declared in [package.json](package.json) file.
 
@@ -6,12 +6,12 @@ The source code of this browser is written for Javascript ES6. It depends on the
 
   - Due some intermediate dependencies, you could also need `ruby` and `gem`.
   
-* Clone this repository, change to the directory `FRONTEND` and run `npm install yarn`, so [Yarn](https://yarnpkg.com/) installation dependency, which is used to fetch [Webpack](https://webpack.github.io/) and other dependencies are installed:
+* Clone this repository, change to the directory `FRONTEND` and assure newest version of npm is installed, so [Yarn](https://yarnpkg.com/) installation dependency, which is used to fetch [Webpack](https://webpack.github.io/) and other dependencies are installed:
 
 ```bash
 git clone https://github.com/inab/comorbidities_frontend.git
 cd FRONTEND
-npm install --no-save yarn
+npm install --no-save npm
 ```
 
 * Add `node_modules/.bin` subdirectory to the `PATH` environment variable, so `yarn` and other installation dependencies can be instantiated. Then, call `yarn`, so the other dependencies are fetched:
@@ -28,4 +28,4 @@ yarn --frozen-lockfile
 webpack -p --progress --colors
 ```
 
-* Congratulations! The frontend of BSC Comorbidities browser is available at the `../REST/static` subdirectory.
+* Congratulations! Disease PERCEPTION Comorbidities browser is available at the `../REST/static` subdirectory.

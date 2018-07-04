@@ -1,7 +1,7 @@
 {
-  "name": "bsc-comorbidities-browser",
-  "version": "0.0.2",
-  "description": "BSC Comorbidities browser",
+  "name": "disease-perception-browser",
+  "version": "0.4.0",
+  "description": "BSC Disease PERCEPTION Comorbidities browser",
   "author": "José María Fernández <jose.m.fernandez@bsc.es>",
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.49",
