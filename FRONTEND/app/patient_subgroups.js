@@ -503,7 +503,7 @@ export class PatientSubgroups {
 				filterfn:  function(attrVal,paramVal) { return paramVal && attrVal; },
 				filterOnCtx: false,
 				type: 'checkbox',
-				label: 'Hide internal edges',
+				label: 'Hide intra-disease edges',
 				param: 'hideInternalEdgesVal',
 				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
 			},
