@@ -15,16 +15,52 @@ body {
   left: 0;
   top: 0;
   bottom: 0;
-  right: 17em;
+  right: 24rem;
 }
 
-.graph-title {
+#graph-title {
   top: 0;
-  width: 100%;
-  text-align: center;
-  font-size: 3vw;
+  left: 0;
+  right: 24rem;
   background-color: rgba(255,255,255,0.5);
-  color: #555;
+}
+
+#history-back {
+  top: 0;
+  left: 1vw;
+}
+
+#history-forward {
+  top: 0;
+  left: 6vw;
+}
+
+.cmui {
+	position: fixed;
+	text-align: center;
+	color: #555;
+	font-size: 3vw;
+	/* box-sizing: border-box; */
+	transition-property: opacity;
+	transition-duration: 250ms;
+	transition-timing-function: ease-out;
+	z-index: 1;
+}
+
+.cmui.button {
+	border-radius: 10%;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #555;
+	width: 4vw;
+	height: 4vw;
+	display: block;
+	padding: 0;
+}
+
+.cmui.button > i {
+	vertical-align: middle;
+	display: inherit;
 }
 
 .config {
@@ -41,7 +77,7 @@ body {
   right: 0;
   top: 0;
   bottom: 0;
-  width: 17em;
+  width: 24rem;
   background: rgba(0, 0, 0, 0.75);
   padding: 1em;
   color: #fff;
@@ -92,7 +128,7 @@ a:hover {
 }
 
 .config-closed .config ,
-.config-closed .graph-title {
+.config-closed .cmui {
   opacity: 0;
   pointer-events: none;
 }

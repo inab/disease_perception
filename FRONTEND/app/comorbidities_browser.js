@@ -49,8 +49,27 @@ export class ComorbiditiesBrowser {
 		
 		// Create the graph title
 		this.$graphTitle = $('<div></div>');
-		this.$graphTitle.addClass('graph-title');
+		this.$graphTitle.attr('id','graph-title');
+		this.$graphTitle.addClass('graph-title cmui');
 		this.$graph.after(this.$graphTitle);
+		
+		// Create the history and its management buttons
+		this.history = [];
+		this.historyPointer = -1;
+		
+		this.$historyBack = $('<button><i class="fa fa-arrow-circle-o-left" aria-hidden="true" title="Previous view"></i></button>');
+		this.$historyBack.attr('id','history-back');
+		this.$historyBack.addClass('cmui button btn btn-default');
+		this.$historyBack.on('click',() => this.historyGoBack());
+		this.$historyBack.prop('disabled',true);
+		this.$graphTitle.after(this.$historyBack);
+		
+		this.$historyForward = $('<button><i class="fa fa-arrow-circle-o-right" aria-hidden="true" title="Next view"></i></button>');
+		this.$historyForward.addClass('cmui button btn btn-default');
+		this.$historyForward.attr('id','history-forward');
+		this.$historyForward.on('click',() => this.historyGoForward());
+		this.$historyForward.prop('disabled',true);
+		this.$historyBack.after(this.$historyForward);
 		
 		// The right panel container
 		this.$config = $(setup.configPanel);
@@ -96,6 +115,43 @@ export class ComorbiditiesBrowser {
 			console.error('This should not happen!!!');
 		}
 		
+		// Saving the parameters
+		if(this.historyPointer > -1) {
+			this.saveLayoutParams(this.params);
+			this.saveSelectedNodes();
+		}
+		
+		// Should we remove the history by replacing it?
+		if(this.historyPointer+1 !== this.history.length) {
+			this.history.splice(this.historyPointer+1);
+		}
+		
+		// Now, populate the history
+		this.history.push({
+			viewName: viewName,
+			viewParams: viewParams,
+			layoutParams: null,
+			selectedNodeIds: []
+		});
+		this.historyPointer++;
+		
+		this.switchHistoryView();
+	}
+	
+	switchHistoryView(historyId=-1) {
+		this.$loading.removeClass('loaded');
+		if(historyId===-1) {
+			historyId = this.historyPointer;
+		} else {
+			this.historyPointer = historyId;
+		}
+		
+		this.$historyBack.prop('disabled',this.historyPointer===0);
+		this.$historyForward.prop('disabled',this.historyPointer+1 === this.history.length);
+		
+		let viewName = this.history[historyId].viewName;
+		let viewParams = this.history[historyId].viewParams;
+		
 		this.viewName = viewName;
 		let currentView = this.currentView = this.views[viewName];
 		
@@ -105,13 +161,55 @@ export class ComorbiditiesBrowser {
 		currentView.fetch(...viewParams).forEach((e) => fetchPromises.push(e));
 		
 		// Now, issuing the fetch itself, and then the layout
-		this.$loading.removeClass('loaded');
 		Promise.all(fetchPromises)
 		.then((dataArray) => {
+			this.doLayout(dataArray);
+			let selected = this.getSavedSelectedNodes();
+			if(selected.nonempty()) {
+				selected.select();
+			}
 			this.$loading.addClass('loaded');
 			this.$appLoading.addClass('loaded');
-			this.doLayout(dataArray);
 		});
+	}
+	
+	getSavedLayoutParams() {
+		return this.history[this.historyPointer].layoutParams;
+	}
+	
+	saveLayoutParams(params) {
+		this.history[this.historyPointer].layoutParams = params;
+	}
+	
+	getSavedSelectedNodes() {
+		let selected = this.cy.collection();
+		
+		this.history[this.historyPointer].selectedNodeIds.forEach((nId) => {
+			selected.merge(this.cy.getElementById(nId));
+		});
+		
+		return selected;
+	}
+	
+	saveSelectedNodes() {
+		let nodeIds = this.cy.nodes('node:selected').map((n) => n.id());
+		this.history[this.historyPointer].selectedNodeIds = nodeIds;
+	}
+	
+	historyGoBack() {
+		if(this.historyPointer > 0) {
+			this.saveLayoutParams(this.params);
+			this.saveSelectedNodes();
+			this.switchHistoryView(this.historyPointer-1);
+		}
+	}
+	
+	historyGoForward() {
+		if(this.historyPointer+1 < this.history.length) {
+			this.saveLayoutParams(this.params);
+			this.saveSelectedNodes();
+			this.switchHistoryView(this.historyPointer+1);
+		}
 	}
 	
 	makeCy(container, style, graphData) {
@@ -175,9 +273,15 @@ export class ComorbiditiesBrowser {
 		
 		$param.append('<span class="label label-default">'+ opts.label +'</span>');
 		
-		let initialValue = opts.initial;
-		// Setting the initial value
-		this.params[ opts.param ] = initialValue;
+		// Is the initial value already set?
+		let initialValue = null;
+		if(opts.param in this.params) {
+			initialValue = this.params[ opts.param ];
+		} else {
+			initialValue = opts.initial;
+			// Setting the initial value
+			this.params[ opts.param ] = initialValue;
+		}
 		let $dataLabel = $('<span class="label label-info">'+ initialValue +'</span>');
 		$param.append($dataLabel);
 		$param.append($input);
@@ -223,7 +327,14 @@ export class ComorbiditiesBrowser {
 		let $checkboxContainer = $('<div style="display: flex;"></div>');
 		let $checkbox = $('<input type="checkbox"></input>');
 		$checkbox.button();
-		if(opts.initial) {
+		
+		let initial = null;
+		if(opts.param in this.params) {
+			initial = this.params[ opts.param ] === checkedVal;
+		} else {
+			initial = opts.initial;
+		}
+		if(initial) {
 			$checkbox.attr('checked','checked');
 			$checkbox.toggle();
 		}
@@ -395,7 +506,7 @@ export class ComorbiditiesBrowser {
 			let hPanel = this.hPanel;
 			hPanel.$nodeListLabel.empty();
 			hPanel.$nodeListLabel.append(nodes.length);
-			hPanel.$nodeListNextViewButton.prop('disabled', nodes.length < 2);
+			hPanel.$nodeListNextViewButton.prop('disabled', nodes.length < this.nextViewSetup.minSelect);
 		}
 	}
 	
@@ -426,7 +537,7 @@ export class ComorbiditiesBrowser {
 		// jshint unused:false
 		let $selectAll = this.makeButton({
 				classes: 'btn-xs',
-				label: '<i class="fa fa-check-square-o"></i>',
+				label: '<i class="fa fa-check-square-o" title="Select all"></i>',
 				fn: () => {
 					$nodeList.find('input[type="checkbox"]').prop('checked',true);
 					this.updateSelectedNodesCount($nodeList.find('input[type="checkbox"]:checked'));
@@ -434,7 +545,7 @@ export class ComorbiditiesBrowser {
 			},$selectedNodesView);
 		let $selectNone = this.makeButton({
 				classes: 'btn-xs',
-				label: '<i class="fa fa-square-o"></i>',
+				label: '<i class="fa fa-square-o" title="Deselect all"></i>',
 				fn: () => {
 					$nodeList.find('input[type="checkbox"]').prop('checked',false);
 					this.updateSelectedNodesCount($nodeList.find('input[type="checkbox"]:checked'));
@@ -448,7 +559,7 @@ export class ComorbiditiesBrowser {
 				
 				return checkbox.data(opts.idPropertyName);
 			});
-			this.switchView('patient_subgroups',nextViewIds);
+			this.switchView(opts.nextView,nextViewIds);
 		});
 		
 		$selectedNodesView.append($nodeListNextViewButton);
@@ -705,10 +816,10 @@ export class ComorbiditiesBrowser {
 		$controls.append(this.$tooltipView);
 		
 		// The next view setup is only set when it is needed
-		let nextViewSetup = this.currentView.getNextViewSetup();
+		this.nextViewSetup = this.currentView.getNextViewSetup();
 		
-		if(nextViewSetup) {
-			this.makeSelectedNodesView(nextViewSetup);
+		if(this.nextViewSetup) {
+			this.makeSelectedNodesView(this.nextViewSetup);
 		} else {
 			this.hPanel = null;
 		}
@@ -751,24 +862,27 @@ export class ComorbiditiesBrowser {
 		let graphData = this.currentView.getFetchedNetwork();
 		//let graphData = this.testData;
 		
-		// The shared params by this instance of cytoscape
-		let graphSetup = this.currentView.getGraphSetup();
+		// Registering the initial filtering conditions
+		this.params = this.getSavedLayoutParams();
+		if(!this.params) {
+			// The shared params by this instance of cytoscape
+			let graphSetup = this.currentView.getGraphSetup();
+			
+			this.params = {
+				// jshint ignore:start
+				...graphSetup,
+				// jshint ignore:end
+				concentric: function( node ){
+				  return node.degree();
+				},
+				levelWidth: function( nodes ){
+				  return 2;
+				}
+			};
+		}
 		
 		// Creation of the cytoscape instance
 		this.makeCy(this.graphEl,this.cyStyle,graphData);
-		
-		// Registering the initial filtering conditions
-		this.params = {
-			// jshint ignore:start
-			...graphSetup,
-			// jshint ignore:end
-			concentric: function( node ){
-			  return node.degree();
-			},
-			levelWidth: function( nodes ){
-			  return 2;
-			}
-		};
 		
 		// Initializing the graph controls (and some values)
 		this.initializeControls();

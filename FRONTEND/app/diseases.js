@@ -302,7 +302,7 @@ export class Diseases {
 	}
 	
 	getNextViewSetup() {
-		return { label: 'Selected diseases', idPropertyName: 'disease_id', nextView: 'patient_subgroups', nextLabel: 'See subgroups'};
+		return { label: 'Selected diseases', idPropertyName: 'disease_id', minSelect: 2, nextView: 'patient_subgroups', nextLabel: 'See subgroups'};
 	}
 	
 	makeNodeTooltipContent(node) {
