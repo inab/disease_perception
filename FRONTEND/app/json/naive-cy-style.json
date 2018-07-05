@@ -28,9 +28,6 @@
 {
   "selector": "node.highlighted",
   "style": {
-    "border-width": "1px",
-    "border-color": "#AAD8FF",
-    "border-opacity": "0.5",
     "background-color": "#394855",
     "text-outline-color": "#394855"
   }
