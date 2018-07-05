@@ -28,7 +28,7 @@
 {
   "selector": "node.highlighted",
   "style": {
-    "border-width": "6px",
+    "border-width": "1px",
     "border-color": "#AAD8FF",
     "border-opacity": "0.5",
     "background-color": "#394855",
@@ -55,6 +55,7 @@
 		"selector": "node.PSG",
 		"css": {
 			"shape": "diamond",
+			"text-outline-color": "#000",
 			"width": "mapData(size,1,10,20,60)",
 			"height": "mapData(size,1,10,20,60)"
 		}
@@ -129,6 +130,7 @@
 			"haystack-radius": "0.5",
 			"opacity": "0.4",
 			"line-color": "mapData(rel_risk, -20, 20, red, blue)",
+			"target-arrow-color": "mapData(rel_risk, -20, 20, red, blue)",
 			"width": "mapData(abs_rel_risk, 0, 50, 1, 8)",
 			"overlay-padding": "3px"
 		}
@@ -140,6 +142,7 @@
 			"haystack-radius": "0.5",
 			"opacity": "0.3",
 			"line-color": "mapData(sign, -1, 1, green, orange)",
+			"target-arrow-color": "mapData(sign, -1, 1, green, orange)",
 			"width": "1",
 			"overlay-padding": "3px"
 		}
@@ -151,6 +154,7 @@
 			"haystack-radius": "0.5",
 			"opacity": "0.3",
 			"line-color": "mapData(sign, -1, 1, lightgray, gray)",
+			"target-arrow-color": "mapData(sign, -1, 1, lightgray, gray)",
 			"width": "1",
 			"overlay-padding": "3px"
 		}
