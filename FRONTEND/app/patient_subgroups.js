@@ -240,20 +240,31 @@ export class PatientSubgroups {
 		let dPSGIHash = this.diseasePatientSubgroupGeneIntersectHash;
 		let dPSDIHash = this.diseasePatientSubgroupDrugIntersectHash;
 		
+		let drugsHash = {};
+		
+		this.drugs.getDrugs().forEach((dr) => {
+			drugsHash[dr.id] = dr;
+		});
+		
 		if(_PendingNodePropagation) {
-			let diseaseColorsHash = {};
+			let diseaseNodesHash = {};
 			
 			diseaseNodes.forEach((dn) => {
-				diseaseColorsHash[dn.data.disease_id] = dn.data.color;
+				diseaseNodesHash[dn.data.disease_id] = dn.data;
 			});
 			_PatientSubgroupNodes.forEach((psn) => {
-				psn.data.color = diseaseColorsHash[psn.data.disease_id];
+				psn.data.disease_name = diseaseNodesHash[psn.data.disease_id].name;
+				psn.data.color = diseaseNodesHash[psn.data.disease_id].color;
 				
 				// Some stats propagation
 				if(psn.data.patient_subgroup_id in dPSDIHash) {
+					let upArr = [];
+					dPSDIHash[psn.data.patient_subgroup_id].upSet.forEach((drug_id) => upArr.push(drugsHash[drug_id].name));
+					let downArr = [];
+					dPSDIHash[psn.data.patient_subgroup_id].downSet.forEach((drug_id) => downArr.push(drugsHash[drug_id].name));
 					psn.data.drugs = {
-						up: Array.from(dPSDIHash[psn.data.patient_subgroup_id].upSet),
-						down: Array.from(dPSDIHash[psn.data.patient_subgroup_id].downSet)
+						up: upArr,
+						down: downArr
 					};
 				} else {
 					psn.data.drugs = {
@@ -314,9 +325,14 @@ export class PatientSubgroups {
 						let fromDrugSets = dPSDIHash[edge.data.from_id];
 						let toDrugSets = dPSDIHash[edge.data.to_id];
 						
+						let upArr = [];
+						fromDrugSets.upSet.intersection(toDrugSets.upSet).forEach((drug_id) => upArr.push(drugsHash[drug_id].name));
+						let downArr = [];
+						fromDrugSets.downSet.intersection(toDrugSets.downSet).forEach((drug_id) => downArr.push(drugsHash[drug_id].name));
+						
 						edge.data.drugs = {
-							up: Array.from(fromDrugSets.upSet.intersection(toDrugSets.upSet)),
-							down: Array.from(fromDrugSets.downSet.intersection(toDrugSets.downSet))
+							up: upArr,
+							down: downArr
 						};
 					} else {
 						edge.data.drugs = {
@@ -344,9 +360,14 @@ export class PatientSubgroups {
 						let fromDrugSets = dPSDIHash[edge.data.from_id];
 						let toDrugSets = dPSDIHash[edge.data.to_id];
 						
+						let upArr = [];
+						fromDrugSets.upSet.intersection(toDrugSets.downSet).forEach((drug_id) => upArr.push(drugsHash[drug_id].name));
+						let downArr = [];
+						fromDrugSets.downSet.intersection(toDrugSets.upSet).forEach((drug_id) => downArr.push(drugsHash[drug_id].name));
+						
 						edge.data.drugs = {
-							up: Array.from(fromDrugSets.upSet.intersection(toDrugSets.downSet)),
-							down: Array.from(fromDrugSets.downSet.intersection(toDrugSets.upSet))
+							up: upArr,
+							down: downArr
 						};
 					} else {
 						edge.data.drugs = {
@@ -371,6 +392,12 @@ export class PatientSubgroups {
 					}
 				}
 			});
+			
+			// Giving a saner initial version to the minClusterSize
+			if(this.initialMinClusterSize < this.minClusterSize || this.initialMinClusterSize > this.maxClusterSize) {
+				this.initialMinClusterSize = (this.minClusterSize + this.maxClusterSize) >> 1;
+			}
+			
 			this.pendingEdgeStats = false;
 		}
 		
@@ -472,7 +499,7 @@ export class PatientSubgroups {
 				filterfn:  function(attrVal,paramVal) { return paramVal && attrVal.up.length === 0 && attrVal.down.length === 0; },
 				filterOnCtx: false,
 				type: 'checkbox',
-				label: 'Hide edges without common drugs',
+				label: 'Hide edges without common/inverse drugs',
 				param: 'hideDruglessEdgesVal',
 				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
 			},
@@ -482,7 +509,7 @@ export class PatientSubgroups {
 				filterfn:  function(attrVal,paramVal) { return paramVal && attrVal.up.length === 0 && attrVal.down.length === 0; },
 				filterOnCtx: false,
 				type: 'checkbox',
-				label: 'Hide edges without common genes',
+				label: 'Hide edges without common/inverse genes',
 				param: 'hideGenelessEdgesVal',
 				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
 			},
@@ -534,7 +561,7 @@ export class PatientSubgroups {
 	}
 	
 	makeNodeTooltipContent(node) {
-		let patientSubgroupName = node.data('label');
+		let patientSubgroupName = node.data('disease_name') + ' ' + node.data('name');
 		
 		let content = document.createElement('div');
 		content.setAttribute('style','font-size: 1.3em;');
@@ -546,8 +573,28 @@ export class PatientSubgroups {
 		;
 		try {
 			cInner += '<br/>' +
-				'Drugs: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' + node.data('drugs').up.length + ' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + node.data('drugs').down.length + '<br/>' +
-				'Genes: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' + node.data('genes').up.length + ' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + node.data('genes').down.length;
+				'Drugs: ' +
+				'<div class="updown">'+
+					'<div>'+
+						'<i class="fa fa-arrow-up" aria-hidden="true"></i> ' + node.data('drugs').up.length +
+						'<div class="scrollblock">'+node.data('drugs').up.join('\n')+'</div>' +
+					'</div>'+
+					'<div>'+
+						' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + node.data('drugs').down.length + '<br/>' +
+						'<div class="scrollblock">'+node.data('drugs').down.join('\n')+'</div>' +
+					'</div>'+
+				'</div>'+
+				'Genes: '+
+				'<div class="updown">'+
+					'<div>'+
+						'<i class="fa fa-arrow-up" aria-hidden="true"></i> ' + node.data('genes').up.length +
+						'<div class="scrollblock">'+node.data('genes').up.join('\n')+'</div>' +
+					'</div>'+
+					'<div>'+
+						' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + node.data('genes').down.length +
+						'<div class="scrollblock">'+node.data('genes').down.join('\n')+'</div>'+
+					'</div>'+
+				'</div>';
 		} catch(e) {
 			// DoNothing(R)
 		}
@@ -569,27 +616,53 @@ export class PatientSubgroups {
 			content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
 				'<div><b>Source</b>: '+source.data('label') + '<br />\n' +
 				'<b>Target</b>: '+target.data('label')+'<br />\n'+
-				'<b>Common drugs</b>: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' +
-					edge.data('drugs').up.length +
-					' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' +
-					edge.data('drugs').down.length + '<br/>' +
-				'<b>Common genes</b>: <i class="fa fa-arrow-up" aria-hidden="true"></i> ' +
-					edge.data('genes').up.length +
-					' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' +
-					edge.data('genes').down.length +
+				'<b>Common drugs</b>: '+
+				'<div class="updown">'+
+					'<div>'+
+						'<i class="fa fa-arrow-up" aria-hidden="true"></i> ' + edge.data('drugs').up.length +
+						'<div class="scrollblock">'+edge.data('drugs').up.join('\n')+'</div>' +
+					'</div>'+
+					'<div>'+
+						' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + edge.data('drugs').down.length + '<br/>' +
+						'<div class="scrollblock">'+edge.data('drugs').down.join('\n')+'</div>' +
+					'</div>'+
+				'</div>'+
+				'<b>Common genes</b>: '+
+				'<div class="updown">'+
+					'<div>'+
+						'<i class="fa fa-arrow-up" aria-hidden="true"></i> ' + edge.data('genes').up.length +
+						'<div class="scrollblock">'+edge.data('genes').up.join('\n')+'</div>' +
+					'</div>'+
+					'<div>'+
+						' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + edge.data('genes').down.length +
+						'<div class="scrollblock">'+edge.data('genes').down.join('\n')+'</div>' +
+					'</div>'+
 				'</div>';
 		} else {
 			content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
 				'<div><b>Source</b>: '+source.data('label') + '<br />\n' +
 				'<b>Target</b>: '+target.data('label')+'<br />\n'+
-				'<b>Inverse drugs</b>: <i class="fa fa-random" aria-hidden="true"></i> ' +
-					edge.data('drugs').up.length +
-					' <i class="fa fa-random fa-rotate-180" aria-hidden="true"></i> ' +
-					edge.data('drugs').down.length + '<br/>' +
-				'<b>Inverse genes</b>: <i class="fa fa-random" aria-hidden="true"></i> ' +
-					edge.data('genes').up.length +
-					' <i class="fa fa-random fa-rotate-180" aria-hidden="true"></i> ' +
-					edge.data('genes').down.length +
+				'<b>Inverse drugs</b>: '+
+				'<div class="updown">'+
+					'<div>'+
+						'<i class="fa fa-random" aria-hidden="true"></i> ' + edge.data('drugs').up.length +
+						'<div class="scrollblock">'+edge.data('drugs').up.join('\n')+'</div>' +
+					'</div>'+
+					'<div>'+
+						' <i class="fa fa-random fa-rotate-180" aria-hidden="true"></i> ' + edge.data('drugs').down.length + '<br/>' +
+						'<div class="scrollblock">'+edge.data('drugs').down.join('\n')+'</div>' +
+					'</div>'+
+				'</div>'+
+				'<b>Inverse genes</b>: '+
+				'<div class="updown">'+
+					'<div>'+
+						'<i class="fa fa-random" aria-hidden="true"></i> ' + edge.data('genes').up.length +
+						'<div class="scrollblock">'+edge.data('genes').up.join('\n')+'</div>' +
+					'</div>'+
+					'<div>'+
+						' <i class="fa fa-random fa-rotate-180" aria-hidden="true"></i> ' + edge.data('genes').down.length +
+						'<div class="scrollblock">'+edge.data('genes').down.join('\n')+'</div>' +
+					'</div>'+
 				'</div>';
 		}
 		return content;
