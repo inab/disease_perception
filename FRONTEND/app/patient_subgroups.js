@@ -415,7 +415,7 @@ export class PatientSubgroups {
 		}
 		
 		let setDiseaseIds = new Set(this.diseaseIds);
-		let selectedDiseases = diseaseNodes.filter((d) => setDiseaseIds.has(d.data.disease_id));
+		let selectedDiseases = this.selectedDiseases = diseaseNodes.filter((d) => setDiseaseIds.has(d.data.disease_id));
 		let setDiseaseGroupIds = new Set(selectedDiseases.map((d) => d.data.disease_group_id));
 		let selectedDiseaseGroups = this.diseases.getDiseaseGroupNodes().filter((dg) => setDiseaseGroupIds.has(dg.data.disease_group_id));
 		
@@ -432,6 +432,7 @@ export class PatientSubgroups {
 	getGraphSetup() {
 		if(this.params===undefined) {
 			this.params = {
+				title: 'Patient subgroups from <span style="font-weight: bold;" title="'+this.selectedDiseases.map((d) => d.data.name).join('\n')+'">'+this.selectedDiseases.length+'</span> diseases',
 				name: 'cose-bilkent',
 				// Specific from cola algorithm
 				edgeLengthVal: 45,

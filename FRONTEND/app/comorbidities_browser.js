@@ -47,6 +47,11 @@ export class ComorbiditiesBrowser {
 		this.graphEl = setup.graph;
 		this.$graph = $(this.graphEl);
 		
+		// Create the graph title
+		this.$graphTitle = $('<div></div>');
+		this.$graphTitle.addClass('graph-title');
+		this.$graph.after(this.$graphTitle);
+		
 		// The right panel container
 		this.$config = $(setup.configPanel);
 		// The right panel toggle container
@@ -604,6 +609,9 @@ export class ComorbiditiesBrowser {
 			
 			this.configWidgets = [];
 		}
+		
+		// First and foremost, set the title
+		this.$graphTitle.html(this.params.title);
 		
 		let graphLayoutSelect = {
 			label: 'Graph Layouts',

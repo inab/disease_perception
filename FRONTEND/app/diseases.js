@@ -208,6 +208,7 @@ export class Diseases {
 		if(this.params===undefined) {
 			this.params = {
 				name: 'concentric',
+				title: 'Diseases',
 				// Specific from cola algorithm
 				edgeLengthVal: 45,
 				animate: true,
