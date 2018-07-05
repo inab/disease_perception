@@ -573,6 +573,8 @@ export class ComorbiditiesBrowser {
 			if(newIntersection.nonempty()) {
 				// The callback which highlights should be fired by this action
 				newIntersection.select();
+			} else {
+				this.cy.emit('unselect',[true]);
 			}
 		}
 	}
@@ -712,7 +714,7 @@ export class ComorbiditiesBrowser {
 		}
 	}
 	
-	onSelectHandler(evt) {
+	onSelectHandler(evt,forceUpdate=false) {
 		// jshint unused:false
 		if(!this.disableHighlightUpdates) {
 			let selected = this.cy.nodes('node:selected');
@@ -726,7 +728,7 @@ export class ComorbiditiesBrowser {
 				selectedEdges.unselect();
 			}
 			// Re-highlight in case it makes sense
-			if((!this.prevHighlighted && selected.nonempty()) || selected.symmetricDifference(this.prevHighlighted).nonempty()) {
+			if(forceUpdate || ((!this.prevHighlighted || this.prevHighlighted.empty()) && selected.nonempty()) || (this.prevHighlighted && selected.symmetricDifference(this.prevHighlighted).nonempty())) {
 				this.highlight(selected);
 				//if(selected.length===2) {
 				//	this.$modal.find('.modal-title').empty().append('Hola holita');
