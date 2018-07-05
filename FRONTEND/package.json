@@ -40,9 +40,7 @@
     ]
   },
   "scripts": {
-    "test": "grunt test",
-    "build:fast": "grunt build:fast",
-    "build": "grunt build"
+    "build": "webpack"
   },
   "resolutions": {
     "jquery": "^2.2.4"
