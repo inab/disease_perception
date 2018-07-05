@@ -699,7 +699,7 @@ export class ComorbiditiesBrowser {
 		
 		// Static tooltip view
 		$controls.append('<span class="label label-default">Selected element</span>');
-		this.$tooltipView = $('<div class="tooltip-view"></div>');
+		this.$tooltipView = $('<div class="tooltip-view"><i>(None)</i></div>');
 		$controls.append(this.$tooltipView);
 		
 		// The next view setup is only set when it is needed
