@@ -517,7 +517,13 @@ export class ComorbiditiesBrowser {
 
 
 	filterOnConditions() {
-		if(this.prevHighlighted && this.prevHighlighted.nonempty()) {
+		// Recording the already selected nodes
+		let selectedNodes = this.cy.nodes('node:selected');
+		this.disableHighlightUpdates = true;
+		selectedNodes.unselect();
+		
+		this.prevHighlighted = null;
+		if(this.unHighlighted && this.unHighlighted.nonempty()) {
 			this.unHighlighted.restore();
 			this.unHighlighted = null;
 		}
@@ -555,9 +561,14 @@ export class ComorbiditiesBrowser {
 			//return n.degree(true) === 0;
 		}).remove());
 		
-		// And, at last, highlight again
-		if(this.prevHighlighted && this.prevHighlighted.nonempty()) {
-			this.highlight(this.prevHighlighted);
+		// And, at last, highlight again (if possible)
+		this.disableHighlightUpdates = false;
+		if(selectedNodes.nonempty()) {
+			let newIntersection = this.cy.nodes().intersection(selectedNodes);
+			if(newIntersection.nonempty()) {
+				// The callback which highlights should be fired by this action
+				newIntersection.select();
+			}
 		}
 	}
 	
@@ -695,22 +706,25 @@ export class ComorbiditiesBrowser {
 	
 	onSelectHandler(evt) {
 		// jshint unused:false
-		let selected = this.cy.nodes('node:selected');
-		let selectedEdges = this.cy.edges('edge:selected');
-		if(selectedEdges.nonempty()) {
-			let connectedEdgesNodes = selectedEdges.connectedNodes();
-			if(connectedEdgesNodes.nonempty()) {
-				connectedEdgesNodes.select();
-				selected.merge(connectedEdgesNodes);
+		if(!this.disableHighlightUpdates) {
+			let selected = this.cy.nodes('node:selected');
+			let selectedEdges = this.cy.edges('edge:selected');
+			if(selectedEdges.nonempty()) {
+				let connectedEdgesNodes = selectedEdges.connectedNodes();
+				if(connectedEdgesNodes.nonempty()) {
+					connectedEdgesNodes.select();
+					selected.merge(connectedEdgesNodes);
+				}
+				selectedEdges.unselect();
 			}
-			selectedEdges.unselect();
-		}
-		if((!this.prevHighlighted && selected.nonempty()) || selected.symmetricDifference(this.prevHighlighted).nonempty()) {
-			this.highlight(selected);
-			//if(selected.length===2) {
-			//	this.$modal.find('.modal-title').empty().append('Hola holita');
-			//	this.$modal.modal('show');
-			//}
+			// Re-highlight in case it makes sense
+			if((!this.prevHighlighted && selected.nonempty()) || selected.symmetricDifference(this.prevHighlighted).nonempty()) {
+				this.highlight(selected);
+				//if(selected.length===2) {
+				//	this.$modal.find('.modal-title').empty().append('Hola holita');
+				//	this.$modal.modal('show');
+				//}
+			}
 		}
 	}
 	
