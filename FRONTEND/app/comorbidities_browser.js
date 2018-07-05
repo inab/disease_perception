@@ -733,6 +733,11 @@ export class ComorbiditiesBrowser {
 				//	this.$modal.modal('show');
 				//}
 			}
+			
+			// Update the title
+			var title = this.params.title+(selected.nonempty() ? ' (focused on '+selected.length+')':'');
+			
+			this.$graphTitle.html(title);
 		}
 	}
 	
