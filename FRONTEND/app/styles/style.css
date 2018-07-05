@@ -108,6 +108,49 @@ a:hover {
 	margin-right: 0.6em;
 }
 
+.tooltip-view {
+	width: 100%;
+	font-size: 1rem;
+	border-width: 1px;
+	border-style: solid;
+	border-color: white;
+	border-radius: 5px;
+	margin-bottom: 1rem;
+}
+
+.scrollblock {
+	overflow: auto;
+	max-height: 10rem;
+	width:100%;
+	white-space: pre-line;
+	font-size: 1rem;
+}
+
+.tippy-content .scrollblock {
+	display: none;
+}
+
+.tippy-content .tooltip-hide {
+	display: none;
+}
+
+.updown {
+	display: flex;
+}
+
+.updown > div {
+	width: 50%;
+	flex: 1 1 auto;
+}
+
+.tippy-content .updown {
+	display: inline;
+}
+
+.tippy-content .updown > div {
+	display: inline;
+}
+
 /*
  *	Vertical centering obtained from
  * 

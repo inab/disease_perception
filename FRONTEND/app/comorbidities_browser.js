@@ -678,6 +678,11 @@ export class ComorbiditiesBrowser {
 			}
 		});
 		
+		// Static tooltip view
+		$controls.append('<span class="label label-default">Selected element</span>');
+		this.$tooltipView = $('<div class="tooltip-view"></div>');
+		$controls.append(this.$tooltipView);
+		
 		// The next view setup is only set when it is needed
 		let nextViewSetup = this.currentView.getNextViewSetup();
 		
@@ -745,19 +750,27 @@ export class ComorbiditiesBrowser {
 		// Now, attach event handlers to each node
 		let $ctxNodeHandler = this.ctxHandlers.nodes.length > 0 ?
 			(evt) => {
-				// Filter by this edge
-				this.ctxHandlers.nodes.forEach((ctxNodeHandler) => ctxNodeHandler(evt.target));
+				// Filter by this node
+				if(evt.originalEvent.ctrlKey) {
+					this.ctxHandlers.nodes.forEach((ctxNodeHandler) => ctxNodeHandler(evt.target));
+				} else {
+					this.$tooltipView.html(evt.target.scratch('tooltip'));
+				}
 			}
 			:
-			null;
+			(evt) => {
+				this.$tooltipView.html(evt.target.scratch('tooltip'));
+			};
 		
 		this.cy.nodes().forEach((node) => {
 			if(!node.isParent()) {
 				let ref = node.popperRef(); // used only for positioning
 
 				// using tippy ^2.0.0
+				let content = this.currentView.makeNodeTooltipContent(node);
+				node.scratch('tooltip',$(content).clone());
 				let tip = tippy(ref, { // tippy options:
-					html: this.currentView.makeNodeTooltipContent(node),
+					html: content,
 					trigger: 'manual',
 					arrow: true,
 					arrowType: 'round',
@@ -797,17 +810,25 @@ export class ComorbiditiesBrowser {
 			let $ctxEdgeHandler = this.ctxHandlers.edges.length > 0 ?
 				(evt) => {
 					// Filter by this edge
-					this.ctxHandlers.edges.forEach((ctxEdgeHandler) => ctxEdgeHandler(evt.target));
+					if(evt.originalEvent.ctrlKey) {
+						this.ctxHandlers.edges.forEach((ctxEdgeHandler) => ctxEdgeHandler(evt.target));
+					} else {
+						this.$tooltipView.html(evt.target.scratch('tooltip'));
+					}
 				}
 				:
-				null;
+				(evt) => {
+					this.$tooltipView.html(evt.target.scratch('tooltip'));
+				};
 			
 			this.cy.edges().forEach((edge) => {
 				let ref = edge.popperRef(); // used only for positioning
 
 				// using tippy ^2.0.0
+				let content = this.currentView.makeEdgeTooltipContent(edge);
+				edge.scratch('tooltip',$(content).clone());
 				let tip = tippy(ref, { // tippy options:
-					html: this.currentView.makeEdgeTooltipContent(edge),
+					html: content,
 					trigger: 'manual',
 					arrow: true,
 					arrowType: 'round',
