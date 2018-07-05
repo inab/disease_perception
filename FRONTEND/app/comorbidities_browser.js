@@ -71,6 +71,30 @@ export class ComorbiditiesBrowser {
 		this.$historyForward.prop('disabled',true);
 		this.$historyBack.after(this.$historyForward);
 		
+		this.$legend = $('<span><i class="fa fa-info-circle" aria-hidden="true"></i></span>');
+		this.$legend.addClass('cmui button');
+		this.$legend.attr('id','legend');
+		this.$historyForward.after(this.$legend);
+		
+		this.$legendBody = $('<div><h1>Skeleton</h1></div>');
+		
+		//tippy(this.$legend);
+		let tip = tippy.one(this.$legend.get(0),{ // tippy options:
+			html: this.$legendBody.get(0),
+			arrow: true,
+			arrowType: 'round',
+			placement: 'bottom-end',
+			animation: 'perspective',
+			interactive: true,
+			interactiveBorder: 5,
+			hideOnClick: false,
+			multiple: false,
+			trigger: 'mouseenter focus',
+			size: 'large',
+			theme: 'light',
+			zIndex: 999
+		});
+		
 		// The right panel container
 		this.$config = $(setup.configPanel);
 		// The right panel toggle container
@@ -921,7 +945,6 @@ export class ComorbiditiesBrowser {
 					animation: 'perspective',
 					interactive: true,
 					interactiveBorder: 5,
-					delay: 2000,
 					hideOnClick: false,
 					multiple: true,
 					sticky: true,
@@ -978,7 +1001,6 @@ export class ComorbiditiesBrowser {
 					placement: 'bottom',
 					animation: 'perspective',
 					followCursor: true,
-					delay: 2000,
 					multiple: false,
 					sticky: true,
 					theme: 'dark',
