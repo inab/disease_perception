@@ -12,6 +12,19 @@ var _PendingNodePropagation = true;
 var _PatientSubgroupsHash;
 var _PatientSubgroupsNodeHash;
 
+const ENSEMBL_GENE_SEARCH='http://www.ensembl.org/Homo_sapiens/Location/View?g=';
+const DRUGBANK_SEARCH='https://www.drugbank.ca/unearth/q?utf8=%E2%9C%93&searcher=drugs&query=';
+
+function ensLink(g) {
+	let saneG = encodeURIComponent(g);
+	return '<a href="'+ENSEMBL_GENE_SEARCH + saneG + '" target="_blank">'+saneG+'</a>';
+}
+
+function drugbankLink(dr) {
+	let saneD = encodeURIComponent(dr);
+	return '<a href="'+DRUGBANK_SEARCH + saneD + '" target="_blank">'+saneD+'</a>';
+}
+
 // Adding useful method
 Set.prototype.intersection = function(setB) {
 	let intersection = new Set();
@@ -577,22 +590,22 @@ export class PatientSubgroups {
 				'<div class="updown">'+
 					'<div>'+
 						'<i class="fa fa-arrow-up" aria-hidden="true"></i> ' + node.data('drugs').up.length +
-						'<div class="scrollblock">'+node.data('drugs').up.join('\n')+'</div>' +
+						'<div class="scrollblock">'+node.data('drugs').up.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
 						' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + node.data('drugs').down.length + '<br/>' +
-						'<div class="scrollblock">'+node.data('drugs').down.join('\n')+'</div>' +
+						'<div class="scrollblock">'+node.data('drugs').down.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 				'</div>'+
 				'Genes: '+
 				'<div class="updown">'+
 					'<div>'+
 						'<i class="fa fa-arrow-up" aria-hidden="true"></i> ' + node.data('genes').up.length +
-						'<div class="scrollblock">'+node.data('genes').up.join('\n')+'</div>' +
+						'<div class="scrollblock">'+node.data('genes').up.map(ensLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
 						' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + node.data('genes').down.length +
-						'<div class="scrollblock">'+node.data('genes').down.join('\n')+'</div>'+
+						'<div class="scrollblock">'+node.data('genes').down.map(ensLink).join('<br/>')+'</div>'+
 					'</div>'+
 				'</div>';
 		} catch(e) {
@@ -619,23 +632,23 @@ export class PatientSubgroups {
 				'<b>Common drugs</b>: '+
 				'<div class="updown">'+
 					'<div>'+
-						'<i class="fa fa-arrow-up" aria-hidden="true"></i> ' + edge.data('drugs').up.length +
-						'<div class="scrollblock">'+edge.data('drugs').up.join('\n')+'</div>' +
+						'<i class="fa fa-angle-double-up" aria-hidden="true" title="Up both in source and target"></i> ' + edge.data('drugs').up.length +
+						'<div class="scrollblock">'+edge.data('drugs').up.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
-						' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + edge.data('drugs').down.length + '<br/>' +
-						'<div class="scrollblock">'+edge.data('drugs').down.join('\n')+'</div>' +
+						' <i class="fa fa-angle-double-down" aria-hidden="true" title="Down both in source and target"></i> ' + edge.data('drugs').down.length + '<br/>' +
+						'<div class="scrollblock">'+edge.data('drugs').down.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 				'</div>'+
 				'<b>Common genes</b>: '+
 				'<div class="updown">'+
 					'<div>'+
-						'<i class="fa fa-arrow-up" aria-hidden="true"></i> ' + edge.data('genes').up.length +
-						'<div class="scrollblock">'+edge.data('genes').up.join('\n')+'</div>' +
+						'<i class="fa fa-angle-double-up" aria-hidden="true" title="Up both in source and target"></i> ' + edge.data('genes').up.length +
+						'<div class="scrollblock">'+edge.data('genes').up.map(ensLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
-						' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + edge.data('genes').down.length +
-						'<div class="scrollblock">'+edge.data('genes').down.join('\n')+'</div>' +
+						' <i class="fa fa-angle-double-down" aria-hidden="true" title="Down both in source and target"></i> ' + edge.data('genes').down.length +
+						'<div class="scrollblock">'+edge.data('genes').down.map(ensLink).join('<br/>')+'</div>' +
 					'</div>'+
 				'</div>';
 		} else {
@@ -645,23 +658,23 @@ export class PatientSubgroups {
 				'<b>Inverse drugs</b>: '+
 				'<div class="updown">'+
 					'<div>'+
-						'<i class="fa fa-random" aria-hidden="true"></i> ' + edge.data('drugs').up.length +
-						'<div class="scrollblock">'+edge.data('drugs').up.join('\n')+'</div>' +
+						'<i class="fa fa-random" aria-hidden="true" title="Up in source, down in target"></i> ' + edge.data('drugs').up.length +
+						'<div class="scrollblock">'+edge.data('drugs').up.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
-						' <i class="fa fa-random fa-rotate-180" aria-hidden="true"></i> ' + edge.data('drugs').down.length + '<br/>' +
-						'<div class="scrollblock">'+edge.data('drugs').down.join('\n')+'</div>' +
+						' <i class="fa fa-random fa-rotate-180" aria-hidden="true" title="Down in source, up in target"></i> ' + edge.data('drugs').down.length + '<br/>' +
+						'<div class="scrollblock">'+edge.data('drugs').down.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 				'</div>'+
 				'<b>Inverse genes</b>: '+
 				'<div class="updown">'+
 					'<div>'+
-						'<i class="fa fa-random" aria-hidden="true"></i> ' + edge.data('genes').up.length +
-						'<div class="scrollblock">'+edge.data('genes').up.join('\n')+'</div>' +
+						'<i class="fa fa-random" aria-hidden="true" title="Up in source, down in target"></i> ' + edge.data('genes').up.length +
+						'<div class="scrollblock">'+edge.data('genes').up.map(ensLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
-						' <i class="fa fa-random fa-rotate-180" aria-hidden="true"></i> ' + edge.data('genes').down.length +
-						'<div class="scrollblock">'+edge.data('genes').down.join('\n')+'</div>' +
+						' <i class="fa fa-random fa-rotate-180" aria-hidden="true" title="Down in source, up in target"></i> ' + edge.data('genes').down.length +
+						'<div class="scrollblock">'+edge.data('genes').down.map(ensLink).join('<br/>')+'</div>' +
 					'</div>'+
 				'</div>';
 		}
