@@ -67,12 +67,19 @@ export class ComorbiditiesBrowser {
 		this.$historyBack.prop('disabled',true);
 		this.$graphTitle.after(this.$historyBack);
 		
+		this.$unselectAll = $('<button><i class="fa fa-refresh" aria-hidden="true" title="Unselect all"></i></button>');
+		this.$unselectAll.attr('id','unselect-all');
+		this.$unselectAll.addClass('cmui button btn btn-default');
+		this.$unselectAll.on('click',() => this.unselectAll());
+		this.$unselectAll.prop('disabled',true);
+		this.$historyBack.after(this.$unselectAll);
+		
 		this.$historyForward = $('<button><i class="fa fa-arrow-circle-o-right" aria-hidden="true" title="Next view"></i></button>');
 		this.$historyForward.addClass('cmui button btn btn-default');
 		this.$historyForward.attr('id','history-forward');
 		this.$historyForward.on('click',() => this.historyGoForward());
 		this.$historyForward.prop('disabled',true);
-		this.$historyBack.after(this.$historyForward);
+		this.$unselectAll.after(this.$historyForward);
 		
 		this.$legend = $('<span><i class="fa fa-info-circle" aria-hidden="true"></i></span>');
 		this.$legend.addClass('cmui button');
@@ -191,6 +198,7 @@ export class ComorbiditiesBrowser {
 		
 		this.$historyBack.prop('disabled',this.historyPointer===0);
 		this.$historyForward.prop('disabled',this.historyPointer+1 === this.history.length);
+		this.$unselectAll.prop('disabled',true);
 		
 		let viewName = this.history[historyId].viewName;
 		let viewParams = this.history[historyId].viewParams;
@@ -602,7 +610,7 @@ export class ComorbiditiesBrowser {
 			},$selectedNodesView);
 		let $selectNone = this.makeButton({
 				classes: 'btn-xs',
-				label: '<i class="fa fa-square-o" title="Deselect all"></i>',
+				label: '<i class="fa fa-square-o" title="Unselect all"></i>',
 				fn: () => {
 					$nodeList.find('input[type="checkbox"]').prop('checked',false);
 					this.updateSelectedNodesCount($nodeList.find('input[type="checkbox"]:checked'));
@@ -906,6 +914,9 @@ export class ComorbiditiesBrowser {
 				}
 				selectedEdges.unselect();
 			}
+			
+			this.$unselectAll.prop('disabled',selected.empty());
+			
 			// Re-highlight in case it makes sense
 			if(forceUpdate || ((!this.prevHighlighted || this.prevHighlighted.empty()) && selected.nonempty()) || (this.prevHighlighted && selected.symmetricDifference(this.prevHighlighted).nonempty())) {
 				this.highlight(selected);
@@ -920,6 +931,10 @@ export class ComorbiditiesBrowser {
 			
 			this.$graphTitle.html(title);
 		}
+	}
+	
+	unselectAll() {
+		this.cy.elements().unselect();
 	}
 	
 	doLayout() {

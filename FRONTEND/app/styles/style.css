@@ -26,6 +26,7 @@ body {
 }
 
 #history-back ,
+#unselect-all ,
 #history-forward ,
 #save-network ,
 #snapshot ,
@@ -33,6 +34,7 @@ body {
 	top: 1vw;
 }
 
+#unselect-all ,
 #save-network ,
 #snapshot {
 	font-size: 2vw;
@@ -47,8 +49,12 @@ body {
   left: 1vw;
 }
 
-#history-forward {
+#unselect-all {
   left: 5vw;
+}
+
+#history-forward {
+  left: 9vw;
 }
 
 #save-network {
