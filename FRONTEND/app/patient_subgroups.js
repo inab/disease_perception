@@ -563,6 +563,11 @@ export class PatientSubgroups {
 						minSeparation: 30
 					}
 				}
+			},
+			{
+				type: 'legend',
+				// Reuse legend from diseases
+				domNode: this.diseases.getLegendDOM()
 			}
 		];
 		

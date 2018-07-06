@@ -74,9 +74,11 @@ export class ComorbiditiesBrowser {
 		this.$legend = $('<span><i class="fa fa-info-circle" aria-hidden="true"></i></span>');
 		this.$legend.addClass('cmui button');
 		this.$legend.attr('id','legend');
+		this.$legend.hide();
 		this.$historyForward.after(this.$legend);
 		
-		this.$legendBody = $('<div><h1>Skeleton</h1></div>');
+		this.$legendBody = $('<div></div>');
+		this.$legendBody.addClass('legend-container');
 		
 		//tippy(this.$legend);
 		let tip = tippy.one(this.$legend.get(0),{ // tippy options:
@@ -164,6 +166,7 @@ export class ComorbiditiesBrowser {
 	
 	switchHistoryView(historyId=-1) {
 		this.$loading.removeClass('loaded');
+		this.$legend.hide();
 		if(historyId===-1) {
 			historyId = this.historyPointer;
 		} else {
@@ -735,6 +738,14 @@ export class ComorbiditiesBrowser {
 		this.filterOnConditions();
 	}
 	
+	makeLegend(opts) {
+		this.$legendBody.empty();
+		this.$legendBody.append(opts.domNode);
+		this.$legend.show();
+		
+		return this.$legendBody;
+	}
+	
 	initializeControls() {
 		let $controls = this.$controls;
 		$controls.empty();
@@ -816,6 +827,9 @@ export class ComorbiditiesBrowser {
 						$controls.append(btnParam);
 					}
 					$ctrl = this.makeButton(ctrlDesc,btnParam);
+					break;
+				case 'legend':
+					$ctrl = this.makeLegend(ctrlDesc);
 					break;
 			}
 			

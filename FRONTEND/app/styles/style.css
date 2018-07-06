@@ -40,6 +40,26 @@ body {
   right: calc(1vw + 24rem);
 }
 
+/*
+.legend-container {
+	max-width: 25%;
+}
+*/
+
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	/* overflow: auto; */
+	align-items: baseline;
+	text-align: left;
+}
+
+.legend.two-column > div {
+	width: 50%;
+	box-sizing: border-box;
+	display: flex;
+}
+
 .cmui {
 	position: fixed;
 	text-align: center;
@@ -175,6 +195,10 @@ a:hover {
 	width:100%;
 	white-space: pre-line;
 	font-size: 1rem;
+}
+
+.tippy-popper[data-html] {
+	max-width: 25%;
 }
 
 .tippy-content .scrollblock {

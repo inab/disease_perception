@@ -220,6 +220,22 @@ export class Diseases {
 		return this.params;
 	}
 	
+	getLegendDOM() {
+		let $result = $('<span style="font-size: 2rem;">Color legend (based on disease groups)</span><div class="legend two-column">'+
+		'<div class="item">'+
+		_DiseaseGroups.map((dg) => {
+			return '<div><i class="fa fa-circle" style="color: '+
+				dg.color+
+				';"></i></div><div>'+
+				dg.name+
+				'</div>';
+		}).join('</div><div>')+
+		'</div>'+
+		'</div>');
+		
+		return $result;
+	}
+	
 	// Controls and their associated filters
 	getControlsSetup() {
 		let absRelRiskData = this.getAbsRelRiskRange();
@@ -295,6 +311,10 @@ export class Diseases {
 						minSeparation: 30
 					}
 				}
+			},
+			{
+				type: 'legend',
+				domNode: this.getLegendDOM(),
 			}
 		];
 		
