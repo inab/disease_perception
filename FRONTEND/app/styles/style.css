@@ -25,20 +25,44 @@ body {
   background-color: rgba(255,255,255,0.5);
 }
 
+#history-back ,
+#history-forward ,
+#save-network ,
+#snapshot ,
+#legend {
+	top: 1vw;
+}
+
+#save-network ,
+#snapshot {
+	font-size: 2vw;
+}
+
+#save-network > i ,
+#snapshot > i {
+	display: inline;
+}
+
 #history-back {
-  top: 1vw;
   left: 1vw;
 }
 
 #history-forward {
-  top: 1vw;
   left: 5vw;
 }
 
+#save-network {
+  right: calc(9vw + 24rem);
+}
+
+#snapshot {
+  right: calc(5vw + 24rem);
+}
+
 #legend {
-  top: 1vw;
   right: calc(1vw + 24rem);
 }
+
 
 /*
 .legend-container {

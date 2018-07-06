@@ -57,6 +57,7 @@
     "fastclick": "^1.0.6",
     "font-awesome": "^4.7.0",
     "jquery": "^2.2.4",
-    "tippy.js": "^2.5.2"
+    "tippy.js": "^2.5.2",
+    "toDataURL": "^0.1.1"
   }
 }

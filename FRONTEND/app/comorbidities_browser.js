@@ -28,6 +28,9 @@ import popper from 'cytoscape-popper';
 cytoscape.use( popper );
 import tippy from 'tippy.js';
 
+// toDataURL support
+import urlfy from 'toDataURL';
+
 // Internal code
 import { Diseases } from './diseases';
 import { Patients } from './patients';
@@ -96,6 +99,19 @@ export class ComorbiditiesBrowser {
 			theme: 'light',
 			zIndex: 999
 		});
+		
+		this.$snapshot = $('<a><i class="fa fa-picture-o" aria-hidden="true" title="Save network snapshot"></i></a>');
+		this.$snapshot.addClass('cmui button button btn btn-default');
+		this.$snapshot.attr('id','snapshot');
+		this.$snapshot.on('click',() => this.saveSnapshot());
+		this.$legend.after(this.$snapshot);
+		
+		this.$saveNetwork = $('<a><i class="fa fa-area-chart" aria-hidden="true" title="Save network as Cytoscape.json"></i></a>');
+		this.$saveNetwork.addClass('cmui button button btn btn-default');
+		this.$saveNetwork.attr('id','save-network');
+		this.$saveNetwork.on('click',() => this.saveNetwork());
+		this.$snapshot.after(this.$saveNetwork);
+		
 		
 		// The right panel container
 		this.$config = $(setup.configPanel);
@@ -237,6 +253,20 @@ export class ComorbiditiesBrowser {
 			this.saveSelectedNodes();
 			this.switchHistoryView(this.historyPointer+1);
 		}
+	}
+	
+	getViewId() {
+		return this.history[this.historyPointer].viewName;
+	}
+	
+	saveSnapshot() {
+		this.$snapshot.attr('download','disease-perception_'+this.getViewId()+'.png');
+		this.$snapshot.attr('href',this.cy.png());
+	}
+	
+	saveNetwork() {
+		this.$saveNetwork.attr('download','disease-perception_'+this.getViewId()+'.json');
+		this.$saveNetwork.attr('href',urlfy.toDataURL(JSON.stringify(this.cy.json()),'application/json'));
 	}
 	
 	makeCy(container, style, graphData) {
