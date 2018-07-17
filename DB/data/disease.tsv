@@ -1,0 +1,137 @@
+id	name	disease_group_id
+1	Acne	1
+2	Active hemophagocytic lymphohistiocytosis	2
+3	Acute atopic dermatitis	1
+4	Acute myeloid leukemia	3
+5	Acute myocardial infarction	4
+6	Adrenocortical carcinoma	3
+7	Adult T cell leukemia	3
+8	Ageing	5
+9	Alcoholic hepatitis	6
+10	Alopecia	1
+11	Alzheimer's disease	7
+12	Amyotrophic lateral sclerosis	7
+13	ANCA crescentic glomerulonephritis	8
+14	Aphthous stomatitis	6
+15	Arrhythmogenic right ventricular cardiomyopathy	4
+16	Asthma	9
+17	Astrocytoma	3
+18	Atopic dermatitis	1
+19	Atrial fibrillation	4
+20	Autism	10
+21	Autosomal dominant monocytopenia	11
+22	Axial spondyloarthropathy	12
+23	Basaloid lung cancer	3
+24	Behcet's disease	13
+25	Bladder carcinoma	3
+26	Breast cancer	3
+27	Campylobacter jenuni infection	13
+28	Cardioembolic stroke	4
+29	Cornelia de Lange syndrome	11
+30	Cervical cancer	3
+31	Choroideremia	7
+32	Chronic atopic dermatitis	1
+33	Chronic lymphocytic leukemia	3
+34	Chronic obstructive pulmonary disease	9
+35	Chronic rhinosinusitis	9
+36	Coenzyme Q deficiency	5
+37	Colorectal cancer	3
+38	Crohns disease	6
+39	Cutaneous sarcoidosis	13
+40	Dengue	13
+41	Dermatomyositis	12
+42	Ductal breast cancer	3
+43	Endometriosis	8
+44	Ependymoma	5
+45	Esophageal squamous cell carcinoma	3
+46	Essential thrombocythemia	3
+47	Fatal familial insomnia	13
+48	Follicular lymphoma	3
+49	Gastric cancer	3
+50	Glioblastoma	3
+51	Hepatitis C virus infection	13
+52	Hepatitis B	13
+53	Hepatoblastoma	3
+54	Hepatocellular carcinoma	3
+55	Hepatocellular carcinoma associated to hepatitis B	3
+56	Human papillomavirus cervix	13
+57	Huntington's disease	7
+58	Hutchinson Gilford progeria	14
+59	Idiopathic pulmonary fibrosis	9
+60	Interstitial cystitis	8
+61	Interstitial lung disease	9
+62	Irritable bowel syndrome	6
+63	Ischemic heart	4
+64	Ischemic stroke	4
+65	ISCU myopathy	7
+66	Juvenile myelomonocytic leukaemia	3
+67	Job's syndrome	14
+68	Klinefelter's syndrome	11
+69	Leigh syndrome	7
+70	Leishmania infection	13
+71	Lobular breast cancer	3
+72	Lung cancer	3
+73	Lung squamous cell carcinoma	3
+74	Major depression	10
+75	Malignant pleural mesothelioma	3
+76	Medulloblastoma	3
+77	Monoclonal gammopathy of undetermined significance	14
+78	Multiple myeloma	3
+79	Multiple sclerosis	7
+80	Mycobacterium tuberculosis	13
+81	Myelodysplastic syndrome	3
+82	Myeloma	3
+83	Myocardial infarction	4
+84	Myositis	12
+85	Nasopharingeal carcinoma	3
+86	NSCLC	3
+87	Oligodendroglioma	3
+88	Oral cavity cancer	3
+89	Oral dysplasia	3
+90	Osteoarthritis	12
+91	Osteosarcoma	3
+92	Ovary cancer	3
+93	Pancreatic carcinoma	3
+94	Pancreatic ductal adenocarcinoma	3
+95	Parkinson's disease	7
+96	Polycystic ovary syndrome	14
+97	Peripheral arterial disease	4
+98	Pilocytic astrocytoma	3
+99	Pollen allergy	9
+100	Mitochondrial DNA polymerase POLG1 disease	14
+101	Polycythemia vera	3
+102	Primary myelofibrosis	2
+103	Prostate cancer	3
+104	Psoriasis	1
+105	Renal cancer	3
+106	Rhabdoid tumor	5
+107	Erythematotelangiectatic Rosacea	1
+108	Papulopustular Rosacea	1
+109	Phymatous Rosacea	1
+110	Sarcoidosis	13
+111	Schizophrenia	10
+112	Seborrheic keratosis	1
+113	Septic shock	15
+114	Setleis syndrome	5
+115	Sickle cell anemia	2
+116	Sjogren's syndrome	12
+117	Systemic lupus erythematosus	12
+118	Smoker	9
+119	Smoldering myeloma	3
+120	Sotos syndrome	11
+121	Spina bifida	11
+122	Squamous cell carcinoma	3
+123	Sybsyndromal symptomatic depression	10
+124	T cell lymphoma	3
+125	Thalassemia	2
+126	Thrombocytopenia	2
+127	Thyroid cancer	3
+128	Muscular dystrophy	7
+129	Trachoma	13
+130	Training	5
+131	Turner syndrome	11
+132	Type I diabetes	14
+133	Type II diabetes	14
+134	Ulcerative colitis	6
+135	Uremia	15
+136	Vitiligo	1
