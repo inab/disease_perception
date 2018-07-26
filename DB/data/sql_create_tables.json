@@ -2,7 +2,7 @@
 	{
 		"table": "disease_group",
 		"sql_ddl": "CREATE TABLE disease_group ( id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-		"datafile": "disease_group.tsv.gz"
+		"datafile": "disease_group.tsv"
 	},
 	{
 		"table": "disease_group_properties",
@@ -18,7 +18,7 @@
 		"indexes": [
 			["disease_group_id"]
 		],
-		"datafile": "disease.tsv.gz"
+		"datafile": "disease.tsv"
 	},
 	{
 		"table": "disease_properties",
@@ -39,17 +39,17 @@
 	{
 		"table": "gene",
 		"sql_ddl": "CREATE TABLE gene ( id INTEGER PRIMARY KEY, gene_symbol TEXT UNIQUE, ensembl_id TEXT, uniprot_id TEXT);",
-		"datafile": "gene.tsv.gz"
+		"datafile": "gene.tsv"
 	},
 	{
 		"table": "study",
 		"sql_ddl": "CREATE TABLE study ( id INTEGER PRIMARY KEY, geo_arrayexpress_code TEXT UNIQUE ); ",
-		"datafile": "study.tsv.gz"
+		"datafile": "study.tsv"
 	},
 	{
 		"table": "drug",
 		"sql_ddl": "CREATE TABLE drug ( id INTEGER PRIMARY KEY, name TEXT );",
-		"datafile": "drug.tsv.gz"
+		"datafile": "drug.tsv"
 	},
 	{
 		"table": "patient",
@@ -67,7 +67,7 @@
 			["patient_id"],
 			["drug_id"]
 		],
-		"datafile": "patient_drug_maps.tsv.gz"
+		"datafile": "patient_drug_maps.tsv.xz"
 	},
 	{
 		"table": "patient_gene_maps",
@@ -76,7 +76,7 @@
 			["patient_id"],
 			["gene_id"]
 		],
-		"datafile": "patient_gene_maps.tsv.gz"
+		"datafile": "patient_gene_maps.tsv.xz"
 	},
 	{
 		"table": "patient_graph",
@@ -85,7 +85,7 @@
 			["patient_a_id"],
 			["patient_b_id"]
 		],
-		"datafile": "patient_graph.tsv.gz"
+		"datafile": "patient_graph.tsv.xz"
 	},
 	{
 		"table": "disease_digraph",
@@ -94,7 +94,7 @@
 			["disease_a_id"],
 			["disease_b_id"]
 		],
-		"datafile": "disease_digraph.tsv.gz"
+		"datafile": "disease_digraph.tsv"
 	},
 	{
 		"table": "patient_subgroup_digraph",
@@ -112,7 +112,7 @@
 			["patient_subgroup_id"],
 			["drug_id"]
 		],
-		"datafile": "patient_subgroup_drug_intersect.tsv.gz"
+		"datafile": "patient_subgroup_drug_intersect.tsv"
 	},
 	{
 		"table": "patient_subgroup_gene_intersect",
@@ -121,6 +121,6 @@
 			["patient_subgroup_id"],
 			["gene_id"]
 		],
-		"datafile": "patient_subgroup_gene_intersect.tsv.gz"
+		"datafile": "patient_subgroup_gene_intersect.tsv"
 	}
 ]
