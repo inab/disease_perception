@@ -32,11 +32,12 @@ def main(project_folder="./"):
 
 		fname = os.path.join(data_folder,table['datafile'])
 		print("\t- Reading file {0}".format(fname))
-		df = pd.read_csv(fname, sep='\t')
+		idf = pd.read_csv(fname, sep='\t', chunksize=100000)
 		#df_id = df.set_index('id')
 		print("\t- Inserting data into {0}".format(tab_name))
 		#df_id.to_sql(tab_name, con_db, if_exists='append')
-		df.to_sql(tab_name, con_db, if_exists='append',index=False)
+		for chunk in idf:
+			chunk.to_sql(tab_name, con_db, if_exists='append',index=False)
 		
 		indexes = table.get('indexes',[])
 		for index in indexes:
