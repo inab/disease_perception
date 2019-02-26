@@ -1,6 +1,6 @@
 id	name	disease_group_id
 1	Acne	1
-2	Active hemophagocytic lymphohistiocytosis	2
+2	Familial hemophagocytic lymphohistiocytosis	2
 3	Acute atopic dermatitis	1
 4	Acute myeloid leukemia	3
 5	Acute myocardial infarction	4
@@ -19,42 +19,42 @@ id	name	disease_group_id
 18	Atopic dermatitis	1
 19	Atrial fibrillation	4
 20	Autism	10
-21	Autosomal dominant monocytopenia	11
-22	Axial spondyloarthropathy	12
+21	Autosomal dominant monocytopenia	2
+22	Axial spondyloarthropathy	11
 23	Basaloid lung cancer	3
-24	Behcet's disease	13
+24	Behcet's disease	12
 25	Bladder carcinoma	3
 26	Breast cancer	3
-27	Campylobacter jenuni infection	13
+27	Campylobacter jenuni infection	12
 28	Cardioembolic stroke	4
-29	Cornelia de Lange syndrome	11
+29	Cornelia de Lange syndrome	13
 30	Cervical cancer	3
 31	Choroideremia	7
 32	Chronic atopic dermatitis	1
 33	Chronic lymphocytic leukemia	3
 34	Chronic obstructive pulmonary disease	9
 35	Chronic rhinosinusitis	9
-36	Coenzyme Q deficiency	5
+36	Coenzyme Q deficiency	14
 37	Colorectal cancer	3
 38	Crohns disease	6
-39	Cutaneous sarcoidosis	13
-40	Dengue	13
-41	Dermatomyositis	12
+39	Cutaneous sarcoidosis	12
+40	Dengue	12
+41	Dermatomyositis	11
 42	Ductal breast cancer	3
 43	Endometriosis	8
-44	Ependymoma	5
+44	Ependymoma	3
 45	Esophageal squamous cell carcinoma	3
 46	Essential thrombocythemia	3
-47	Fatal familial insomnia	13
+47	Fatal familial insomnia	12
 48	Follicular lymphoma	3
 49	Gastric cancer	3
 50	Glioblastoma	3
-51	Hepatitis C virus infection	13
-52	Hepatitis B	13
+51	Hepatitis C virus infection	12
+52	Hepatitis B	12
 53	Hepatoblastoma	3
 54	Hepatocellular carcinoma	3
 55	Hepatocellular carcinoma associated to hepatitis B	3
-56	Human papillomavirus cervix	13
+56	Human papillomavirus cervix	12
 57	Huntington's disease	7
 58	Hutchinson Gilford progeria	14
 59	Idiopathic pulmonary fibrosis	9
@@ -63,12 +63,12 @@ id	name	disease_group_id
 62	Irritable bowel syndrome	6
 63	Ischemic heart	4
 64	Ischemic stroke	4
-65	ISCU myopathy	7
+65	ISCU myopathy	14
 66	Juvenile myelomonocytic leukaemia	3
-67	Job's syndrome	14
-68	Klinefelter's syndrome	11
+67	Job's syndrome	2
+68	Klinefelter's syndrome	13
 69	Leigh syndrome	7
-70	Leishmania infection	13
+70	Leishmania infection	12
 71	Lobular breast cancer	3
 72	Lung cancer	3
 73	Lung squamous cell carcinoma	3
@@ -78,17 +78,17 @@ id	name	disease_group_id
 77	Monoclonal gammopathy of undetermined significance	14
 78	Multiple myeloma	3
 79	Multiple sclerosis	7
-80	Mycobacterium tuberculosis	13
+80	Mycobacterium tuberculosis	12
 81	Myelodysplastic syndrome	3
 82	Myeloma	3
 83	Myocardial infarction	4
-84	Myositis	12
+84	Myositis	11
 85	Nasopharingeal carcinoma	3
 86	NSCLC	3
 87	Oligodendroglioma	3
 88	Oral cavity cancer	3
-89	Oral dysplasia	3
-90	Osteoarthritis	12
+89	Oral dysplasia	6
+90	Osteoarthritis	11
 91	Osteosarcoma	3
 92	Ovary cancer	3
 93	Pancreatic carcinoma	3
@@ -108,30 +108,29 @@ id	name	disease_group_id
 107	Erythematotelangiectatic Rosacea	1
 108	Papulopustular Rosacea	1
 109	Phymatous Rosacea	1
-110	Sarcoidosis	13
+110	Sarcoidosis	12
 111	Schizophrenia	10
 112	Seborrheic keratosis	1
 113	Septic shock	15
-114	Setleis syndrome	5
+114	Setleis syndrome	13
 115	Sickle cell anemia	2
-116	Sjogren's syndrome	12
-117	Systemic lupus erythematosus	12
-118	Smoker	9
+116	Sjogren's syndrome	11
+117	Systemic lupus erythematosus	11
+118	Smoker	10
 119	Smoldering myeloma	3
-120	Sotos syndrome	11
-121	Spina bifida	11
-122	Squamous cell carcinoma	3
-123	Sybsyndromal symptomatic depression	10
-124	T cell lymphoma	3
-125	Thalassemia	2
-126	Thrombocytopenia	2
-127	Thyroid cancer	3
-128	Muscular dystrophy	7
-129	Trachoma	13
-130	Training	5
-131	Turner syndrome	11
-132	Type I diabetes	14
-133	Type II diabetes	14
-134	Ulcerative colitis	6
-135	Uremia	15
-136	Vitiligo	1
+120	Sotos syndrome	14
+121	Spina bifida	13
+122	Sybsyndromal symptomatic depression	5
+123	T cell lymphoma	3
+124	Thalassemia	2
+125	Thrombocytopenia	2
+126	Thyroid cancer	3
+127	Muscular dystrophy	7
+128	Trachoma	12
+129	Training	5
+130	Turner syndrome	13
+131	Type I diabetes	14
+132	Type II diabetes	14
+133	Ulcerative colitis	6
+134	Uremia	8
+135	Vitiligo	1

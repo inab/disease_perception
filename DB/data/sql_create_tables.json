@@ -6,7 +6,7 @@
 	},
 	{
 		"table": "disease_group_properties",
-		"sql_ddl": "CREATE TABLE disease_group_properties ( disease_group_id INTEGER NOT NULL, property TEXT NOT NULL, value TEXT, FOREIGN KEY(disease_group_id) REFERENCES disease_group(id) ); ",
+		"sql_ddl": "CREATE TABLE disease_group_properties ( disease_group_id INTEGER NOT NULL, property TEXT NOT NULL, value TEXT, UNIQUE (disease_group_id, property), FOREIGN KEY(disease_group_id) REFERENCES disease_group(id) ); ",
 		"indexes": [
 			["disease_group_id","property"]
 		],
@@ -22,7 +22,7 @@
 	},
 	{
 		"table": "disease_properties",
-		"sql_ddl": "CREATE TABLE disease_properties ( disease_id INTEGER NOT NULL, property TEXT NOT NULL, value TEXT, FOREIGN KEY(disease_id) REFERENCES disease(id) ); ",
+		"sql_ddl": "CREATE TABLE disease_properties ( disease_id INTEGER NOT NULL, property TEXT NOT NULL, value TEXT, UNIQUE (disease_id, property), FOREIGN KEY(disease_id) REFERENCES disease(id) ); ",
 		"indexes": [
 			["disease_id","property"]
 		],
@@ -95,6 +95,14 @@
 			["disease_b_id"]
 		],
 		"datafile": "disease_digraph.tsv"
+	},
+	{
+		"table": "disease_digraph_properties",
+		"sql_ddl": "CREATE TABLE disease_digraph_properties ( disease_digraph_id INTEGER NOT NULL, property TEXT NOT NULL, value TEXT, UNIQUE (disease_digraph_id, property), FOREIGN KEY (disease_digraph_id) REFERENCES disease_digraph(id) ); ",
+		"indexes": [
+			["disease_digraph_id","property"]
+		],
+		"datafile": "disease_digraph_properties.tsv"
 	},
 	{
 		"table": "patient_subgroup_digraph",

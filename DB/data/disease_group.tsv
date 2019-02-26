@@ -1,6 +1,6 @@
 id	name
 1	Diseases of the skin and subcutaneous tissue
-2	Diseases of the musculoskeletal system and connective tissue
+2	Diseases of the blood and blood-forming organs
 3	Neoplasms
 4	Diseases of the circulatory system
 5	Unclassified diseases and risk factors
@@ -9,8 +9,8 @@ id	name
 8	Diseases of the genitourinary system
 9	Diseases of the respiratory system
 10	Mental disorders
-11	Congenital anomalies
-12	Diseases of the blood and blood-forming organs
-13	Infectious and parasitic diseases
+11	Diseases of the musculoskeletal system and connective tissue
+12	Infectious and parasitic diseases
+13	Congenital anomalies
 14	Endocrine, nutritional and metabolic diseases, and immunity disorders
 15	Symptoms, signs, and ill-defined conditions
