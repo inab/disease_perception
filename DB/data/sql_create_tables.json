@@ -52,6 +52,11 @@
 		"datafile": "drug.tsv"
 	},
 	{
+		"table": "supporting_sources",
+		"sql_ddl": "CREATE TABLE supporting_sources ( id VARCHAR(256) NOT NULL PRIMARY KEY, pubmed_id INTEGER, doi VARCHAR(4096) );",
+		"datafile": "supporting_papers.tsv"
+	},
+	{
 		"table": "patient",
 		"sql_ddl": "CREATE TABLE patient ( id INTEGER PRIMARY KEY, patient_subgroup_id INTEGER, study_id INTEGER, FOREIGN KEY(patient_subgroup_id) REFERENCES patient_subgroup(id), FOREIGN KEY(study_id) REFERENCES study(id) ); ",
 		"indexes": [
