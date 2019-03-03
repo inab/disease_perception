@@ -18,35 +18,48 @@ def main(project_folder="./"):
 	with open(sql_creates_fname) as fh:
 		table_decls = json.load(fh)
 	
-	con_db = sqlite3.connect(db_path)
-	cursor = con_db.cursor()
-	
-	print("Creating Tables")
-	
-	for table in table_decls:
-		tab_name = table['table']
-		print("* Creating table %s" % tab_name)
+	con_db = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES, check_same_thread = False)
+	con_db.execute("""PRAGMA locking_mode = NORMAL""")
+	con_db.execute("""PRAGMA journal_mode = WAL""")
+	with con_db:
+		cursor = con_db.cursor()
+		cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table';")
+		numTablesRes = cursor.fetchone()
 		
-		sql = table['sql_ddl']
-		cursor.execute(sql)
-
-		fname = os.path.join(data_folder,table['datafile'])
-		print("\t- Reading file {0}".format(fname))
-		idf = pd.read_csv(fname, sep='\t', chunksize=100000)
-		#df_id = df.set_index('id')
-		print("\t- Inserting data into {0}".format(tab_name))
-		#df_id.to_sql(tab_name, con_db, if_exists='append')
-		for chunk in idf:
-			chunk.to_sql(tab_name, con_db, if_exists='append',index=False)
+		# We have to drop all the tables with the same name as the new ones before starting
+		if numTablesRes and numTablesRes[0] > 0:
+			print("Dropping old tables")
+			for table in reversed(table_decls):
+				tab_name = table['table']
+				print("* Drop table {0} (if exists)".format(tab_name))
+				cursor.execute("DROP TABLE IF EXISTS {0};".format(tab_name))
+				
+		print("Creating tables")
 		
-		indexes = table.get('indexes',[])
-		for index in indexes:
-			indexCommas = ', '.join(index)
-			print("\t- Indexing column(s): {0}".format(indexCommas))
-			index_ddl = "CREATE INDEX {0} ON {1} ({2});".format(tab_name+'_fk_'+'_'.join(index),tab_name,indexCommas)
-			cursor.execute(index_ddl)
-		
-		print("\t- Done!")
+		for table in table_decls:
+			tab_name = table['table']
+			print("* Creating table %s" % tab_name)
+			
+			sql_creation_arr = table['sql_ddl']
+			cursor.execute("CREATE TABLE {0} ( {1} );".format(tab_name,", ".join(sql_creation_arr)))
+			
+			fname = os.path.join(data_folder,table['datafile'])
+			print("\t- Reading file {0}".format(fname))
+			idf = pd.read_csv(fname, sep='\t', chunksize=100000)
+			#df_id = df.set_index('id')
+			print("\t- Inserting data into {0}".format(tab_name))
+			#df_id.to_sql(tab_name, con_db, if_exists='append')
+			for chunk in idf:
+				chunk.to_sql(tab_name, con_db, if_exists='append',index=False)
+			
+			indexes = table.get('indexes',[])
+			for index in indexes:
+				indexCommas = ', '.join(index)
+				print("\t- Indexing column(s): {0}".format(indexCommas))
+				index_ddl = "CREATE INDEX {0} ON {1} ({2});".format(tab_name+'_fk_'+'_'.join(index),tab_name,indexCommas)
+				cursor.execute(index_ddl)
+			
+			print("\t- Done!")
 	
 	print("Tables Ready")        
 	

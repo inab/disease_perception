@@ -532,7 +532,7 @@ export class PatientSubgroups {
 			},
 			//{
 			//	type: 'button',
-			//	label: '<i class="fa fa-object-group"></i>',
+			//	label: '<i class="far fa-object-group"></i>',
 			//	layoutOpts: {
 			//		randomize: true
 			//	},
@@ -540,7 +540,7 @@ export class PatientSubgroups {
 			//},
 			//{
 			//	type: 'button',
-			//	label: '<i class="fa fa-object-ungroup"></i>',
+			//	label: '<i class="far fa-object-ungroup"></i>',
 			//	layoutOpts: {
 			//		randomize: true
 			//	},
@@ -548,7 +548,7 @@ export class PatientSubgroups {
 			//},
 			{
 				type: 'button',
-				label: '<i class="fa fa-random"></i>',
+				label: '<i class="fas fa-random"></i>',
 				layoutOpts: {
 					randomize: true,
 					flow: null
@@ -556,7 +556,7 @@ export class PatientSubgroups {
 			},
 			{
 				type: 'button',
-				label: '<i class="fa fa-long-arrow-down"></i>',
+				label: '<i class="fas fa-long-arrow-alt-down"></i>',
 				layoutOpts: {
 					flow: {
 						axis: 'y',
@@ -595,22 +595,22 @@ export class PatientSubgroups {
 				'Drugs: ' +
 				'<div class="updown">'+
 					'<div>'+
-						'<i class="fa fa-arrow-up" aria-hidden="true"></i> ' + node.data('drugs').up.length +
+						'<i class="fas fa-sort-up" aria-hidden="true"></i> ' + node.data('drugs').up.length +
 						'<div class="scrollblock">'+node.data('drugs').up.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
-						' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + node.data('drugs').down.length + '<br/>' +
+						' <i class="fas fa-sort-down" aria-hidden="true"></i> ' + node.data('drugs').down.length + '<br/>' +
 						'<div class="scrollblock">'+node.data('drugs').down.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 				'</div>'+
 				'Genes: '+
 				'<div class="updown">'+
 					'<div>'+
-						'<i class="fa fa-arrow-up" aria-hidden="true"></i> ' + node.data('genes').up.length +
+						'<i class="fas fa-sort-up" aria-hidden="true"></i> ' + node.data('genes').up.length +
 						'<div class="scrollblock">'+node.data('genes').up.map(ensLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
-						' <i class="fa fa-arrow-down" aria-hidden="true"></i> ' + node.data('genes').down.length +
+						' <i class="fas fa-sort-down" aria-hidden="true"></i> ' + node.data('genes').down.length +
 						'<div class="scrollblock">'+node.data('genes').down.map(ensLink).join('<br/>')+'</div>'+
 					'</div>'+
 				'</div>';
@@ -638,22 +638,22 @@ export class PatientSubgroups {
 				'<b>Common drugs</b>: '+
 				'<div class="updown">'+
 					'<div>'+
-						'<i class="fa fa-angle-double-up" aria-hidden="true" title="Up both in source and target"></i> ' + edge.data('drugs').up.length +
+						'<i class="fas fa-angle-double-up" aria-hidden="true" title="Up both in source and target"></i> ' + edge.data('drugs').up.length +
 						'<div class="scrollblock">'+edge.data('drugs').up.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
-						' <i class="fa fa-angle-double-down" aria-hidden="true" title="Down both in source and target"></i> ' + edge.data('drugs').down.length + '<br/>' +
+						' <i class="fas fa-angle-double-down" aria-hidden="true" title="Down both in source and target"></i> ' + edge.data('drugs').down.length + '<br/>' +
 						'<div class="scrollblock">'+edge.data('drugs').down.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 				'</div>'+
 				'<b>Common genes</b>: '+
 				'<div class="updown">'+
 					'<div>'+
-						'<i class="fa fa-angle-double-up" aria-hidden="true" title="Up both in source and target"></i> ' + edge.data('genes').up.length +
+						'<i class="fas fa-angle-double-up" aria-hidden="true" title="Up both in source and target"></i> ' + edge.data('genes').up.length +
 						'<div class="scrollblock">'+edge.data('genes').up.map(ensLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
-						' <i class="fa fa-angle-double-down" aria-hidden="true" title="Down both in source and target"></i> ' + edge.data('genes').down.length +
+						' <i class="fas fa-angle-double-down" aria-hidden="true" title="Down both in source and target"></i> ' + edge.data('genes').down.length +
 						'<div class="scrollblock">'+edge.data('genes').down.map(ensLink).join('<br/>')+'</div>' +
 					'</div>'+
 				'</div>';
@@ -664,22 +664,22 @@ export class PatientSubgroups {
 				'<b>Inverse drugs</b>: '+
 				'<div class="updown">'+
 					'<div>'+
-						'<i class="fa fa-random" aria-hidden="true" title="Up in source, down in target"></i> ' + edge.data('drugs').up.length +
+						'<i class="fas fa-random" aria-hidden="true" title="Up in source, down in target"></i> ' + edge.data('drugs').up.length +
 						'<div class="scrollblock">'+edge.data('drugs').up.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
-						' <i class="fa fa-random fa-rotate-180" aria-hidden="true" title="Down in source, up in target"></i> ' + edge.data('drugs').down.length + '<br/>' +
+						' <i class="fas fa-random fa-rotate-180" aria-hidden="true" title="Down in source, up in target"></i> ' + edge.data('drugs').down.length + '<br/>' +
 						'<div class="scrollblock">'+edge.data('drugs').down.map(drugbankLink).join('<br/>')+'</div>' +
 					'</div>'+
 				'</div>'+
 				'<b>Inverse genes</b>: '+
 				'<div class="updown">'+
 					'<div>'+
-						'<i class="fa fa-random" aria-hidden="true" title="Up in source, down in target"></i> ' + edge.data('genes').up.length +
+						'<i class="fas fa-random" aria-hidden="true" title="Up in source, down in target"></i> ' + edge.data('genes').up.length +
 						'<div class="scrollblock">'+edge.data('genes').up.map(ensLink).join('<br/>')+'</div>' +
 					'</div>'+
 					'<div>'+
-						' <i class="fa fa-random fa-rotate-180" aria-hidden="true" title="Down in source, up in target"></i> ' + edge.data('genes').down.length +
+						' <i class="fas fa-random fa-rotate-180" aria-hidden="true" title="Down in source, up in target"></i> ' + edge.data('genes').down.length +
 						'<div class="scrollblock">'+edge.data('genes').down.map(ensLink).join('<br/>')+'</div>' +
 					'</div>'+
 				'</div>';
