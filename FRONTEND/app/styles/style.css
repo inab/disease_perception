@@ -34,15 +34,18 @@ body {
 	top: 1vw;
 }
 
+/*
 #unselect-all ,
 #save-network ,
 #snapshot {
 	font-size: 2vw;
 }
+*/
 
 #save-network > i ,
-#snapshot > i {
-	display: inline;
+#snapshot > i , 
+#legend > i {
+	display: contents;
 }
 
 #history-back {
@@ -90,11 +93,10 @@ body {
 	display: flex;
 }
 
-.cmui {
-	position: fixed;
+.cmui , .cmui-inline {
 	text-align: center;
 	color: #555;
-	font-size: 3vw;
+	font-size: 2vw;
 	/* box-sizing: border-box; */
 	transition-property: opacity;
 	transition-duration: 250ms;
@@ -102,20 +104,33 @@ body {
 	z-index: 1;
 }
 
-.cmui.button {
+.cmui {
+	position: fixed;
+}
+
+.cmui-inline {
+	font-size: 2vw;
+}
+
+.cmui.button , .cmui-inline.button {
 	border-radius: 10%;
 	border-width: 1px;
 	border-style: solid;
 	border-color: #555;
+	font-size: 2vw;
 	width: 3vw;
 	height: 3vw;
 	display: block;
 	padding: 0;
 }
 
-.cmui.button > i {
+.cmui.button > i , .cmui-inline.button > i {
 	vertical-align: middle;
 	display: inherit;
+}
+
+.cmui-inline.button > i {
+	display: contents;
 }
 
 .config {

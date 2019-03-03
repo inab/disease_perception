@@ -643,6 +643,10 @@
     lodash "^4.17.5"
     to-fast-properties "^2.0.0"
 
+"@fortawesome/fontawesome-free@^5.7.2":
+  version "5.7.2"
+  resolved "https://registry.yarnpkg.com/@fortawesome/fontawesome-free/-/fontawesome-free-5.7.2.tgz#1498c3eb78ee7c78c5488418707de90aaf58d5d7"
+
 abbrev@1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.1.1.tgz#f8f2c887ad10bf67f634f005b6987fed3179aac8"
@@ -1477,6 +1481,10 @@ cytoscape-popper@^1.0.1:
   dependencies:
     popper.js "^1.0.0"
 
+cytoscape-svg@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/cytoscape-svg/-/cytoscape-svg-0.1.1.tgz#514e1fd7733994215ded25e1eeb54b7029db3626"
+
 cytoscape@^3.2.6:
   version "3.2.13"
   resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-3.2.13.tgz#d9f807f6f444ddc755ab4254c9d65dcc8e9bc371"
@@ -1952,10 +1960,6 @@ flush-write-stream@^1.0.0:
   dependencies:
     inherits "^2.0.1"
     readable-stream "^2.0.4"
-
-font-awesome@^4.7.0:
-  version "4.7.0"
-  resolved "https://registry.yarnpkg.com/font-awesome/-/font-awesome-4.7.0.tgz#8fa8cf0411a1a31afd07b06d2902bb9fc815a133"
 
 for-in@^1.0.2:
   version "1.0.2"

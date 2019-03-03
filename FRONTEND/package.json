@@ -46,6 +46,7 @@
     "jquery": "^2.2.4"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.7.2",
     "bootstrap": "^3.3.7",
     "bootstrap-slider": "^10.0.0",
     "cytoscape": "^3.2.6",
@@ -54,8 +55,8 @@
     "cytoscape-dagre": "^2.2.1",
     "cytoscape-klay": "^3.1.1",
     "cytoscape-popper": "^1.0.1",
+    "cytoscape-svg": "^0.1.1",
     "fastclick": "^1.0.6",
-    "font-awesome": "^4.7.0",
     "jquery": "^2.2.4",
     "tippy.js": "^2.5.2",
     "toDataURL": "^0.1.1"

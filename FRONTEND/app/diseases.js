@@ -1,5 +1,7 @@
 'use strict';
 
+import $ from 'jquery';
+
 // Singleton variables
 var _Diseases;
 var _DiseaseNodes;
@@ -224,7 +226,7 @@ export class Diseases {
 		let $result = $('<span style="font-size: 2rem;">Color legend (based on disease groups)</span><div class="legend two-column">'+
 		'<div class="item">'+
 		_DiseaseGroups.map((dg) => {
-			return '<div><i class="fa fa-circle" style="color: '+
+			return '<div><i class="fas fa-circle" style="color: '+
 				dg.color+
 				';"></i></div><div>'+
 				dg.name+
@@ -280,7 +282,7 @@ export class Diseases {
 			},
 			//{
 			//	type: 'button',
-			//	label: '<i class="fa fa-object-group"></i>',
+			//	label: '<i class="far fa-object-group"></i>',
 			//	layoutOpts: {
 			//		randomize: true
 			//	},
@@ -288,7 +290,7 @@ export class Diseases {
 			//},
 			//{
 			//	type: 'button',
-			//	label: '<i class="fa fa-object-ungroup"></i>',
+			//	label: '<i class="far fa-object-ungroup"></i>',
 			//	layoutOpts: {
 			//		randomize: true
 			//	},
@@ -296,7 +298,7 @@ export class Diseases {
 			//},
 			{
 				type: 'button',
-				label: '<i class="fa fa-random"></i>',
+				label: '<i class="fas fa-random"></i>',
 				layoutOpts: {
 					randomize: true,
 					flow: null
@@ -304,7 +306,7 @@ export class Diseases {
 			},
 			{
 				type: 'button',
-				label: '<i class="fa fa-long-arrow-down"></i>',
+				label: '<i class="fas fa-long-arrow-alt-down"></i>',
 				layoutOpts: {
 					flow: {
 						axis: 'y',
@@ -373,7 +375,7 @@ export class Diseases {
 		
 		//content.innerHTML = 'Tippy content';
 		content.innerHTML = '<b>'+diseaseName+'</b>'+' ICD9: '+icd9 + ' ICD10: ' + icd10 + '<br />\n'+
-			'('+'<i class="fa fa-circle" style="color: '+dg.color+';"></i> '+dg.name+')<br />\n'+
+			'('+'<i class="fas fa-circle" style="color: '+dg.color+';"></i> '+dg.name+')<br />\n'+
 			'<div style="text-align: left;">' +
 			links.map(function(link) {
 				return '<a target="_blank" href="' + link.url + '">' + link.name + '</a>';

@@ -23,6 +23,10 @@ cytoscape.use( cydagre );
 import cyklay from 'cytoscape-klay';
 cytoscape.use( cyklay );
 
+// Plugin to export as SVG
+import cysvg from 'cytoscape-svg';
+cytoscape.use( cysvg );
+
 // Tooltips attached to graph elements
 import popper from 'cytoscape-popper';
 cytoscape.use( popper );
@@ -60,28 +64,28 @@ export class ComorbiditiesBrowser {
 		this.history = [];
 		this.historyPointer = -1;
 		
-		this.$historyBack = $('<button><i class="fa fa-arrow-circle-o-left" aria-hidden="true" title="Previous view"></i></button>');
+		this.$historyBack = $('<button><i class="far fa-arrow-alt-circle-left" aria-hidden="true" title="Previous view"></i></button>');
 		this.$historyBack.attr('id','history-back');
 		this.$historyBack.addClass('cmui button btn btn-default');
 		this.$historyBack.on('click',() => this.historyGoBack());
 		this.$historyBack.prop('disabled',true);
 		this.$graphTitle.after(this.$historyBack);
 		
-		this.$unselectAll = $('<button><i class="fa fa-refresh" aria-hidden="true" title="Unselect all"></i></button>');
+		this.$unselectAll = $('<button><i class="fas fa-sync-alt" aria-hidden="true" title="Unselect all"></i></button>');
 		this.$unselectAll.attr('id','unselect-all');
 		this.$unselectAll.addClass('cmui button btn btn-default');
 		this.$unselectAll.on('click',() => this.unselectAll());
 		this.$unselectAll.prop('disabled',true);
 		this.$historyBack.after(this.$unselectAll);
 		
-		this.$historyForward = $('<button><i class="fa fa-arrow-circle-o-right" aria-hidden="true" title="Next view"></i></button>');
+		this.$historyForward = $('<button><i class="far fa-arrow-alt-circle-right" aria-hidden="true" title="Next view"></i></button>');
 		this.$historyForward.addClass('cmui button btn btn-default');
 		this.$historyForward.attr('id','history-forward');
 		this.$historyForward.on('click',() => this.historyGoForward());
 		this.$historyForward.prop('disabled',true);
 		this.$unselectAll.after(this.$historyForward);
 		
-		this.$legend = $('<span><i class="fa fa-info-circle" aria-hidden="true"></i></span>');
+		this.$legend = $('<span><i class="fas fa-info-circle" aria-hidden="true"></i></span>');
 		this.$legend.addClass('cmui button');
 		this.$legend.attr('id','legend');
 		this.$legend.hide();
@@ -107,13 +111,49 @@ export class ComorbiditiesBrowser {
 			zIndex: 999
 		});
 		
-		this.$snapshot = $('<a><i class="fa fa-picture-o" aria-hidden="true" title="Save network snapshot"></i></a>');
-		this.$snapshot.addClass('cmui button button btn btn-default');
+		this.$snapshot = $('<a><i class="far fa-images" aria-hidden="true" title="Save network view snapshot"></i></a>');
+		this.$snapshot.addClass('cmui button');
+		//this.$snapshot.addClass('cmui button button btn btn-default');
 		this.$snapshot.attr('id','snapshot');
-		this.$snapshot.on('click',() => this.saveSnapshot());
+		//this.$snapshot.on('click',() => this.saveSnapshotSVG());
 		this.$legend.after(this.$snapshot);
 		
-		this.$saveNetwork = $('<a><i class="fa fa-area-chart" aria-hidden="true" title="Save network as Cytoscape.json"></i></a>');
+		let $snapshotBody = $('<div></div>');
+		$snapshotBody.addClass('snapshot-container');
+		
+		$snapshotBody.append('PNG');
+		this.$snapshotPNG = $('<a><i class="far fa-file-image" aria-hidden="true" title="Save as PNG network view snapshot"></i></a>');
+		this.$snapshotPNG.addClass('cmui-inline button btn btn-default');
+		this.$snapshotPNG.attr('id','snapshotPNG');
+		this.$snapshotPNG.on('click',() => this.saveSnapshotPNG());
+		$snapshotBody.append(this.$snapshotPNG);
+		
+		$snapshotBody.append('SVG');
+		this.$snapshotSVG = $('<a><i class="fas fa-image" aria-hidden="true" title="Save as SVG network view snapshot"></i></a>');
+		this.$snapshotSVG.addClass('cmui-inline button btn btn-default');
+		this.$snapshotSVG.attr('id','snapshotSVG');
+		this.$snapshotSVG.on('click',() => this.saveSnapshotSVG());
+		$snapshotBody.append(this.$snapshotSVG);
+		
+		
+		//tippy(this.$legend);
+		let tipSnapshot = tippy.one(this.$snapshot.get(0),{ // tippy options:
+			html: $snapshotBody.get(0),
+			arrow: true,
+			arrowType: 'round',
+			placement: 'bottom-end',
+			animation: 'perspective',
+			interactive: true,
+			interactiveBorder: 5,
+			hideOnClick: false,
+			multiple: false,
+			trigger: 'mouseenter focus',
+			size: 'large',
+			theme: 'light',
+			zIndex: 999
+		});
+		
+		this.$saveNetwork = $('<a><i class="fas fa-chart-area" aria-hidden="true" title="Save network as Cytoscape.json"></i></a>');
 		this.$saveNetwork.addClass('cmui button button btn btn-default');
 		this.$saveNetwork.attr('id','save-network');
 		this.$saveNetwork.on('click',() => this.saveNetwork());
@@ -267,9 +307,14 @@ export class ComorbiditiesBrowser {
 		return this.history[this.historyPointer].viewName;
 	}
 	
-	saveSnapshot() {
-		this.$snapshot.attr('download','disease-perception_'+this.getViewId()+'.png');
-		this.$snapshot.attr('href',this.cy.png());
+	saveSnapshotPNG() {
+		this.$snapshotPNG.attr('download','disease-perception_'+this.getViewId()+'.png');
+		this.$snapshotPNG.attr('href',this.cy.png({full: true, scale: 2}));
+	}
+	
+	saveSnapshotSVG() {
+		this.$snapshotSVG.attr('download','disease-perception_'+this.getViewId()+'.svg');
+		this.$snapshotSVG.attr('href',urlfy.toDataURL(this.cy.svg({full: true}),'application/xml+svg'));
 	}
 	
 	saveNetwork() {
@@ -553,11 +598,11 @@ export class ComorbiditiesBrowser {
 		
 		let $cont = $('<div style="white-space: nowrap"></div>');
 		$cont.append($nodeOption);
-		$cont.append('<i class="fa fa-circle" style="vertical-align: text-top; color: '+node.data('color')+';"></i>');
+		$cont.append('<i class="fas fa-circle" style="vertical-align: text-top; color: '+node.data('color')+';"></i>');
 		$option.append($cont);
 		
 		//$option.append($nodeOption);
-		//$option.append('<i class="fa fa-circle" style="color: '+node.data('color')+';"></i>');
+		//$option.append('<i class="fas fa-circle" style="color: '+node.data('color')+';"></i>');
 		let $label = $('<div>'+node.data('name')+'</div>');
 		if(!isInitiallyChecked) {
 			$label.css('font-style','italic');
@@ -602,7 +647,7 @@ export class ComorbiditiesBrowser {
 		// jshint unused:false
 		let $selectAll = this.makeButton({
 				classes: 'btn-xs',
-				label: '<i class="fa fa-check-square-o" title="Select all"></i>',
+				label: '<i class="far fa-check-square" title="Select all"></i>',
 				fn: () => {
 					$nodeList.find('input[type="checkbox"]').prop('checked',true);
 					this.updateSelectedNodesCount($nodeList.find('input[type="checkbox"]:checked'));
@@ -610,7 +655,7 @@ export class ComorbiditiesBrowser {
 			},$selectedNodesView);
 		let $selectNone = this.makeButton({
 				classes: 'btn-xs',
-				label: '<i class="fa fa-square-o" title="Unselect all"></i>',
+				label: '<i class="far fa-square" title="Unselect all"></i>',
 				fn: () => {
 					$nodeList.find('input[type="checkbox"]').prop('checked',false);
 					this.updateSelectedNodesCount($nodeList.find('input[type="checkbox"]:checked'));
