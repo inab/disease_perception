@@ -89,7 +89,11 @@
 	},
 	{
 		"table": "supporting_sources",
-		"sql_ddl": "CREATE TABLE supporting_sources ( id VARCHAR(256) NOT NULL PRIMARY KEY, pubmed_id INTEGER, doi VARCHAR(4096) );",
+		"sql_ddl": [
+			"id VARCHAR(256) NOT NULL PRIMARY KEY",
+			"pubmed_id INTEGER",
+			"doi VARCHAR(4096)"
+		],
 		"datafile": "supporting_papers.tsv"
 	},
 	{
