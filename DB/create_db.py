@@ -60,10 +60,9 @@ def main(project_folder="./"):
 				cursor.execute(index_ddl)
 			
 			print("\t- Done!")
+	con_db.execute("""PRAGMA journal_mode = DELETE""")
 	
 	print("Tables Ready")        
-	
-	con_db.commit()
 	con_db.close()
 
 
