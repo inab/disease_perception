@@ -122,7 +122,7 @@ export class Diseases {
 						
 						return {
 							data: retdc,
-							classes: 'CM'
+							classes: 'CM CM'+((retdc.rel_risk > 0) ? 'p' : 'n')
 						};
 					});
 					

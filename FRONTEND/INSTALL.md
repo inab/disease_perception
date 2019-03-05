@@ -17,7 +17,7 @@ npm install --no-save npm yarn
 * Add `node_modules/.bin` subdirectory to the `PATH` environment variable, so `yarn` and other installation dependencies can be instantiated. Then, call `yarn`, so the other dependencies are fetched:
 
 ```bash
-PATH="${PWD}/node_modules/.bin:${PATH}"
+PATH="$(npm bin):${PATH}"
 export PATH
 yarn --frozen-lockfile
 ```

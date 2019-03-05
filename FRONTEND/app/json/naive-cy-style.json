@@ -122,14 +122,28 @@
 	{
 		"selector": "edge.CM",
 		"css": {
-			"target-arrow-shape": "triangle",
 			"curve-style": "bezier",
 			"haystack-radius": "0.5",
 			"opacity": "0.4",
-			"line-color": "mapData(rel_risk, -20, 20, red, blue)",
-			"target-arrow-color": "mapData(rel_risk, -20, 20, red, blue)",
+			"target-arrow-opacity": "0.4",
 			"width": "mapData(abs_rel_risk, 0, 50, 1, 8)",
 			"overlay-padding": "3px"
+		}
+	},
+	{
+		"selector": "edge.CMp",
+		"css": {
+			"target-arrow-shape": "triangle",
+			"line-color": "mapData(rel_risk, 0, 20, gray, blue)",
+			"target-arrow-color": "mapData(rel_risk, 0, 20, gray, blue)"
+		}
+	},
+	{
+		"selector": "edge.CMn",
+		"css": {
+			"target-arrow-shape": "tee",
+			"line-color": "mapData(rel_risk, -20, 0, red, gray)",
+			"target-arrow-color": "mapData(rel_risk, -20, 20, red, gray)"
 		}
 	},
 	{
