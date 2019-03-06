@@ -51,7 +51,8 @@ def init_comorbidities_app(dbpath):
 
 	@blueprint_static.route('/')
 	def root():
-	    return redirect('index.html')
+		return app.send_static_file('index.html')
+		#return redirect('./index.html')
 
 
 	# This enables CORS along all the app
