@@ -124,7 +124,7 @@ export class PatientSubgroups {
 					
 					return {
 						data: retpsgc,
-						classes: 'CM'
+						classes: 'CM CM'+((retpsgc.rel_risk > 0) ? 'p' : 'n')
 					};
 				});
 				this.pendingEdgeStats = true;

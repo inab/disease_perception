@@ -134,16 +134,16 @@
 		"selector": "edge.CMp",
 		"css": {
 			"target-arrow-shape": "triangle",
-			"line-color": "mapData(rel_risk, 0, 20, gray, blue)",
-			"target-arrow-color": "mapData(rel_risk, 0, 20, gray, blue)"
+			"line-color": "mapData(rel_risk, 0, 20, rgb(127,127,255), blue)",
+			"target-arrow-color": "mapData(rel_risk, 0, 20, rgb(127,127,255), blue)"
 		}
 	},
 	{
 		"selector": "edge.CMn",
 		"css": {
 			"target-arrow-shape": "tee",
-			"line-color": "mapData(rel_risk, -20, 0, red, gray)",
-			"target-arrow-color": "mapData(rel_risk, -20, 20, red, gray)"
+			"line-color": "mapData(rel_risk, -20, 0, red, rgb(255,127,127))",
+			"target-arrow-color": "mapData(rel_risk, -20, 20, red, rgb(255,127,127))"
 		}
 	},
 	{
