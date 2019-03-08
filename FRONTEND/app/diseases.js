@@ -49,6 +49,8 @@ export class Diseases {
 							// jshint ignore:end
 							// Unique identifiers
 							label: label,
+							groupname: name,
+							childcount: 0,
 							disease_id: dis.id,
 							id: 'D'+dis.id,
 							parent: 'DG'+dis.disease_group_id,

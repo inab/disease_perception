@@ -7,7 +7,7 @@ import { Drugs } from './drugs';
 // Singleton variables
 var _PatientSubgroups;
 var _PatientSubgroupNodes;
-var _PendingNodePropagation = true;
+var _PatientSubgroupNodesByDisease;
 
 var _PatientSubgroupsHash;
 var _PatientSubgroupsNodeHash;
@@ -63,6 +63,7 @@ export class PatientSubgroups {
 					_PatientSubgroups = decodedJson;
 					_PatientSubgroupsHash = {};
 					_PatientSubgroupsNodeHash = {};
+					_PatientSubgroupNodesByDisease = {};
 					_PatientSubgroupNodes = _PatientSubgroups.map(function(psg) {
 						// jshint camelcase: false 
 						let name = 'Subgroup\n'+psg.name.split('.')[1];
@@ -81,10 +82,18 @@ export class PatientSubgroups {
 						_PatientSubgroupsHash[psg.id] = retpsg;
 						_PatientSubgroupsNodeHash[retpsg.id] = retpsg;
 						
-						return {
+						let retval = {
 							classes: 'PSG',
 							data: retpsg
 						};
+						
+						if(psg.disease_id in _PatientSubgroupNodesByDisease) {
+							_PatientSubgroupNodesByDisease[psg.disease_id].push(retval);
+						} else {
+							_PatientSubgroupNodesByDisease[psg.disease_id] = [ retval ];
+						}
+						
+						return retval;
 					});
 					
 					return _PatientSubgroups;
@@ -127,6 +136,7 @@ export class PatientSubgroups {
 						classes: 'CM CM'+((retpsgc.rel_risk > 0) ? 'p' : 'n')
 					};
 				});
+				this.pendingNodePropagation = true;
 				this.pendingEdgeStats = true;
 				
 				let minAbsRisk = Infinity;
@@ -246,10 +256,13 @@ export class PatientSubgroups {
 	
 	// getCYComorbiditiesNetwork
 	getFetchedNetwork() {
-		// Fixups from diseases
 		// jshint camelcase: false
-		let diseaseNodes = this.diseases.getDiseaseNodes();
-			
+		// Fixups from diseases
+		
+		//let diseaseNodes = this.diseases.getDiseaseNodes();
+		let setDiseaseIds = new Set(this.diseaseIds);
+		let selectedDiseases = this.selectedDiseases = this.diseases.getDiseaseNodes().filter((d) => setDiseaseIds.has(d.data.disease_id));
+		
 		let dPSGIHash = this.diseasePatientSubgroupGeneIntersectHash;
 		let dPSDIHash = this.diseasePatientSubgroupDrugIntersectHash;
 		
@@ -259,47 +272,67 @@ export class PatientSubgroups {
 			drugsHash[dr.id] = dr;
 		});
 		
-		if(_PendingNodePropagation) {
-			let diseaseNodesHash = {};
-			
-			diseaseNodes.forEach((dn) => {
-				diseaseNodesHash[dn.data.disease_id] = dn.data;
-			});
-			_PatientSubgroupNodes.forEach((psn) => {
-				psn.data.disease_name = diseaseNodesHash[psn.data.disease_id].name;
-				psn.data.color = diseaseNodesHash[psn.data.disease_id].color;
-				
-				// Some stats propagation
-				if(psn.data.patient_subgroup_id in dPSDIHash) {
-					let upArr = [];
-					dPSDIHash[psn.data.patient_subgroup_id].upSet.forEach((drug_id) => upArr.push(drugsHash[drug_id].name));
-					let downArr = [];
-					dPSDIHash[psn.data.patient_subgroup_id].downSet.forEach((drug_id) => downArr.push(drugsHash[drug_id].name));
-					psn.data.drugs = {
-						up: upArr,
-						down: downArr
-					};
-				} else {
-					psn.data.drugs = {
-						up: [],
-						down: []
-					};
+		// The patient subgroups related to the selected diseases
+		let selectedPatientSubgroupNodes = Array.from(setDiseaseIds).filter((disease_id) => {
+			return disease_id in _PatientSubgroupNodesByDisease;
+		}).map((disease_id) => {
+			return selectedPatientSubgroupNodes,_PatientSubgroupNodesByDisease[disease_id];
+		}).reduce((acc, val) => acc.concat(val), []);
+		
+		// This code is needed to update the subtotals
+		if(this.pendingNodePropagation) {
+			selectedDiseases.forEach((dn) => {
+				if(dn.data.disease_id in _PatientSubgroupNodesByDisease) {
+					let data = dn.data;
+					
+					// up propagation
+					if(!('_propUp' in data)) {
+						// Propagating the number of patient subgroups related to the disease
+						data.childcount = _PatientSubgroupNodesByDisease[data.disease_id].length;
+						
+						// Setting up the groupname
+						data.groupname = data.name+ '\n(' + data.childcount + ' subgroup' + ((data.childcount === 1) ? 's' : '') + ')';
+						data._propUp = true;
+					}
+					
+					// down propagation
+					_PatientSubgroupNodesByDisease[data.disease_id].forEach((psn) => {
+						psn.data.disease_name = data.name;
+						psn.data.color = data.color;
+						
+						// Some stats propagation
+						if(psn.data.patient_subgroup_id in dPSDIHash) {
+							let upArr = [];
+							dPSDIHash[psn.data.patient_subgroup_id].upSet.forEach((drug_id) => upArr.push(drugsHash[drug_id].name));
+							let downArr = [];
+							dPSDIHash[psn.data.patient_subgroup_id].downSet.forEach((drug_id) => downArr.push(drugsHash[drug_id].name));
+							psn.data.drugs = {
+								up: upArr,
+								down: downArr
+							};
+						} else {
+							psn.data.drugs = {
+								up: [],
+								down: []
+							};
+						}
+						
+						if(psn.data.patient_subgroup_id in dPSGIHash) {
+							psn.data.genes = {
+								up: Array.from(dPSGIHash[psn.data.patient_subgroup_id].upSet),
+								down: Array.from(dPSGIHash[psn.data.patient_subgroup_id].downSet)
+							};
+						} else {
+							psn.data.genes = {
+								up: [],
+								down: []
+							};
+						}
+					});
 				}
-				
-				if(psn.data.patient_subgroup_id in dPSGIHash) {
-					psn.data.genes = {
-						up: Array.from(dPSGIHash[psn.data.patient_subgroup_id].upSet),
-						down: Array.from(dPSGIHash[psn.data.patient_subgroup_id].downSet)
-					};
-				} else {
-					psn.data.genes = {
-						up: [],
-						down: []
-					};
-				}
 			});
 			
-			_PendingNodePropagation = false;
+			this.pendingNodePropagation = false;
 		}
 		
 		// Labelling intra-disease commorbidities
@@ -414,14 +447,12 @@ export class PatientSubgroups {
 			this.pendingEdgeStats = false;
 		}
 		
-		let setDiseaseIds = new Set(this.diseaseIds);
-		let selectedDiseases = this.selectedDiseases = diseaseNodes.filter((d) => setDiseaseIds.has(d.data.disease_id));
 		let setDiseaseGroupIds = new Set(selectedDiseases.map((d) => d.data.disease_group_id));
 		let selectedDiseaseGroups = this.diseases.getDiseaseGroupNodes().filter((dg) => setDiseaseGroupIds.has(dg.data.disease_group_id));
 		
 		return {
 			nodes: [
-				..._PatientSubgroupNodes,
+				...selectedPatientSubgroupNodes,
 				...selectedDiseases,
 				...selectedDiseaseGroups
 			],

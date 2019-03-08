@@ -84,7 +84,7 @@
 	{
 		"selector": "$node > node",
 		"css": {
-			"content": "data(name)",
+			"content": "data(groupname)",
 			"text-wrap": "wrap",
 			"padding-top": "10px",
 			"padding-left": "10px",
@@ -125,7 +125,6 @@
 			"curve-style": "bezier",
 			"haystack-radius": "0.5",
 			"opacity": "0.4",
-			"target-arrow-opacity": "0.4",
 			"width": "mapData(abs_rel_risk, 0, 50, 1, 8)",
 			"overlay-padding": "3px"
 		}
