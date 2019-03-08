@@ -139,28 +139,6 @@ export class PatientSubgroups {
 				this.pendingNodePropagation = true;
 				this.pendingEdgeStats = true;
 				
-				let minAbsRisk = Infinity;
-				let maxAbsRisk = -Infinity;
-				let initialAbsCutoff = -Infinity;
-				if(dPSCN.length > 0) {
-					let dPSCNe = dPSCN.map((e) => e.abs_rel_risk);
-					
-					dPSCNe.sort(function(e1,e2) { return e1 - e2; });
-					dPSCNe = dPSCNe.filter(distinctFilter);
-					minAbsRisk = dPSCNe[0];
-					maxAbsRisk = dPSCNe[dPSCNe.length - 1];
-					
-					// Selecting the initial absolute cutoff risk, based on the then biggest values
-					initialAbsCutoff = dPSCNe[Math.floor(dPSCNe.length * 0.5)];
-				}
-				
-				// Saving the range and cutoff for later processing
-				this.absRelRiskRange = {
-					min: minAbsRisk,
-					initial: initialAbsCutoff,
-					max: maxAbsRisk
-				};
-				
 				return decodedJson;
 			})
 		);
@@ -281,6 +259,9 @@ export class PatientSubgroups {
 		
 		// This code is needed to update the subtotals
 		if(this.pendingNodePropagation) {
+			this.minClusterSize = +Infinity;
+			this.maxClusterSize = -Infinity;
+			
 			selectedDiseases.forEach((dn) => {
 				if(dn.data.disease_id in _PatientSubgroupNodesByDisease) {
 					let data = dn.data;
@@ -293,6 +274,17 @@ export class PatientSubgroups {
 						// Setting up the groupname
 						data.groupname = data.name+ '\n(' + data.childcount + ' subgroup' + ((data.childcount === 1) ? 's' : '') + ')';
 						data._propUp = true;
+					}
+					
+					// update min / max cluster size
+					if('_propUp' in data) {
+						if(data.childcount > this.maxClusterSize) {
+							this.maxClusterSize = data.childcount;
+						}
+						
+						if(data.childcount < this.minClusterSize) {
+							this.minClusterSize = data.childcount;
+						}
 					}
 					
 					// down propagation
@@ -338,32 +330,69 @@ export class PatientSubgroups {
 		// Labelling intra-disease commorbidities
 		// Getting minimum and maximum cluster sizes
 		if(this.pendingEdgeStats) {
-			this.minClusterSize = +Infinity;
-			this.maxClusterSize = -Infinity;
+			let minAbsRisk = Infinity;
+			let maxAbsRisk = -Infinity;
+			
+			let initialMinClusterSize = Infinity;
+			
+			// Inter disease
+			let diseasePairMaxAbsRelRisk = {};
+			// Intra disease
+			let diseaseSelfMaxAbsRelRisk = {};
+			
+			
+			let selectedDiseasesHash = {};
+			selectedDiseases.forEach((d) => {
+				selectedDiseasesHash[d.data.disease_id] = d.data;
+			});
 			
 			this.patientSubgroupComorbidityNetworkEdges.forEach((edge) => {
 				let fromPSG = _PatientSubgroupsHash[edge.data.from_id];
 				let toPSG = _PatientSubgroupsHash[edge.data.to_id];
 				
-				// Getting minimum and maximum cluster sizes
-				if(fromPSG.size > this.maxClusterSize) {
-					this.maxClusterSize = fromPSG.size;
-				}
-				
-				if(toPSG.size > this.maxClusterSize) {
-					this.maxClusterSize = toPSG.size;
-				}
-				
-				if(fromPSG.size < this.minClusterSize) {
-					this.minClusterSize = fromPSG.size;
-				}
-				
-				if(toPSG.size < this.minClusterSize) {
-					this.minClusterSize = toPSG.size;
-				}
-				
 				// Labelling intra-disease commorbidities
 				edge.data.isIntraDisease = fromPSG.disease_id === toPSG.disease_id;
+				
+				// Getting the minimum and maximum absolute risk
+				if(minAbsRisk > edge.data.abs_rel_risk) {
+					minAbsRisk = edge.data.abs_rel_risk;
+				}
+				
+				if(maxAbsRisk < edge.data.abs_rel_risk) {
+					maxAbsRisk = edge.data.abs_rel_risk;
+				}
+				
+				let selectedEdgeHash;
+				if(edge.data.isIntraDisease) {
+					selectedEdgeHash = diseaseSelfMaxAbsRelRisk;
+				} else {
+					// Identifying the initial cluster size, which allows viewing at least each related disease with clusters
+					if(initialMinClusterSize > selectedDiseasesHash[fromPSG.disease_id].childcount) {
+						initialMinClusterSize = selectedDiseasesHash[fromPSG.disease_id].childcount;
+					}
+					
+					if(initialMinClusterSize > selectedDiseasesHash[toPSG.disease_id].childcount) {
+						initialMinClusterSize = selectedDiseasesHash[toPSG.disease_id].childcount;
+					}
+					
+					selectedEdgeHash = diseasePairMaxAbsRelRisk;
+				}
+				
+				// Identifying the initial cutoff, which allows viewing at least one arc from each node
+				let a;
+				let b;
+				if(fromPSG.disease_id < toPSG.disease_id) {
+					a = fromPSG;
+					b = toPSG;
+				} else {
+					b = fromPSG;
+					a = toPSG;
+				}
+				
+				let edgeDisId =  a.disease_id + '_' + b.disease_id;
+				if(!(edgeDisId in selectedEdgeHash) || edge.data.abs_rel_risk > selectedEdgeHash[edgeDisId]) {
+					selectedEdgeHash[edgeDisId] = edge.data.abs_rel_risk;
+				}
 				
 				// Adding some edge stats
 				if(edge.data.rel_risk > 0) {
@@ -439,10 +468,34 @@ export class PatientSubgroups {
 				}
 			});
 			
-			// Giving a saner initial version to the minClusterSize
-			if(this.initialMinClusterSize < this.minClusterSize || this.initialMinClusterSize > this.maxClusterSize) {
-				this.initialMinClusterSize = (this.minClusterSize + this.maxClusterSize) >> 1;
+			// Getting the minimum arc from the max arcs
+			let initialAbsCutoff = Infinity;
+			for(let pair in diseasePairMaxAbsRelRisk) {
+				if(initialAbsCutoff > diseasePairMaxAbsRelRisk[pair]) {
+					initialAbsCutoff = diseasePairMaxAbsRelRisk[pair];
+				}
 			}
+			
+			// Switch to the intra case
+			if(initialAbsCutoff > maxAbsRisk) {
+				for(let pair in diseaseSelfMaxAbsRelRisk) {
+					if(initialAbsCutoff > diseaseSelfMaxAbsRelRisk[pair]) {
+						initialAbsCutoff = diseaseSelfMaxAbsRelRisk[pair];
+					}
+				}
+			}
+			
+			// Giving a saner initial version to the minClusterSize
+			if(initialMinClusterSize < Infinity) {
+				this.initialMinClusterSize = initialMinClusterSize;
+			}
+			
+			// Saving the range and cutoff for later processing
+			this.absRelRiskRange = {
+				min: minAbsRisk,
+				initial: initialAbsCutoff,
+				max: maxAbsRisk
+			};
 			
 			this.pendingEdgeStats = false;
 		}
