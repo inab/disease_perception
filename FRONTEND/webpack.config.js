@@ -74,7 +74,14 @@ module.exports = {
 					options: {
 						presets: [
 							'@babel/preset-env',
-							['@babel/preset-stage-2',{'useBuiltIns': true, 'decoratorsLegacy': true}],
+//    							['@babel/preset-stage-2',{'useBuiltIns': true, 'decoratorsLegacy': true}],
+						],
+						plugins: [
+							["module:@babel/plugin-proposal-decorators", { "legacy": true }],
+							"module:@babel/plugin-proposal-function-sent",
+							"module:@babel/plugin-proposal-export-namespace-from",
+							"module:@babel/plugin-proposal-numeric-separator",
+							"module:@babel/plugin-proposal-throw-expressions",
 						]
 					}
 				}

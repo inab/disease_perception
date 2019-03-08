@@ -2,5 +2,6 @@
 /dist
 /bower_components
 yarn-error.log
+package-lock.json
 .tmp
 .DS_Store
