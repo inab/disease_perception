@@ -12,6 +12,7 @@ function escapeRegExpString(str) { return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.
 function pathToRegExp(p) { return new RegExp("^" + escapeRegExpString(p)); }
 
 module.exports = {
+	mode: 'development',
 	entry: {
 		path: path.join(PATHS.app, 'code.js')
 	},
