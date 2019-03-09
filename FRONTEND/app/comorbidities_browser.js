@@ -96,7 +96,7 @@ export class ComorbiditiesBrowser {
 		
 		//tippy(this.$legend);
 		let tip = tippy(this.$legend.get(0),{ // tippy options:
-			html: this.$legendBody.get(0),
+			content: this.$legendBody.get(0),
 			arrow: true,
 			arrowType: 'round',
 			placement: 'bottom-end',
@@ -138,7 +138,7 @@ export class ComorbiditiesBrowser {
 		
 		//tippy(this.$legend);
 		let tipSnapshot = tippy(this.$snapshot.get(0),{ // tippy options:
-			html: $snapshotBody.get(0),
+			content: $snapshotBody.get(0),
 			arrow: true,
 			arrowType: 'round',
 			placement: 'bottom-end',
@@ -1041,7 +1041,7 @@ export class ComorbiditiesBrowser {
 				let content = this.currentView.makeNodeTooltipContent(node);
 				node.scratch('tooltip',$(content).clone());
 				let tip = tippy(ref, { // tippy options:
-					html: content,
+					content: content,
 					trigger: 'manual',
 					arrow: true,
 					arrowType: 'round',
@@ -1055,16 +1055,16 @@ export class ComorbiditiesBrowser {
 					size: 'large',
 					theme: 'light',
 					zIndex: 999
-				}).tooltips[0];
+				});
 				
 				node.on('tapdragover', () => {
-					if(!tip.state.visible) {
+					if(!tip.state.isVisible) {
 						tip.show();
 					}
 				});
 				
 				node.on('tapdragout', () => {
-					if(tip.state.visible) {
+					if(tip.state.isVisible) {
 						tip.hide();
 					}
 				});
@@ -1098,22 +1098,23 @@ export class ComorbiditiesBrowser {
 				let content = this.currentView.makeEdgeTooltipContent(edge);
 				edge.scratch('tooltip',$(content).clone());
 				let tip = tippy(ref, { // tippy options:
-					html: content,
+					content: content,
 					trigger: 'manual',
 					arrow: true,
 					arrowType: 'round',
 					placement: 'bottom',
 					animation: 'perspective',
-					followCursor: true,
-					multiple: false,
+					//followCursor: true,
+					hideOnClick: false,
+					multiple: true,
 					sticky: true,
 					theme: 'dark',
 					zIndex: 999
-				}).tooltips[0];
+				});
 				
 				edge.on('tapdragover', (e) => {
-					//if(!tip.state.visible && (this.unHighlighted || e.originalEvent.ctrlKey)) {
-					if(!tip.state.visible) {
+					//if(!tip.state.isVisible && (this.unHighlighted || e.originalEvent.ctrlKey)) {
+					if(!tip.state.isVisible) {
 						edge.flashClass('highlighted');
 						edge.connectedNodes().flashClass('highlighted');
 						tip.show();
@@ -1121,7 +1122,7 @@ export class ComorbiditiesBrowser {
 				});
 				
 				edge.on('tapdragout', () => {
-					if(tip.state.visible) {
+					if(tip.state.isVisible) {
 						tip.hide();
 					}
 				});
