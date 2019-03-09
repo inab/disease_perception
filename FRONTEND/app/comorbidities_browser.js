@@ -95,7 +95,7 @@ export class ComorbiditiesBrowser {
 		this.$legendBody.addClass('legend-container');
 		
 		//tippy(this.$legend);
-		let tip = tippy.one(this.$legend.get(0),{ // tippy options:
+		let tip = tippy(this.$legend.get(0),{ // tippy options:
 			html: this.$legendBody.get(0),
 			arrow: true,
 			arrowType: 'round',
@@ -137,7 +137,7 @@ export class ComorbiditiesBrowser {
 		
 		
 		//tippy(this.$legend);
-		let tipSnapshot = tippy.one(this.$snapshot.get(0),{ // tippy options:
+		let tipSnapshot = tippy(this.$snapshot.get(0),{ // tippy options:
 			html: $snapshotBody.get(0),
 			arrow: true,
 			arrowType: 'round',

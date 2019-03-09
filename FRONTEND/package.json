@@ -54,16 +54,16 @@
     "@fortawesome/fontawesome-free": "^5.7.2",
     "bootstrap": "^3.3.7",
     "bootstrap-slider": "^10.0.0",
-    "cytoscape": "^3.2.6",
-    "cytoscape-cola": "^2.0.1",
+    "cytoscape": "^3.5.0",
+    "cytoscape-cola": "^2.3.0",
     "cytoscape-cose-bilkent": "^4.0.0",
-    "cytoscape-dagre": "^2.2.1",
-    "cytoscape-klay": "^3.1.1",
-    "cytoscape-popper": "^1.0.1",
+    "cytoscape-dagre": "^2.2.2",
+    "cytoscape-klay": "^3.1.2",
+    "cytoscape-popper": "^1.0.4",
     "cytoscape-svg": "^0.1.1",
     "fastclick": "^1.0.6",
     "jquery": "^2.2.4",
-    "tippy.js": "^2.5.2",
+    "tippy.js": "^4.0.4",
     "toDataURL": "^0.1.1"
   }
 }

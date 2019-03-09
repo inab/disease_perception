@@ -5,8 +5,8 @@ import 'bootstrap/dist/css/bootstrap-theme.css';
 import 'bootstrap-slider/dist/css/bootstrap-slider.css';
 import '@fortawesome/fontawesome-free';
 import '@fortawesome/fontawesome-free/css/all.css';
-import 'tippy.js/dist/tippy.css';
-import 'tippy.js/dist/themes/light.css';
+import 'tippy.js';
+import 'tippy.js/themes/light.css';
 import './styles/style.css';
 
 import $ from 'jquery';
