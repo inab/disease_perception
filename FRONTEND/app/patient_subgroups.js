@@ -516,7 +516,6 @@ export class PatientSubgroups {
 	getGraphSetup() {
 		if(this.params===undefined) {
 			this.params = {
-				title: 'Patient subgroups from <span style="font-weight: bold;" title="'+this.selectedDiseases.map((d) => d.data.name).join('\n')+'">'+this.selectedDiseases.length+'</span> diseases',
 				name: 'cose-bilkent',
 				// Specific from cola algorithm
 				edgeLengthVal: 45,
@@ -525,6 +524,7 @@ export class PatientSubgroups {
 				maxSimulationTime: 1500
 			};
 		}
+		this.params.title = 'Patient subgroups from <span style="font-weight: bold;" title="'+this.selectedDiseases.map((d) => d.data.name).join('\n')+'">'+this.selectedDiseases.length+'</span> diseases';
 		
 		return this.params;
 	}
