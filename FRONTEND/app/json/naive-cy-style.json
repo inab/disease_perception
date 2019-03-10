@@ -51,6 +51,7 @@
 	{
 		"selector": "node.PSG",
 		"css": {
+			"content": "data(label)",
 			"shape": "diamond",
 			"text-outline-color": "#000",
 			"width": "mapData(size,1,10,20,60)",

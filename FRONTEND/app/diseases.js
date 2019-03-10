@@ -51,6 +51,7 @@ export class Diseases {
 							label: label,
 							groupname: name,
 							childcount: 0,
+							grandchildcount: 0,
 							disease_id: dis.id,
 							id: 'D'+dis.id,
 							parent: 'DG'+dis.disease_group_id,

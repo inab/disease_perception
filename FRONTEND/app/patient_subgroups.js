@@ -62,14 +62,15 @@ export class PatientSubgroups {
 					_PatientSubgroupNodesByDisease = {};
 					_PatientSubgroupNodes = _PatientSubgroups.map(function(psg) {
 						// jshint camelcase: false 
-						let name = 'Sub '+psg.name.split('.')[1]+'\n('+psg.size+')';
+						let name = 'Sub '+psg.name.split('.')[1];
+						let label = name + '\n('+psg.size+')';
 						let retpsg = {
 							color: '#008020',
 							// jshint ignore:start
 							...psg,
 							// jshint ignore:end
 							name: name,
-							label: psg.name,
+							label: label,
 							// Unique identifiers
 							patient_subgroup_id: psg.id,
 							id: 'PSG'+psg.id,
@@ -298,9 +299,14 @@ export class PatientSubgroups {
 					if(!('_propUp' in data)) {
 						// Propagating the number of patient subgroups related to the disease
 						data.childcount = _PatientSubgroupNodesByDisease[data.disease_id].length;
+						data.grandchildcount = _PatientSubgroupNodesByDisease[data.disease_id].reduce((prev,sub) => {
+							return prev + sub.data.size;
+						},0);
 						
 						// Setting up the groupname
-						data.groupname = data.name+ '\n(' + data.childcount + ' subgroup' + ((data.childcount !== 1) ? 's' : '') + ')';
+						data.groupname = data.name +
+							'\n(' + data.childcount + ' subgroup' + ((data.childcount !== 1) ? 's' : '') +
+							', ' + data.grandchildcount + ' patient' + ((data.grandchildcount !== 1) ? 's' : '') + ')';
 						data._propUp = true;
 					}
 					
