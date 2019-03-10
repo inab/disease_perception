@@ -249,7 +249,8 @@ export class ComorbiditiesBrowser {
 		// Preparing the initial data fetch
 		let fetchPromises = this.fetch();
 		
-		currentView.fetch(...viewParams).forEach((e) => fetchPromises.push(e));
+		let viewPromises = currentView.fetch(...viewParams);
+		viewPromises.forEach((e) => fetchPromises.push(e));
 		
 		// Now, issuing the fetch itself, and then the layout
 		Promise.all(fetchPromises)
@@ -982,6 +983,74 @@ export class ComorbiditiesBrowser {
 		this.cy.elements().unselect();
 	}
 	
+	populateNodeTooltip(node) {
+		if(!node.scratch('tooltip')) {
+			let content = this.currentView.makeNodeTooltipContent(node);
+			let ref = node.popperRef(); // used only for positioning
+			let nodetip = tippy(ref, { // tippy options:
+				content: content,
+				trigger: 'manual',
+				arrow: true,
+				arrowType: 'round',
+				placement: 'bottom',
+				animation: 'perspective',
+				interactive: true,
+				interactiveBorder: 5,
+				hideOnClick: false,
+				multiple: true,
+				sticky: true,
+				size: 'large',
+				theme: 'light',
+				zIndex: 999
+			});
+			node.scratch('tippy',nodetip);
+			node.scratch('tooltip',$(content).clone());
+		}
+		
+		return node;
+	}
+	
+	cachedNodeTooltip(node) {
+		return this.populateNodeTooltip(node).scratch('tooltip');
+	}
+	
+	cachedNodeTippy(node) {
+		return this.populateNodeTooltip(node).scratch('tippy');
+	}
+	
+	populateEdgeTooltip(edge) {
+		if(!edge.scratch('tooltip')) {
+			let content = this.currentView.makeEdgeTooltipContent(edge);
+			let ref = edge.popperRef(); // used only for positioning
+			let edgetip = tippy(ref, { // tippy options:
+				content: content,
+				trigger: 'manual',
+				arrow: true,
+				arrowType: 'round',
+				placement: 'bottom',
+				animation: 'perspective',
+				//followCursor: true,
+				hideOnClick: false,
+				multiple: true,
+				sticky: true,
+				theme: 'dark',
+				zIndex: 999
+			});
+			edge.scratch('tippy',edgetip);
+			edge.scratch('tooltip',$(content).clone());
+		}
+		
+		return edge;
+	}
+	
+	cachedEdgeTooltip(edge) {
+		return this.populateEdgeTooltip(edge).scratch('tooltip');
+	}
+	
+	cachedEdgeTippy(edge) {
+		return this.populateEdgeTooltip(edge).scratch('tippy');
+	}
+	
 	doLayout() {
 		// First, empty the container
 		this.$graph.empty();
@@ -1003,7 +1072,7 @@ export class ComorbiditiesBrowser {
 				concentric: function( node ){
 				  return node.degree();
 				},
-				levelWidth: function( nodes ){
+				levelWidth: function( /* nodes */ ){
 				  return 2;
 				}
 			};
@@ -1025,52 +1094,40 @@ export class ComorbiditiesBrowser {
 				if(evt.originalEvent.ctrlKey) {
 					this.ctxHandlers.nodes.forEach((ctxNodeHandler) => ctxNodeHandler(evt.target));
 				} else {
-					this.$tooltipView.html(evt.target.scratch('tooltip'));
+					this.$tooltipView.html(this.cachedNodeTooltip(evt.target));
 				}
 			}
 			:
 			(evt) => {
-				this.$tooltipView.html(evt.target.scratch('tooltip'));
+				this.$tooltipView.html(this.cachedNodeTooltip(evt.target));
 			};
 		
-		this.cy.nodes().forEach((node) => {
+		if($ctxNodeHandler) {
+			this.cy.on('cxttap','node',(evt) => {
+				let node = evt.target;
+				if(!node.isParent()) {
+					$ctxNodeHandler(evt);
+				}
+			});
+		}
+		
+		this.cy.on('tapdragover','node',(evt) => {
+			let node = evt.target;
 			if(!node.isParent()) {
-				let ref = node.popperRef(); // used only for positioning
-
-				// using tippy ^2.0.0
-				let content = this.currentView.makeNodeTooltipContent(node);
-				node.scratch('tooltip',$(content).clone());
-				let tip = tippy(ref, { // tippy options:
-					content: content,
-					trigger: 'manual',
-					arrow: true,
-					arrowType: 'round',
-					placement: 'bottom',
-					animation: 'perspective',
-					interactive: true,
-					interactiveBorder: 5,
-					hideOnClick: false,
-					multiple: true,
-					sticky: true,
-					size: 'large',
-					theme: 'light',
-					zIndex: 999
-				});
+				let nodetip = this.cachedNodeTippy(node);
 				
-				node.on('tapdragover', () => {
-					if(!tip.state.isVisible) {
-						tip.show();
-					}
-				});
-				
-				node.on('tapdragout', () => {
-					if(tip.state.isVisible) {
-						tip.hide();
-					}
-				});
-				
-				if($ctxNodeHandler) {
-					node.on('cxttap',$ctxNodeHandler);
+				if(!nodetip.state.isVisible) {
+					nodetip.show();
+				}
+			}
+		});
+		
+		this.cy.on('tapdragout','node',(evt) => {
+			let node = evt.target;
+			if(!node.isParent()) {
+				let nodetip = node.scratch('tippy');
+				if(nodetip && nodetip.state.isVisible) {
+					nodetip.hide();
 				}
 			}
 		});
@@ -1091,44 +1148,28 @@ export class ComorbiditiesBrowser {
 					this.$tooltipView.html(evt.target.scratch('tooltip'));
 				};
 			
-			this.cy.edges().forEach((edge) => {
-				let ref = edge.popperRef(); // used only for positioning
-
-				// using tippy ^2.0.0
-				let content = this.currentView.makeEdgeTooltipContent(edge);
-				edge.scratch('tooltip',$(content).clone());
-				let tip = tippy(ref, { // tippy options:
-					content: content,
-					trigger: 'manual',
-					arrow: true,
-					arrowType: 'round',
-					placement: 'bottom',
-					animation: 'perspective',
-					//followCursor: true,
-					hideOnClick: false,
-					multiple: true,
-					sticky: true,
-					theme: 'dark',
-					zIndex: 999
+			if($ctxEdgeHandler) {
+				this.cy.on('cxttap','edge',(evt) => {
+					$ctxNodeHandler(evt);
 				});
+			}
+			
+			this.cy.on('tapdragover','edge',(evt) => {
+				let edge = evt.target;
+				let edgetip = this.cachedEdgeTippy(edge);
 				
-				edge.on('tapdragover', (e) => {
-					//if(!tip.state.isVisible && (this.unHighlighted || e.originalEvent.ctrlKey)) {
-					if(!tip.state.isVisible) {
-						edge.flashClass('highlighted');
-						edge.connectedNodes().flashClass('highlighted');
-						tip.show();
-					}
-				});
-				
-				edge.on('tapdragout', () => {
-					if(tip.state.isVisible) {
-						tip.hide();
-					}
-				});
-				
-				if($ctxEdgeHandler) {
-					edge.on('cxttap',$ctxEdgeHandler);
+				if(!edgetip.state.isVisible) {
+					edge.flashClass('highlighted');
+					edge.connectedNodes().flashClass('highlighted');
+					edgetip.show();
+				}
+			});
+			
+			this.cy.on('tapdragout','edge',(evt) => {
+				let edge = evt.target;
+				let edgetip = edge.scratch('tippy');
+				if(edgetip && edgetip.state.isVisible) {
+					edgetip.hide();
 				}
 			});
 			
