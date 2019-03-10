@@ -409,24 +409,29 @@ a:hover {
 }
 */
 
-.legend-container .form-control {
+.search-container .form-control {
 	padding-top: 0;
 	padding-bottom: 0;
-	height: 3vw;
-	font-size: 1.75vw;
-	line-height: 2vw;
+	height: 2vw;
+	font-size: 1.25vw;
+	line-height: 1.5vw;
 }
 
-.legend-container .dropdown-menu {
-	font-size: 1.75vw;
-	line-height: 2vw;
+.search-container .dropdown-menu {
+	font-size: 1.25vw;
+	line-height: 1.5vw;
 	width:100%;
+}
+
+.term-unavailable {
+	color: #888;
+	font-style: italic;
 }
 
 .tt-suggestion {
   padding-left: 1em;
-  font-size: 1.75vw;
-  line-height: 2vw;
+  font-size: 1.25vw;
+  line-height: 1.5vw;
 }
 
 .tt-suggestion:hover {

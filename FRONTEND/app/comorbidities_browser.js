@@ -4,7 +4,6 @@
 //import $ from 'jquery';
 
 import _ from 'lodash';
-import Popper from 'popper.js';
 
 import 'bootstrap';
 import 'bootstrap-slider';
@@ -104,21 +103,33 @@ export class ComorbiditiesBrowser {
 		
 		// The body of the search tooltip, to be used by tippy
 		ui.$searchBody = $('<div></div>');
-		ui.$searchBody.addClass('legend-container');
-		ui.$searchBody.css({zIndex: 9999});
-		//ui.$searchBody.addClass('legend-container');
+		ui.$searchBody.addClass('search-container');
 
-		ui.$searchField = $('<input type="text" placeholder="States of USA">');
+		ui.$searchField = $('<input type="text" placeholder="Diseases">');
 		ui.$searchField.addClass('form-control typeahead');
 		//ui.$searchField.addClass('typeahead');
 		
 		ui.$searchBody.append(ui.$searchField);
 		ui.$searchBody.hide();
 		
-		new Popper(ui.$search.get(0),ui.$searchBody.get(0),{
-			placement: 'right-start'
+		let tipSearch = tippy(ui.$search.get(0),{ // tippy options:
+			content: ui.$searchBody.get(0),
+			arrow: true,
+			arrowType: 'round',
+			placement: 'right-start',
+			animation: 'perspective',
+			interactive: true,
+			interactiveBorder: 5,
+			hideOnClick: false,
+			multiple: false,
+			trigger: 'mouseenter focus',
+			size: 'large',
+			theme: 'light',
+			zIndex: 999,
+			onShown: () => {
+				ui.$searchField.focus();
+			}
 		});
-		uiElems.push(ui.$searchBody);
 		
 		ui.$search.on('mouseenter focus',() => ui.$searchBody.show());
 		ui.$search.on('click', () => ui.$searchBody.toggle());
@@ -126,7 +137,7 @@ export class ComorbiditiesBrowser {
 		ui.$searchBody.on('mouseleave unfocus',() => ui.$searchBody.hide());
 		
 		// The legend button
-		ui.$legend = $('<span><i class="fas fa-info-circle" aria-hidden="true"></i></span>');
+		ui.$legend = $('<button><i class="fas fa-info-circle" aria-hidden="true"></i></button>');
 		ui.$legend.addClass('cmui button');
 		ui.$legend.attr('id','legend');
 		ui.$legend.hide();
@@ -243,65 +254,12 @@ export class ComorbiditiesBrowser {
 		
 		// Now, all the dynamically created elements are placed after the graph
 		ui.$graph.after(uiElems);
-
-		let engine = new Bloodhound({
-			local: [
-				{
-					c: 'Andalucía',
-					
-				},
-				{
-					c: 'Andorra',
-				},
-				{
-					c: 'Madrid',
-				},
-				{
-					c: 'Madrid',
-				},
-				{
-					c: 'Madrid1',
-				},
-				{
-					c: 'Madrid2',
-				},
-				{
-					c: 'Madrid3',
-				},
-				{
-					c: 'Madrid4',
-				},
-				{
-					c: 'Madrid5',
-				},
-				{
-					c: 'Madrid6',
-				},
-				{
-					c: 'Murcia',
-				},
-				{
-					c: 'Murcia1',
-				},
-				{
-					c: 'Murcia2',
-				},
-				{
-					c: 'Murcia3',
-				},
-				{
-					c: 'Murcia4',
-				},
-				{
-					c: 'Canarias',
-				},
-				{
-					c: 'Cataluña'
-				}
-			],
-			identify: function(o) { return o.c; },
+		
+		// Setting up the typeahead component
+		ui.bloodhound = new Bloodhound({
+			identify: function(o) { return o.data.id; },
 			queryTokenizer: Bloodhound.tokenizers.whitespace,
-			datumTokenizer: Bloodhound.tokenizers.obj.whitespace('c')
+			datumTokenizer: function(o) { return Bloodhound.tokenizers.whitespace(o.data.label);}
 		});
 		
 		ui.$searchField.typeahead({
@@ -312,17 +270,47 @@ export class ComorbiditiesBrowser {
 				menu: 'dropdown-menu'
 			}
 		},{
-			name: 'states',
-			display: 'c',
-			source: engine
+			name: 'nodes',
+			display: function(o) { return o.data.label; },
+			source: ui.bloodhound,
+			templates: {
+				notFound: '<span style="font-style: italic;">No match</span>',
+				suggestion: (node) => {
+					let unavailable = this.filteredEles.getElementById(node.data.id).length > 0;
+					let theNode = '<div><i class="fas fa-circle" style="color: '+
+						node.data.color+
+						';"></i> ';
+					theNode += '<span class="term-' +
+						(unavailable ? 'unavailable' : 'available') + '">' +
+						node.data.name + '</span></div>';
+					return theNode;
+				}
+			}
+		}).bind('typeahead:select',(ev,suggestion) => {
+			this.addSelectionByNodeId(suggestion.data.id);
+			ui.$searchField.typeahead('val','');
+			tipSearch.hide();
+		}).on('keyup', (e) => {
+			switch(e.keyCode) {
+				case 13:
+					// Do something
+					let fieldVal = ui.$searchField.typeahead('val');
+					if(fieldVal.length > 0) {
+						ui.bloodhound.search(fieldVal,(res) => {
+							if(res.length > 0) {
+								this.addSelectionByNodeId(res[0].data.id);
+								ui.$searchField.typeahead('val','');
+								tipSearch.hide();
+							}
+						});
+					}
+					break;
+				case 27:
+					ui.$searchField.typeahead('val','');
+					tipSearch.hide();
+					break;
+			}
 		});
-		//ui.$searchField.typeahead(null,{
-		//	name: 'states',
-		//	display: 'c',
-		//	source: engine
-		//});
-
-
 
 		
 		// The list of disposable configuration widgets
@@ -1128,6 +1116,19 @@ export class ComorbiditiesBrowser {
 		this.cy.elements().unselect();
 	}
 	
+	addSelectionByNodeId(nodeId) {
+		// Only select when it was not previously discarded by filtering conditions
+		if(this.filteredEles.getElementById(nodeId).length === 0) {
+			this.batch(() => {
+				if(this.unHighlighted) {
+					this.unHighlighted.restore();
+					this.unHighlighted = null;
+				}
+				this.cy.getElementById(nodeId).select();
+			});
+		}
+	}
+	
 	populateNodeTooltip(node) {
 		if(!node.scratch('tooltip')) {
 			let content = this.currentView.makeNodeTooltipContent(node);
@@ -1199,10 +1200,14 @@ export class ComorbiditiesBrowser {
 	doLayout() {
 		// First, empty the container
 		this.ui.$graph.empty();
+		this.ui.bloodhound.clear();
 		
 		// This is the graph data
 		let graphData = this.currentView.getFetchedNetwork();
 		//let graphData = this.testData;
+		
+		// We feed now the Bloodhound
+		this.ui.bloodhound.add(graphData.nodes);
 		
 		// Registering the initial filtering conditions
 		this.params = this.getSavedLayoutParams();
