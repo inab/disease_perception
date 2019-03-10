@@ -1,6 +1,7 @@
 'use strict';
 
-import $ from 'jquery';
+/* globals $: false */
+//import $ from 'jquery';
 
 // Singleton variables
 var _Diseases;

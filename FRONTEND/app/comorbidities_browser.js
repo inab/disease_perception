@@ -1,10 +1,16 @@
 'use strict';
 
-import $ from 'jquery';
+/* globals $: false */
+//import $ from 'jquery';
 
 import _ from 'lodash';
+import Popper from 'popper.js';
+
 import 'bootstrap';
 import 'bootstrap-slider';
+//import typeahead from 'typeahead.js/dist/typeahead.jquery.js';
+//import Bloodhound from 'typeahead.js/dist/bloodhound.js';
+import Bloodhound from 'typeahead.js';
 import FastClick from 'fastclick';
 
 import cytoscape from 'cytoscape';
@@ -50,53 +56,88 @@ import { Studies } from './studies';
 
 export class ComorbiditiesBrowser {
 	constructor(setup) {
+		// Create the object holding all the ui elements
+		let ui = this.ui = {};
+		let uiElems = [];
+		
 		// The graph container
-		this.graphEl = setup.graph;
-		this.$graph = $(this.graphEl);
+		ui.$graph = $(setup.graph);
 		
 		// Create the graph title
-		this.$graphTitle = $('<div></div>');
-		this.$graphTitle.attr('id','graph-title');
-		this.$graphTitle.addClass('graph-title cmui');
-		this.$graph.after(this.$graphTitle);
+		ui.$graphTitle = $('<div></div>');
+		ui.$graphTitle.attr('id','graph-title');
+		ui.$graphTitle.addClass('graph-title cmui');
+		uiElems.push(ui.$graphTitle);
 		
-		// Create the history and its management buttons
+		// Create the history
 		this.history = [];
 		this.historyPointer = -1;
 		
-		this.$historyBack = $('<button><i class="far fa-arrow-alt-circle-left" aria-hidden="true" title="Previous view"></i></button>');
-		this.$historyBack.attr('id','history-back');
-		this.$historyBack.addClass('cmui button btn btn-default');
-		this.$historyBack.on('click',() => this.historyGoBack());
-		this.$historyBack.prop('disabled',true);
-		this.$graphTitle.after(this.$historyBack);
+		// Create the history management buttons
+		ui.$historyBack = $('<button><i class="far fa-arrow-alt-circle-left" aria-hidden="true" title="Previous view"></i></button>');
+		ui.$historyBack.attr('id','history-back');
+		ui.$historyBack.addClass('cmui button btn btn-default');
+		ui.$historyBack.on('click',() => this.historyGoBack());
+		ui.$historyBack.prop('disabled',true);
+		uiElems.push(ui.$historyBack);
 		
-		this.$unselectAll = $('<button><i class="fas fa-sync-alt" aria-hidden="true" title="Unselect all"></i></button>');
-		this.$unselectAll.attr('id','unselect-all');
-		this.$unselectAll.addClass('cmui button btn btn-default');
-		this.$unselectAll.on('click',() => this.unselectAll());
-		this.$unselectAll.prop('disabled',true);
-		this.$historyBack.after(this.$unselectAll);
+		ui.$unselectAll = $('<button><i class="fas fa-sitemap" aria-hidden="true" title="Unselect all"></i></button>');
+		ui.$unselectAll.attr('id','unselect-all');
+		ui.$unselectAll.addClass('cmui button btn btn-default');
+		ui.$unselectAll.on('click',() => this.unselectAll());
+		ui.$unselectAll.prop('disabled',true);
+		uiElems.push(ui.$unselectAll);
 		
-		this.$historyForward = $('<button><i class="far fa-arrow-alt-circle-right" aria-hidden="true" title="Next view"></i></button>');
-		this.$historyForward.addClass('cmui button btn btn-default');
-		this.$historyForward.attr('id','history-forward');
-		this.$historyForward.on('click',() => this.historyGoForward());
-		this.$historyForward.prop('disabled',true);
-		this.$unselectAll.after(this.$historyForward);
+		ui.$historyForward = $('<button><i class="far fa-arrow-alt-circle-right" aria-hidden="true" title="Next view"></i></button>');
+		ui.$historyForward.addClass('cmui button btn btn-default');
+		ui.$historyForward.attr('id','history-forward');
+		ui.$historyForward.on('click',() => this.historyGoForward());
+		ui.$historyForward.prop('disabled',true);
+		uiElems.push(ui.$historyForward);
 		
-		this.$legend = $('<span><i class="fas fa-info-circle" aria-hidden="true"></i></span>');
-		this.$legend.addClass('cmui button');
-		this.$legend.attr('id','legend');
-		this.$legend.hide();
-		this.$historyForward.after(this.$legend);
+		// The search button
+		ui.$search = $('<button><i class="fas fa-search" aria-hidden="true" title="Search"></i></button>');
+		ui.$search.addClass('cmui button');
+		ui.$search.attr('id','search');
+		//ui.$search.prop('disabled',true);
+		uiElems.push(ui.$search);
 		
-		this.$legendBody = $('<div></div>');
-		this.$legendBody.addClass('legend-container');
+		// The body of the search tooltip, to be used by tippy
+		ui.$searchBody = $('<div></div>');
+		ui.$searchBody.addClass('legend-container');
+		ui.$searchBody.css({zIndex: 9999});
+		//ui.$searchBody.addClass('legend-container');
+
+		ui.$searchField = $('<input type="text" placeholder="States of USA">');
+		ui.$searchField.addClass('form-control typeahead');
+		//ui.$searchField.addClass('typeahead');
 		
-		//tippy(this.$legend);
-		let tip = tippy(this.$legend.get(0),{ // tippy options:
-			content: this.$legendBody.get(0),
+		ui.$searchBody.append(ui.$searchField);
+		ui.$searchBody.hide();
+		
+		new Popper(ui.$search.get(0),ui.$searchBody.get(0),{
+			placement: 'right-start'
+		});
+		uiElems.push(ui.$searchBody);
+		
+		ui.$search.on('mouseenter focus',() => ui.$searchBody.show());
+		ui.$search.on('click', () => ui.$searchBody.toggle());
+		ui.$searchBody.on('mouseenter focus',() => ui.$searchBody.show());
+		ui.$searchBody.on('mouseleave unfocus',() => ui.$searchBody.hide());
+		
+		// The legend button
+		ui.$legend = $('<span><i class="fas fa-info-circle" aria-hidden="true"></i></span>');
+		ui.$legend.addClass('cmui button');
+		ui.$legend.attr('id','legend');
+		ui.$legend.hide();
+		uiElems.push(ui.$legend);
+		
+		// The body of the legend, to be used by tippy
+		ui.$legendBody = $('<div></div>');
+		ui.$legendBody.addClass('legend-container');
+		
+		let tip = tippy(ui.$legend.get(0),{ // tippy options:
+			content: ui.$legendBody.get(0),
 			arrow: true,
 			arrowType: 'round',
 			placement: 'bottom-end',
@@ -111,33 +152,33 @@ export class ComorbiditiesBrowser {
 			zIndex: 999
 		});
 		
-		this.$snapshot = $('<a><i class="far fa-images" aria-hidden="true" title="Save network view snapshot"></i></a>');
-		this.$snapshot.addClass('cmui button');
-		//this.$snapshot.addClass('cmui button button btn btn-default');
-		this.$snapshot.attr('id','snapshot');
-		//this.$snapshot.on('click',() => this.saveSnapshotSVG());
-		this.$legend.after(this.$snapshot);
+		// Snapshots
+		ui.$snapshot = $('<a><i class="far fa-images" aria-hidden="true" title="Save network view snapshot"></i></a>');
+		ui.$snapshot.addClass('cmui button');
+		//ui.$snapshot.addClass('cmui button button btn btn-default');
+		ui.$snapshot.attr('id','snapshot');
+		uiElems.push(ui.$snapshot);
 		
 		let $snapshotBody = $('<div></div>');
 		$snapshotBody.addClass('snapshot-container');
 		
+		// Save PNG snapshot
 		$snapshotBody.append('PNG');
-		this.$snapshotPNG = $('<a><i class="far fa-file-image" aria-hidden="true" title="Save as PNG network view snapshot"></i></a>');
-		this.$snapshotPNG.addClass('cmui-inline button btn btn-default');
-		this.$snapshotPNG.attr('id','snapshotPNG');
-		this.$snapshotPNG.on('click',() => this.saveSnapshotPNG());
-		$snapshotBody.append(this.$snapshotPNG);
+		ui.$snapshotPNG = $('<a><i class="far fa-file-image" aria-hidden="true" title="Save as PNG network view snapshot"></i></a>');
+		ui.$snapshotPNG.addClass('cmui-inline button btn btn-default');
+		ui.$snapshotPNG.attr('id','snapshotPNG');
+		ui.$snapshotPNG.on('click',() => this.saveSnapshotPNG());
+		$snapshotBody.append(ui.$snapshotPNG);
 		
+		// Save SVG snapshot
 		$snapshotBody.append('SVG');
-		this.$snapshotSVG = $('<a><i class="fas fa-image" aria-hidden="true" title="Save as SVG network view snapshot"></i></a>');
-		this.$snapshotSVG.addClass('cmui-inline button btn btn-default');
-		this.$snapshotSVG.attr('id','snapshotSVG');
-		this.$snapshotSVG.on('click',() => this.saveSnapshotSVG());
-		$snapshotBody.append(this.$snapshotSVG);
+		ui.$snapshotSVG = $('<a><i class="fas fa-image" aria-hidden="true" title="Save as SVG network view snapshot"></i></a>');
+		ui.$snapshotSVG.addClass('cmui-inline button btn btn-default');
+		ui.$snapshotSVG.attr('id','snapshotSVG');
+		ui.$snapshotSVG.on('click',() => this.saveSnapshotSVG());
+		$snapshotBody.append(ui.$snapshotSVG);
 		
-		
-		//tippy(this.$legend);
-		let tipSnapshot = tippy(this.$snapshot.get(0),{ // tippy options:
+		let tipSnapshot = tippy(ui.$snapshot.get(0),{ // tippy options:
 			content: $snapshotBody.get(0),
 			arrow: true,
 			arrowType: 'round',
@@ -153,32 +194,136 @@ export class ComorbiditiesBrowser {
 			zIndex: 999
 		});
 		
-		this.$saveNetwork = $('<a><i class="fas fa-chart-area" aria-hidden="true" title="Save network as Cytoscape.json"></i></a>');
-		this.$saveNetwork.addClass('cmui button button btn btn-default');
-		this.$saveNetwork.attr('id','save-network');
-		this.$saveNetwork.on('click',() => this.saveNetwork());
-		this.$snapshot.after(this.$saveNetwork);
+		// Save shown graph in Cytoscape.js format
+		ui.$saveNetwork = $('<a><i class="fas fa-chart-area" aria-hidden="true" title="Save network as Cytoscape.json"></i></a>');
+		ui.$saveNetwork.addClass('cmui button button btn btn-default');
+		ui.$saveNetwork.attr('id','save-network');
+		ui.$saveNetwork.on('click',() => this.saveNetwork());
+		uiElems.push(ui.$saveNetwork);
 		
 		
 		// The right panel container
-		this.$config = $(setup.configPanel);
+		ui.$config = $(setup.configPanel);
 		// The right panel toggle container
-		this.$configToggle = $(setup.configPanelToggle);
-		
-		this.$controls = $(setup.graphControls);
-		
-		this.$modal = $(setup.modal);
-		this.$loading = $(setup.loading);
-		this.$appLoading = $(setup.appLoading);
+		ui.$configToggle = $(setup.configPanelToggle);
 		
 		// Event handler to show/hide the config container
-		this.$configToggle.on('click', () => {
+		ui.$configToggle.on('click', () => {
 			$('body').toggleClass('config-closed');
 			
 			if(this.cy) {
 				this.cy.resize();
 			}
+			if(this.layout) {
+				this.layout.run();
+			}
 		});
+		
+		// Event handler to resize the graph on window shape change
+		$(window).on('resize',() => {
+			if(this.cy) {
+				this.cy.resize();
+			}
+			if(this.layout) {
+				this.layout.run();
+			}
+		});
+		
+		// Controls within the config panel
+		ui.$controls = $(setup.graphControls);
+		
+		// Loading state controls
+		ui.$loading = $(setup.loading);
+		ui.$appLoading = $(setup.appLoading);
+		
+		
+		
+		// A modal (to be used)
+		ui.$modal = $(setup.modal);
+		
+		// Now, all the dynamically created elements are placed after the graph
+		ui.$graph.after(uiElems);
+
+		let engine = new Bloodhound({
+			local: [
+				{
+					c: 'Andalucía',
+					
+				},
+				{
+					c: 'Andorra',
+				},
+				{
+					c: 'Madrid',
+				},
+				{
+					c: 'Madrid',
+				},
+				{
+					c: 'Madrid1',
+				},
+				{
+					c: 'Madrid2',
+				},
+				{
+					c: 'Madrid3',
+				},
+				{
+					c: 'Madrid4',
+				},
+				{
+					c: 'Madrid5',
+				},
+				{
+					c: 'Madrid6',
+				},
+				{
+					c: 'Murcia',
+				},
+				{
+					c: 'Murcia1',
+				},
+				{
+					c: 'Murcia2',
+				},
+				{
+					c: 'Murcia3',
+				},
+				{
+					c: 'Murcia4',
+				},
+				{
+					c: 'Canarias',
+				},
+				{
+					c: 'Cataluña'
+				}
+			],
+			identify: function(o) { return o.c; },
+			queryTokenizer: Bloodhound.tokenizers.whitespace,
+			datumTokenizer: Bloodhound.tokenizers.obj.whitespace('c')
+		});
+		
+		ui.$searchField.typeahead({
+			hint: false,
+			highlight: true,
+			minLenght: 0,
+			classNames: {
+				menu: 'dropdown-menu'
+			}
+		},{
+			name: 'states',
+			display: 'c',
+			source: engine
+		});
+		//ui.$searchField.typeahead(null,{
+		//	name: 'states',
+		//	display: 'c',
+		//	source: engine
+		//});
+
+
+
 		
 		// The list of disposable configuration widgets
 		this.configWidgets = [];
@@ -228,17 +373,17 @@ export class ComorbiditiesBrowser {
 	}
 	
 	switchHistoryView(historyId=-1) {
-		this.$loading.removeClass('loaded');
-		this.$legend.hide();
+		this.ui.$loading.removeClass('loaded');
+		this.ui.$legend.hide();
 		if(historyId===-1) {
 			historyId = this.historyPointer;
 		} else {
 			this.historyPointer = historyId;
 		}
 		
-		this.$historyBack.prop('disabled',this.historyPointer===0);
-		this.$historyForward.prop('disabled',this.historyPointer+1 === this.history.length);
-		this.$unselectAll.prop('disabled',true);
+		this.ui.$historyBack.prop('disabled',this.historyPointer===0);
+		this.ui.$historyForward.prop('disabled',this.historyPointer+1 === this.history.length);
+		this.ui.$unselectAll.prop('disabled',true);
 		
 		let viewName = this.history[historyId].viewName;
 		let viewParams = this.history[historyId].viewParams;
@@ -260,8 +405,8 @@ export class ComorbiditiesBrowser {
 			if(selected.nonempty()) {
 				selected.select();
 			}
-			this.$loading.addClass('loaded');
-			this.$appLoading.addClass('loaded');
+			this.ui.$loading.addClass('loaded');
+			this.ui.$appLoading.addClass('loaded');
 		});
 	}
 	
@@ -309,18 +454,18 @@ export class ComorbiditiesBrowser {
 	}
 	
 	saveSnapshotPNG() {
-		this.$snapshotPNG.attr('download','disease-perception_'+this.getViewId()+'.png');
-		this.$snapshotPNG.attr('href',this.cy.png({full: true, scale: 2}));
+		this.ui.$snapshotPNG.attr('download','disease-perception_'+this.getViewId()+'.png');
+		this.ui.$snapshotPNG.attr('href',this.cy.png({full: true, scale: 2}));
 	}
 	
 	saveSnapshotSVG() {
-		this.$snapshotSVG.attr('download','disease-perception_'+this.getViewId()+'.svg');
-		this.$snapshotSVG.attr('href',urlfy.toDataURL(this.cy.svg({full: true}),'application/xml+svg'));
+		this.ui.$snapshotSVG.attr('download','disease-perception_'+this.getViewId()+'.svg');
+		this.ui.$snapshotSVG.attr('href',urlfy.toDataURL(this.cy.svg({full: true}),'application/xml+svg'));
 	}
 	
 	saveNetwork() {
-		this.$saveNetwork.attr('download','disease-perception_'+this.getViewId()+'.json');
-		this.$saveNetwork.attr('href',urlfy.toDataURL(JSON.stringify(this.cy.json()),'application/json'));
+		this.ui.$saveNetwork.attr('download','disease-perception_'+this.getViewId()+'.json');
+		this.ui.$saveNetwork.attr('href',urlfy.toDataURL(JSON.stringify(this.cy.json()),'application/json'));
 	}
 	
 	makeCy(container, style, graphData) {
@@ -622,7 +767,7 @@ export class ComorbiditiesBrowser {
 	}
 	
 	registerConfigWidget($widget) {
-		this.$config.append($widget);
+		this.ui.$config.append($widget);
 		this.configWidgets.push($widget);
 	}
 	
@@ -823,15 +968,15 @@ export class ComorbiditiesBrowser {
 	}
 	
 	makeLegend(opts) {
-		this.$legendBody.empty();
-		this.$legendBody.append(opts.domNode);
-		this.$legend.show();
+		this.ui.$legendBody.empty();
+		this.ui.$legendBody.append(opts.domNode);
+		this.ui.$legend.show();
 		
-		return this.$legendBody;
+		return this.ui.$legendBody;
 	}
 	
 	initializeControls() {
-		let $controls = this.$controls;
+		let $controls = this.ui.$controls;
 		$controls.empty();
 		
 		if(this.configWidgets.length > 0) {
@@ -843,7 +988,7 @@ export class ComorbiditiesBrowser {
 		}
 		
 		// First and foremost, set the title
-		this.$graphTitle.html(this.params.title);
+		this.ui.$graphTitle.html(this.params.title);
 		
 		let graphLayoutSelect = {
 			label: 'Graph Layouts',
@@ -934,8 +1079,8 @@ export class ComorbiditiesBrowser {
 		
 		// Static tooltip view
 		$controls.append('<span class="label label-default">Selected element</span>');
-		this.$tooltipView = $('<div class="tooltip-view"><i>(None)</i></div>');
-		$controls.append(this.$tooltipView);
+		this.ui.$tooltipView = $('<div class="tooltip-view"><i>(None)</i></div>');
+		$controls.append(this.ui.$tooltipView);
 		
 		// The next view setup is only set when it is needed
 		this.nextViewSetup = this.currentView.getNextViewSetup();
@@ -961,21 +1106,21 @@ export class ComorbiditiesBrowser {
 				selectedEdges.unselect();
 			}
 			
-			this.$unselectAll.prop('disabled',selected.empty());
+			this.ui.$unselectAll.prop('disabled',selected.empty());
 			
 			// Re-highlight in case it makes sense
 			if(forceUpdate || ((!this.prevHighlighted || this.prevHighlighted.empty()) && selected.nonempty()) || (this.prevHighlighted && selected.symmetricDifference(this.prevHighlighted).nonempty())) {
 				this.highlight(selected);
 				//if(selected.length===2) {
-				//	this.$modal.find('.modal-title').empty().append('Hola holita');
-				//	this.$modal.modal('show');
+				//	this.ui.$modal.find('.modal-title').empty().append('Hola holita');
+				//	this.ui.$modal.modal('show');
 				//}
 			}
 			
 			// Update the title
 			var title = this.params.title+(selected.nonempty() ? ' (focused on '+selected.length+')':'');
 			
-			this.$graphTitle.html(title);
+			this.ui.$graphTitle.html(title);
 		}
 	}
 	
@@ -1053,7 +1198,7 @@ export class ComorbiditiesBrowser {
 	
 	doLayout() {
 		// First, empty the container
-		this.$graph.empty();
+		this.ui.$graph.empty();
 		
 		// This is the graph data
 		let graphData = this.currentView.getFetchedNetwork();
@@ -1079,7 +1224,7 @@ export class ComorbiditiesBrowser {
 		}
 		
 		// Creation of the cytoscape instance
-		this.makeCy(this.graphEl,this.cyStyle,graphData);
+		this.makeCy(this.ui.$graph.get(0),this.cyStyle,graphData);
 		
 		// Initializing the graph controls (and some values)
 		this.initializeControls();
@@ -1094,12 +1239,12 @@ export class ComorbiditiesBrowser {
 				if(evt.originalEvent.ctrlKey) {
 					this.ctxHandlers.nodes.forEach((ctxNodeHandler) => ctxNodeHandler(evt.target));
 				} else {
-					this.$tooltipView.html(this.cachedNodeTooltip(evt.target));
+					this.ui.$tooltipView.html(this.cachedNodeTooltip(evt.target));
 				}
 			}
 			:
 			(evt) => {
-				this.$tooltipView.html(this.cachedNodeTooltip(evt.target));
+				this.ui.$tooltipView.html(this.cachedNodeTooltip(evt.target));
 			};
 		
 		if($ctxNodeHandler) {
@@ -1140,12 +1285,12 @@ export class ComorbiditiesBrowser {
 					if(evt.originalEvent.ctrlKey) {
 						this.ctxHandlers.edges.forEach((ctxEdgeHandler) => ctxEdgeHandler(evt.target));
 					} else {
-						this.$tooltipView.html(evt.target.scratch('tooltip'));
+						this.ui.$tooltipView.html(evt.target.scratch('tooltip'));
 					}
 				}
 				:
 				(evt) => {
-					this.$tooltipView.html(evt.target.scratch('tooltip'));
+					this.ui.$tooltipView.html(evt.target.scratch('tooltip'));
 				};
 			
 			if($ctxEdgeHandler) {
