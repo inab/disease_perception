@@ -37,10 +37,6 @@ Set.prototype.intersection = function(setB) {
 	return intersection;
 };
 
-function distinctFilter(value,index,self) {
-	return index === 0 || self.lastIndexOf(value,index-1) < 0;
-}
-
 export class PatientSubgroups {
 	constructor(cmBrowser) {
 		this.cmBrowser = cmBrowser;
@@ -66,7 +62,7 @@ export class PatientSubgroups {
 					_PatientSubgroupNodesByDisease = {};
 					_PatientSubgroupNodes = _PatientSubgroups.map(function(psg) {
 						// jshint camelcase: false 
-						let name = 'Subgroup\n'+psg.name.split('.')[1];
+						let name = 'Sub '+psg.name.split('.')[1]+'\n('+psg.size+')';
 						let retpsg = {
 							color: '#008020',
 							// jshint ignore:start
@@ -136,8 +132,8 @@ export class PatientSubgroups {
 						classes: 'CM CM'+((retpsgc.rel_risk > 0) ? 'p' : 'n')
 					};
 				});
-				this.pendingNodePropagation = true;
-				this.pendingEdgeStats = true;
+				
+				this.network = null;
 				
 				return decodedJson;
 			})
@@ -155,32 +151,34 @@ export class PatientSubgroups {
 				
 				let dPSDIHash = this.diseasePatientSubgroupDrugIntersectHash = {};
 				
-				dPSDI.forEach(function(psd,psdi) {
-					dPSDIHash[psd.patient_subgroup_id] = psd;
-					let upList = [];
-					let downList = [];
-					psd.drugs.forEach(function(psde,psdei) {
-						if(psde.regulation_sign > 0) {
-							upList.push(psde.drug_id);
-						} else {
-							downList.push(psde.drug_id);
-						}
-						let retpsd = {
-							// Unique identifiers
-							id: 'PSDC'+psdi+'_'+psdei,
-							source: 'Dr'+psde.drug_id,
-							target: 'PSD'+psd.patient_subgroup_id,
-							sign: psde.regulation_sign
-						};
-						
-						dPSDIE.push({
-							data: retpsd,
-							classes: 'DI'
+				if(dPSDI instanceof Array) {
+					dPSDI.forEach(function(psd,psdi) {
+						dPSDIHash[psd.patient_subgroup_id] = psd;
+						let upList = [];
+						let downList = [];
+						psd.drugs.forEach(function(psde,psdei) {
+							if(psde.regulation_sign > 0) {
+								upList.push(psde.drug_id);
+							} else {
+								downList.push(psde.drug_id);
+							}
+							let retpsd = {
+								// Unique identifiers
+								id: 'PSDC'+psdi+'_'+psdei,
+								source: 'Dr'+psde.drug_id,
+								target: 'PSD'+psd.patient_subgroup_id,
+								sign: psde.regulation_sign
+							};
+							
+							dPSDIE.push({
+								data: retpsd,
+								classes: 'DI'
+							});
 						});
+						psd.upSet = new Set(upList);
+						psd.downSet = new Set(downList);
 					});
-					psd.upSet = new Set(upList);
-					psd.downSet = new Set(downList);
-				});
+				}
 			})
 		);
 		
@@ -196,32 +194,34 @@ export class PatientSubgroups {
 				
 				let dPSGIHash = this.diseasePatientSubgroupGeneIntersectHash = {};
 				
-				dPSGI.forEach(function(psg,psgi) {
-					dPSGIHash[psg.patient_subgroup_id] = psg;
-					let upList = [];
-					let downList = [];
-					psg.genes.forEach(function(psge,psgei) {
-						if(psge.regulation_sign > 0) {
-							upList.push(psge.gene_symbol);
-						} else {
-							downList.push(psge.gene_symbol);
-						}
-						let retpsg = {
-							// Unique identifiers
-							id: 'PSGC'+psgi+'_'+psgei,
-							source: psge.gene_symbol,
-							target: 'PSD'+psg.patient_subgroup_id,
-							sign: psge.regulation_sign
-						};
-						
-						dPSGIE.push({
-							data: retpsg,
-							classes: 'GI'
+				if(dPSGI instanceof Array) {
+					dPSGI.forEach(function(psg,psgi) {
+						dPSGIHash[psg.patient_subgroup_id] = psg;
+						let upList = [];
+						let downList = [];
+						psg.genes.forEach(function(psge,psgei) {
+							if(psge.regulation_sign > 0) {
+								upList.push(psge.gene_symbol);
+							} else {
+								downList.push(psge.gene_symbol);
+							}
+							let retpsg = {
+								// Unique identifiers
+								id: 'PSGC'+psgi+'_'+psgei,
+								source: psge.gene_symbol,
+								target: 'PSD'+psg.patient_subgroup_id,
+								sign: psge.regulation_sign
+							};
+							
+							dPSGIE.push({
+								data: retpsg,
+								classes: 'GI'
+							});
 						});
+						psg.upSet = new Set(upList);
+						psg.downSet = new Set(downList);
 					});
-					psg.upSet = new Set(upList);
-					psg.downSet = new Set(downList);
-				});
+				}
 			})
 		);
 		
@@ -237,31 +237,59 @@ export class PatientSubgroups {
 		// jshint camelcase: false
 		// Fixups from diseases
 		
-		//let diseaseNodes = this.diseases.getDiseaseNodes();
-		let setDiseaseIds = new Set(this.diseaseIds);
-		let selectedDiseases = this.selectedDiseases = this.diseases.getDiseaseNodes().filter((d) => setDiseaseIds.has(d.data.disease_id));
-		
-		let dPSGIHash = this.diseasePatientSubgroupGeneIntersectHash;
-		let dPSDIHash = this.diseasePatientSubgroupDrugIntersectHash;
-		
-		let drugsHash = {};
-		
-		this.drugs.getDrugs().forEach((dr) => {
-			drugsHash[dr.id] = dr;
-		});
-		
-		// The patient subgroups related to the selected diseases
-		let selectedPatientSubgroupNodes = Array.from(setDiseaseIds).filter((disease_id) => {
-			return disease_id in _PatientSubgroupNodesByDisease;
-		}).map((disease_id) => {
-			return selectedPatientSubgroupNodes,_PatientSubgroupNodesByDisease[disease_id];
-		}).reduce((acc, val) => acc.concat(val), []);
-		
-		// This code is needed to update the subtotals
-		if(this.pendingNodePropagation) {
+		if(this.network === null) {
+			//let diseaseNodes = this.diseases.getDiseaseNodes();
+			let setDiseaseIds = new Set(this.diseaseIds);
+			let selectedDiseases = this.selectedDiseases = this.diseases.getDiseaseNodes().filter((d) => setDiseaseIds.has(d.data.disease_id));
+			
+			let dPSGIHash = this.diseasePatientSubgroupGeneIntersectHash;
+			let dPSDIHash = this.diseasePatientSubgroupDrugIntersectHash;
+			
+			let drugsHash = {};
+			
+			this.drugs.getDrugs().forEach((dr) => {
+				drugsHash[dr.id] = dr;
+			});
+			
+			// The patient subgroups related to the selected diseases
 			this.minClusterSize = +Infinity;
 			this.maxClusterSize = -Infinity;
+			let initialMinSelfClusterSize = Infinity;
+			let selectedPatientSubgroupNodes = Array.from(setDiseaseIds).filter((disease_id) => {
+				return disease_id in _PatientSubgroupNodesByDisease;
+			}).map((disease_id) => {
+				let localSubgroup = _PatientSubgroupNodesByDisease[disease_id];
+				
+				// The biggest subgroup from this disease
+				let initialSelfClusterSize = -Infinity;
+				// update min / max cluster size
+				localSubgroup.forEach((psg) => {
+					if(psg.data.size > this.maxClusterSize) {
+						this.maxClusterSize = psg.data.size;
+					}
+					
+					if(psg.data.size < this.minClusterSize) {
+						this.minClusterSize = psg.data.size;
+					}
+					
+					if(psg.data.size > initialSelfClusterSize) {
+						initialSelfClusterSize = psg.data.size;
+					}
+				});
+				
+				// The biggest subgroup from each disease, but
+				// the least from the other ones
+				if(initialSelfClusterSize < initialMinSelfClusterSize) {
+					initialMinSelfClusterSize = initialSelfClusterSize;
+				}
+				
+				return localSubgroup;
+			}).reduce((acc, val) => acc.concat(val), []);
 			
+			//console.log("GSize",selectedDiseases.map((dn) => {
+			//	return (dn.data.disease_id in _PatientSubgroupNodesByDisease) ? _PatientSubgroupNodesByDisease[dn.data.disease_id].length : -1;
+			//}));
+			// This code is needed to update the subtotals
 			selectedDiseases.forEach((dn) => {
 				if(dn.data.disease_id in _PatientSubgroupNodesByDisease) {
 					let data = dn.data;
@@ -272,19 +300,8 @@ export class PatientSubgroups {
 						data.childcount = _PatientSubgroupNodesByDisease[data.disease_id].length;
 						
 						// Setting up the groupname
-						data.groupname = data.name+ '\n(' + data.childcount + ' subgroup' + ((data.childcount === 1) ? 's' : '') + ')';
+						data.groupname = data.name+ '\n(' + data.childcount + ' subgroup' + ((data.childcount !== 1) ? 's' : '') + ')';
 						data._propUp = true;
-					}
-					
-					// update min / max cluster size
-					if('_propUp' in data) {
-						if(data.childcount > this.maxClusterSize) {
-							this.maxClusterSize = data.childcount;
-						}
-						
-						if(data.childcount < this.minClusterSize) {
-							this.minClusterSize = data.childcount;
-						}
 					}
 					
 					// down propagation
@@ -324,15 +341,12 @@ export class PatientSubgroups {
 				}
 			});
 			
-			this.pendingNodePropagation = false;
-		}
-		
-		// Labelling intra-disease commorbidities
-		// Getting minimum and maximum cluster sizes
-		if(this.pendingEdgeStats) {
+			// Labelling intra-disease commorbidities
+			// Getting minimum and maximum cluster sizes
 			let minAbsRisk = Infinity;
 			let maxAbsRisk = -Infinity;
 			
+			// Intercluster
 			let initialMinClusterSize = Infinity;
 			
 			// Inter disease
@@ -366,15 +380,6 @@ export class PatientSubgroups {
 				if(edge.data.isIntraDisease) {
 					selectedEdgeHash = diseaseSelfMaxAbsRelRisk;
 				} else {
-					// Identifying the initial cluster size, which allows viewing at least each related disease with clusters
-					if(initialMinClusterSize > selectedDiseasesHash[fromPSG.disease_id].childcount) {
-						initialMinClusterSize = selectedDiseasesHash[fromPSG.disease_id].childcount;
-					}
-					
-					if(initialMinClusterSize > selectedDiseasesHash[toPSG.disease_id].childcount) {
-						initialMinClusterSize = selectedDiseasesHash[toPSG.disease_id].childcount;
-					}
-					
 					selectedEdgeHash = diseasePairMaxAbsRelRisk;
 				}
 				
@@ -390,8 +395,19 @@ export class PatientSubgroups {
 				}
 				
 				let edgeDisId =  a.disease_id + '_' + b.disease_id;
-				if(!(edgeDisId in selectedEdgeHash) || edge.data.abs_rel_risk > selectedEdgeHash[edgeDisId]) {
+				if(!(edgeDisId in selectedEdgeHash) || (edge.data.abs_rel_risk > selectedEdgeHash[edgeDisId])) {
 					selectedEdgeHash[edgeDisId] = edge.data.abs_rel_risk;
+					
+					if(!edge.data.isIntraDisease) {
+						// Identifying the initial cluster size, which allows viewing at least each related disease with clusters
+						if(initialMinClusterSize > edge.data.from_size) {
+							initialMinClusterSize = edge.data.from_size;
+						}
+						
+						if(initialMinClusterSize > edge.data.to_size) {
+							initialMinClusterSize = edge.data.to_size;
+						}
+					}
 				}
 				
 				// Adding some edge stats
@@ -488,6 +504,8 @@ export class PatientSubgroups {
 			// Giving a saner initial version to the minClusterSize
 			if(initialMinClusterSize < Infinity) {
 				this.initialMinClusterSize = initialMinClusterSize;
+			} else if(initialMinSelfClusterSize < Infinity) {
+				this.initialMinClusterSize = initialMinSelfClusterSize;
 			}
 			
 			// Saving the range and cutoff for later processing
@@ -497,20 +515,20 @@ export class PatientSubgroups {
 				max: maxAbsRisk
 			};
 			
-			this.pendingEdgeStats = false;
+			let setDiseaseGroupIds = new Set(selectedDiseases.map((d) => d.data.disease_group_id));
+			let selectedDiseaseGroups = this.diseases.getDiseaseGroupNodes().filter((dg) => setDiseaseGroupIds.has(dg.data.disease_group_id));
+			
+			this.network = {
+				nodes: [
+					...selectedPatientSubgroupNodes,
+					...selectedDiseases,
+					...selectedDiseaseGroups
+				],
+				edges: this.patientSubgroupComorbidityNetworkEdges
+			};
 		}
 		
-		let setDiseaseGroupIds = new Set(selectedDiseases.map((d) => d.data.disease_group_id));
-		let selectedDiseaseGroups = this.diseases.getDiseaseGroupNodes().filter((dg) => setDiseaseGroupIds.has(dg.data.disease_group_id));
-		
-		return {
-			nodes: [
-				...selectedPatientSubgroupNodes,
-				...selectedDiseases,
-				...selectedDiseaseGroups
-			],
-			edges: this.patientSubgroupComorbidityNetworkEdges
-		};
+		return this.network;
 	}
 	
 	getGraphSetup() {
@@ -532,7 +550,7 @@ export class PatientSubgroups {
 	// Controls and their associated filters
 	getControlsSetup() {
 		let absRelRiskData = this.getAbsRelRiskRange();
-		let initialAbsRelRiskVal = Math.round(absRelRiskData.initial);	
+		let initialAbsRelRiskVal = Math.floor(absRelRiskData.initial*10)/10;	
 		
 		let controlsDesc = [
 			{
@@ -664,6 +682,10 @@ export class PatientSubgroups {
 	}
 	
 	makeNodeTooltipContent(node) {
+		if(node.classNames().indexOf('D') !== -1) {
+			return this.diseases.makeNodeTooltipContent(node);
+		}
+		
 		let patientSubgroupName = node.data('disease_name') + ' ' + node.data('name');
 		
 		let content = document.createElement('div');
