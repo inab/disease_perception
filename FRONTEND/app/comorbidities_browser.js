@@ -1118,13 +1118,21 @@ export class ComorbiditiesBrowser {
 	
 	addSelectionByNodeId(nodeId) {
 		// Only select when it was not previously discarded by filtering conditions
-		if(this.filteredEles.getElementById(nodeId).length === 0) {
+		let nodeIds = (nodeId instanceof Array) ? nodeId : [ nodeId ];
+		let filteredNodeIds = nodeIds.filter((nId) => this.filteredEles.getElementById(nId).empty());
+		if(filteredNodeIds.length > 0) {
 			this.batch(() => {
 				if(this.unHighlighted) {
 					this.unHighlighted.restore();
 					this.unHighlighted = null;
 				}
-				this.cy.getElementById(nodeId).select();
+				console.log(filteredNodeIds);
+				let col = this.cy.collection();
+				filteredNodeIds.forEach((nId) => {
+					col.merge(this.cy.getElementById(nId));
+					console.log(col);
+				});
+				col.select();
 			});
 		}
 	}

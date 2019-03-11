@@ -252,6 +252,13 @@ export class Diseases {
 				dg.name+
 				'</a></div></div>');
 			$dg.addClass('item');
+			$dg.bind('click',() => {
+				let diseaseIds = _DiseaseNodesByGroupId[dg.id].map((d) => d.data.id);
+				console.log(diseaseIds);
+				this.cmBrowser.addSelectionByNodeId(diseaseIds);
+				tippy.hideAll();
+				return true;
+			});
 			
 			// The list of diseases from this disease group
 			let $dSet = $('<div></div>');
