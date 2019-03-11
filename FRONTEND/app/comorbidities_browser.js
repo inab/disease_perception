@@ -157,6 +157,7 @@ export class ComorbiditiesBrowser {
 			interactiveBorder: 5,
 			hideOnClick: false,
 			multiple: false,
+			maxWidth: '50rem',
 			trigger: 'mouseenter focus',
 			size: 'large',
 			theme: 'light',
@@ -1126,11 +1127,10 @@ export class ComorbiditiesBrowser {
 					this.unHighlighted.restore();
 					this.unHighlighted = null;
 				}
-				console.log(filteredNodeIds);
+				
 				let col = this.cy.collection();
 				filteredNodeIds.forEach((nId) => {
 					col.merge(this.cy.getElementById(nId));
-					console.log(col);
 				});
 				col.select();
 			});
@@ -1151,7 +1151,7 @@ export class ComorbiditiesBrowser {
 				interactive: true,
 				interactiveBorder: 5,
 				hideOnClick: false,
-				multiple: true,
+				multiple: false,
 				sticky: true,
 				size: 'large',
 				theme: 'light',
@@ -1185,7 +1185,7 @@ export class ComorbiditiesBrowser {
 				animation: 'perspective',
 				//followCursor: true,
 				hideOnClick: false,
-				multiple: true,
+				multiple: false,
 				sticky: true,
 				theme: 'dark',
 				zIndex: 999

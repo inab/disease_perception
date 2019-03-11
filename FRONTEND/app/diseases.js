@@ -254,7 +254,6 @@ export class Diseases {
 			$dg.addClass('item');
 			$dg.bind('click',() => {
 				let diseaseIds = _DiseaseNodesByGroupId[dg.id].map((d) => d.data.id);
-				console.log(diseaseIds);
 				this.cmBrowser.addSelectionByNodeId(diseaseIds);
 				tippy.hideAll();
 				return true;
@@ -277,7 +276,8 @@ export class Diseases {
 				animation: 'perspective',
 				interactive: true,
 				interactiveBorder: 5,
-				hideOnClick: true,
+				maxWidth: '50rem',
+				hideOnClick: false,
 				multiple: false,
 				trigger: 'mouseenter focus',
 				size: 'large',
