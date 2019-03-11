@@ -75,6 +75,7 @@ export class ComorbiditiesBrowser {
 		// Create the history management buttons
 		ui.$historyBack = $('<button><i class="far fa-arrow-alt-circle-left" aria-hidden="true" title="Previous view"></i></button>');
 		ui.$historyBack.attr('id','history-back');
+		ui.$historyBack.attr('title','Previous view');
 		ui.$historyBack.addClass('cmui button btn btn-default');
 		ui.$historyBack.on('click',() => this.historyGoBack());
 		ui.$historyBack.prop('disabled',true);
@@ -82,6 +83,7 @@ export class ComorbiditiesBrowser {
 		
 		ui.$unselectAll = $('<button><i class="fas fa-sitemap" aria-hidden="true" title="Unselect all"></i></button>');
 		ui.$unselectAll.attr('id','unselect-all');
+		ui.$unselectAll.attr('title','De-select all the nodes');
 		ui.$unselectAll.addClass('cmui button btn btn-default');
 		ui.$unselectAll.on('click',() => this.unselectAll());
 		ui.$unselectAll.prop('disabled',true);
@@ -90,6 +92,7 @@ export class ComorbiditiesBrowser {
 		ui.$historyForward = $('<button><i class="far fa-arrow-alt-circle-right" aria-hidden="true" title="Next view"></i></button>');
 		ui.$historyForward.addClass('cmui button btn btn-default');
 		ui.$historyForward.attr('id','history-forward');
+		ui.$historyForward.attr('title','View forward');
 		ui.$historyForward.on('click',() => this.historyGoForward());
 		ui.$historyForward.prop('disabled',true);
 		uiElems.push(ui.$historyForward);
@@ -169,6 +172,7 @@ export class ComorbiditiesBrowser {
 		ui.$snapshot.addClass('cmui button');
 		//ui.$snapshot.addClass('cmui button button btn btn-default');
 		ui.$snapshot.attr('id','snapshot');
+		ui.$snapshot.attr('title','Take a snapshot');
 		uiElems.push(ui.$snapshot);
 		
 		let $snapshotBody = $('<div></div>');
@@ -210,6 +214,7 @@ export class ComorbiditiesBrowser {
 		ui.$saveNetwork = $('<a><i class="fas fa-chart-area" aria-hidden="true" title="Save network as Cytoscape.json"></i></a>');
 		ui.$saveNetwork.addClass('cmui button button btn btn-default');
 		ui.$saveNetwork.attr('id','save-network');
+		ui.$saveNetwork.attr('title','Save current network in cytoscape format');
 		ui.$saveNetwork.on('click',() => this.saveNetwork());
 		uiElems.push(ui.$saveNetwork);
 		
@@ -613,16 +618,29 @@ export class ComorbiditiesBrowser {
 	
 	makeButton(opts,btnParam) {
 		let optsLabel = opts.label ? opts.label : opts.value;
-		let $button = $('<button type="button" class="btn btn-default">' + optsLabel + '</button>');
-		if(opts.classes) {
-			$button.addClass(opts.classes);
-		}
+		let $button = $('<button type="button" class="btn">' + optsLabel + '</button>');
+		let classes = opts.classes ? opts.classes: 'btn-default';
+		$button.addClass(classes);
 		
 		if(opts.value) {
 			$button.val(opts.value);
 		}
 		
+		if(opts.title) {
+			$button.attr('title',opts.title);
+		}
+		
+		if(opts.initiallyToggled) {
+			if(opts.toggleClasses) {
+				$button.toggleClass(opts.toggleClasses);
+			}
+		}
+		
 		$button.on('click', () => {
+			if(opts.toggleClasses) {
+				$button.toggleClass(opts.toggleClasses);
+			}
+			
 			if(opts.param) {
 				this.params[ opts.param ] = $button.val();
 			}
@@ -632,7 +650,7 @@ export class ComorbiditiesBrowser {
 			}
 			
 			if(opts.fn) {
-				opts.fn();
+				opts.fn($button);
 			}
 			
 			if(opts.layoutOpts) {
@@ -656,15 +674,31 @@ export class ComorbiditiesBrowser {
 		
 		let iniVal = this.params[ opts.param ] = opts.initial;
 
-		opts.options.forEach((opt) => {
-			opt.initiallyToggled = opt.value === iniVal;
-			
+		let buttons = [];
+		
+		let $fn = ($pushed) => {
+			buttons.forEach(($button) => {
+				$button.toggleClass('active focus',$button===$pushed);
+			});
+			if(opts.fn) {
+				opts.fn();
+			}
+		};
+		
+		buttons = opts.options.map((opt) => {
 			let combOpt = {
 				...opts,
-				...opt
+				...opt,
+				initiallyToggled: opt.value === iniVal,
+				fn: $fn
 			};
 			
-			this.makeButton(combOpt,$buttonGroup);
+			let $button = this.makeButton(combOpt,$buttonGroup);
+			if(combOpt.initiallyToggled) {
+				$button.addClass('active focus');
+			}
+			
+			return $button;
 		});
 		btnParam.append( $param );
 		
@@ -787,7 +821,7 @@ export class ComorbiditiesBrowser {
 		// This button should check or uncheck all the elements
 		// jshint unused:false
 		let $selectAll = this.makeButton({
-				classes: 'btn-xs',
+				classes: 'btn-default btn-xs',
 				label: '<i class="far fa-check-square" title="Select all"></i>',
 				fn: () => {
 					$nodeList.find('input[type="checkbox"]').prop('checked',true);
@@ -795,7 +829,7 @@ export class ComorbiditiesBrowser {
 				},
 			},$selectedNodesView);
 		let $selectNone = this.makeButton({
-				classes: 'btn-xs',
+				classes: 'btn-default btn-xs',
 				label: '<i class="far fa-square" title="Unselect all"></i>',
 				fn: () => {
 					$nodeList.find('input[type="checkbox"]').prop('checked',false);
@@ -1049,6 +1083,9 @@ export class ComorbiditiesBrowser {
 					$ctrl = this.makeCheckbox(ctrlDesc,$controls);
 					break;
 				case 'button-group':
+					if(ctrlDesc.label) {
+						$controls.append('<span class="label label-default">'+ ctrlDesc.label +'</span>');
+					}
 					btnParam = $ctrl = $('<div class="param"></div>');
 					$controls.append(btnParam);
 					break;

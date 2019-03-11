@@ -328,6 +328,7 @@ export class Diseases {
 			{
 				filter: 'edges',
 				attr: 'rel_risk',
+				classes: 'btn-primary',
 				filterfn:  function(attrVal,paramVal) { let paramValInt = parseInt(paramVal); return paramValInt !== 0 && Math.sign(attrVal) !== paramValInt; },
 				filterOnCtx: true,
 				type: 'radio',
@@ -336,18 +337,22 @@ export class Diseases {
 				options: [
 					{
 						label: '-',
+						title: 'Only inverse comorbidities',
 						value: '-1'
 					},
 					{
 						label: 'all',
+						title: 'All kind of comorbidities',
 						value: '0'
 					},
 					{
 						label: '+',
+						title: 'Only direct comorbidities',
 						value: '1'
 					}
 				],
 				initial: '0',
+				layoutOpts: {},
 				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
 			},
 			//{
@@ -369,6 +374,7 @@ export class Diseases {
 			//},
 			{
 				type: 'button-group',
+				label: 'Relayout'
 			},
 			//{
 			//	type: 'button',
@@ -389,6 +395,7 @@ export class Diseases {
 			{
 				type: 'button',
 				label: '<i class="fas fa-random"></i>',
+				title: 'Randomize',
 				layoutOpts: {
 					randomize: true,
 					flow: null
@@ -397,6 +404,7 @@ export class Diseases {
 			{
 				type: 'button',
 				label: '<i class="fas fa-long-arrow-alt-down"></i>',
+				title: 'Relayout on y-axis',
 				layoutOpts: {
 					flow: {
 						axis: 'y',

@@ -584,6 +584,36 @@ export class PatientSubgroups {
 				scale: 'logarithmic',
 				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
 			},
+			{
+				filter: 'edges',
+				attr: 'rel_risk',
+				classes: 'btn-primary',
+				filterfn:  function(attrVal,paramVal) { let paramValInt = parseInt(paramVal); return paramValInt !== 0 && Math.sign(attrVal) !== paramValInt; },
+				filterOnCtx: true,
+				type: 'radio',
+				label: 'Show comorbidities',
+				param: 'showComor',
+				options: [
+					{
+						label: '-',
+						title: 'Only inverse comorbidities',
+						value: '-1'
+					},
+					{
+						label: 'all',
+						title: 'All kind of comorbidities',
+						value: '0'
+					},
+					{
+						label: '+',
+						title: 'Only direct comorbidities',
+						value: '1'
+					}
+				],
+				initial: '0',
+				layoutOpts: {},
+				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
+			},
 			//{
 			//	type: 'slider',
 			//	label: 'Edge length',
@@ -652,6 +682,7 @@ export class PatientSubgroups {
 			//},
 			{
 				type: 'button',
+				title: 'Randomize',
 				label: '<i class="fas fa-random"></i>',
 				layoutOpts: {
 					randomize: true,
@@ -660,6 +691,7 @@ export class PatientSubgroups {
 			},
 			{
 				type: 'button',
+				title: 'Relayout on y-axis',
 				label: '<i class="fas fa-long-arrow-alt-down"></i>',
 				layoutOpts: {
 					flow: {
