@@ -164,7 +164,7 @@ export class ComorbiditiesBrowser {
 		});
 		
 		// Snapshots
-		ui.$snapshot = $('<a><i class="far fa-images" aria-hidden="true" title="Save network view snapshot"></i></a>');
+		ui.$snapshot = $('<button><i class="far fa-images" aria-hidden="true" title="Save network view snapshot"></i></button>');
 		ui.$snapshot.addClass('cmui button');
 		//ui.$snapshot.addClass('cmui button button btn btn-default');
 		ui.$snapshot.attr('id','snapshot');

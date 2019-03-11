@@ -89,6 +89,9 @@ body {
 	max-width: 25%;
 }
 */
+.legend-container {
+	font-size: 1.5rem;
+}
 
 .legend {
 	display: flex;
@@ -190,7 +193,7 @@ a:hover {
 }
 
 .item a {
-	cursor: pointer;
+	cursor: copy;
 }
 
 .label {
