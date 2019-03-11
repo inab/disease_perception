@@ -49,9 +49,7 @@ export class Diseases {
 						// jshint camelcase: false
 						let label = dis.name.replace(/ +/g,'\n');
 						let retdis = {
-							// jshint ignore:start
 							...dis,
-							// jshint ignore:end
 							// Unique identifiers
 							label: label,
 							groupname: dis.name,
@@ -93,9 +91,7 @@ export class Diseases {
 						// jshint camelcase: false 
 						let label = dg.name.replace(/ +/g,'\n');
 						let retdg = {
-							// jshint ignore:start
 							...dg,
-							// jshint ignore:end
 							label: label,
 							disease_group_id: dg.id,
 							id: 'DG'+dg.id
@@ -126,9 +122,7 @@ export class Diseases {
 						dc.abs_rel_risk = Math.abs(dc.rel_risk);
 						// Preparation
 						let retdc = {
-							// jshint ignore:start
 							...dc,
-							// jshint ignore:end
 							// Unique identifiers
 							id: 'DC'+dci,
 							source: 'D'+dc.from_id,
@@ -214,10 +208,8 @@ export class Diseases {
 	getFetchedNetwork() {
 		return {
 			nodes: [
-				// jshint ignore:start
 				...this.getDiseaseNodes(),
 				//...this.getDiseaseGroupNodes()
-				// jshint ignore:end
 			],
 			edges: _DiseaseComorbiditiesNetworkEdges
 		};
@@ -331,6 +323,31 @@ export class Diseases {
 				initial: initialAbsRelRiskVal,
 				scale: 'logarithmic',
 				step: 0.1,
+				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
+			},
+			{
+				filter: 'edges',
+				attr: 'rel_risk',
+				filterfn:  function(attrVal,paramVal) { let paramValInt = parseInt(paramVal); return paramValInt !== 0 && Math.sign(attrVal) !== paramValInt; },
+				filterOnCtx: true,
+				type: 'radio',
+				label: 'Show comorbidities',
+				param: 'showComor',
+				options: [
+					{
+						label: '-',
+						value: '-1'
+					},
+					{
+						label: 'all',
+						value: '0'
+					},
+					{
+						label: '+',
+						value: '1'
+					}
+				],
+				initial: '0',
 				fn: () => this.cmBrowser.batch(() => this.cmBrowser.filterOnConditions())
 			},
 			//{

@@ -24,9 +24,7 @@ export class Drugs {
 					_DrugNodes = _Drugs.map(function(drug) {
 						// jshint camelcase: false
 						let retdrug = {
-							// jshint ignore:start
 							...drug,
-							// jshint ignore:end
 							// Unique identifiers
 							drug_id: drug.id,
 							id: 'Dr'+drug.id,

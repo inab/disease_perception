@@ -24,9 +24,7 @@ export class Genes {
 					_GeneNodes = _Genes.map(function(gene) {
 						// jshint camelcase: false
 						let retgene = {
-							// jshint ignore:start
 							...gene,
-							// jshint ignore:end
 							// Unique identifiers
 							name: gene.gene_symbol,
 							id: gene.gene_symbol

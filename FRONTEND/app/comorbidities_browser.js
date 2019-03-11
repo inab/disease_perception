@@ -654,11 +654,17 @@ export class ComorbiditiesBrowser {
 		let $buttonGroup = $('<div class="btn-group" role="group" aria-label="'+opts.label+'"></div>');
 		$param.append($buttonGroup);
 		
-		let iniVal = this.params[ opts.param ];
+		let iniVal = this.params[ opts.param ] = opts.initial;
+
 		opts.options.forEach((opt) => {
 			opt.initiallyToggled = opt.value === iniVal;
 			
-			this.makeButton(opt,$buttonGroup);
+			let combOpt = {
+				...opts,
+				...opt
+			};
+			
+			this.makeButton(combOpt,$buttonGroup);
 		});
 		btnParam.append( $param );
 		
@@ -1021,6 +1027,13 @@ export class ComorbiditiesBrowser {
 				case 'select':
 					$ctrl = this.makeSelectDropdown(ctrlDesc,$controls);
 					break;
+				case 'radio':
+					if(btnParam === undefined) {
+						btnParam = $('<div class="param"></div>');
+						$controls.append(btnParam);
+					}
+					$ctrl = this.makeSelectButtons(ctrlDesc,$controls);
+					break;
 				case 'slider':
 					$ctrl = this.makeSlider(ctrlDesc,$controls);
 					
@@ -1224,9 +1237,7 @@ export class ComorbiditiesBrowser {
 			let graphSetup = this.currentView.getGraphSetup();
 			
 			this.params = {
-				// jshint ignore:start
 				...graphSetup,
-				// jshint ignore:end
 				concentric: function( node ){
 				  return node.degree();
 				},

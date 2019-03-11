@@ -66,9 +66,7 @@ export class PatientSubgroups {
 						let label = name + '\n('+psg.size+')';
 						let retpsg = {
 							color: '#008020',
-							// jshint ignore:start
 							...psg,
-							// jshint ignore:end
 							name: name,
 							label: label,
 							// Unique identifiers
@@ -117,9 +115,7 @@ export class PatientSubgroups {
 					psgc.abs_rel_risk = Math.abs(psgc.rel_risk);
 					// Preparation
 					let retpsgc = {
-						// jshint ignore:start
 						...psgc,
-						// jshint ignore:end
 						// Unique identifiers
 						id: 'PSGC'+psgci,
 						source: 'PSG'+psgc.from_id,
