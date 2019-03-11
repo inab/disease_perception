@@ -3,9 +3,12 @@
 /* globals $: false */
 //import $ from 'jquery';
 
+import tippy from 'tippy.js';
+
 // Singleton variables
 var _Diseases;
 var _DiseaseNodes;
+var _DiseaseNodesByGroupId;
 
 var _DiseaseGroups;
 var _DiseaseGroupNodes;
@@ -41,6 +44,7 @@ export class Diseases {
 				})
 				.then(function(decodedJson) {
 					_Diseases = decodedJson;
+					_DiseaseNodesByGroupId = {};
 					_DiseaseNodes = _Diseases.map(function(dis) {
 						// jshint camelcase: false
 						let label = dis.name.replace(/ +/g,'\n');
@@ -50,7 +54,7 @@ export class Diseases {
 							// jshint ignore:end
 							// Unique identifiers
 							label: label,
-							groupname: name,
+							groupname: dis.name,
 							childcount: 0,
 							grandchildcount: 0,
 							disease_id: dis.id,
@@ -58,10 +62,19 @@ export class Diseases {
 							parent: 'DG'+dis.disease_group_id,
 						};
 						
-						return {
+						let retval =  {
 							data: retdis,
 							classes: 'D'
 						};
+						
+						// Populating the hash of diseases grouped by disease group
+						if(dis.disease_group_id in _DiseaseNodesByGroupId) {
+							_DiseaseNodesByGroupId[dis.disease_group_id].push(retval);
+						} else {
+							_DiseaseNodesByGroupId[dis.disease_group_id] = [ retval ];
+						}
+						
+						return retval;
 					});
 					return _Diseases;
 				})
@@ -227,19 +240,68 @@ export class Diseases {
 	}
 	
 	getLegendDOM() {
-		let $result = $('<span style="font-size: 2rem;">Color legend (based on disease groups)</span><div class="legend two-column">'+
-		'<div class="item">'+
-		_DiseaseGroups.map((dg) => {
-			return '<div><i class="fas fa-circle" style="color: '+
-				dg.color+
-				';"></i></div><div>'+
-				dg.name+
-				'</div>';
-		}).join('</div><div>')+
-		'</div>'+
-		'</div>');
+		let $result = $('<span style="font-size: 2rem;">Color legend (based on disease groups)</span>');
+		let $legend = $('<div></div>');
+		$legend.addClass('legend two-column');
 		
-		return $result;
+		// For each disease group, show it
+		let $elemMap = _DiseaseGroups.map((dg) => {
+			let $dg = $('<div><div><i class="fas fa-circle" style="color: '+
+				dg.color+
+				';"></i></div><div><a>'+
+				dg.name+
+				'</a></div></div>');
+			$dg.addClass('item');
+			
+			// The list of diseases from this disease group
+			let $dSet = $('<div></div>');
+			$dSet.addClass('legend-container');
+			$dSet.append('<span style="font-size: 2rem;">Group ' + dg.name + '</span>');
+			let $dResult = $('<div></div>');
+			$dResult.addClass('legend two-column');
+			$dSet.append($dResult);
+			
+			// And nest a tooltip with the diseases
+			let tip = tippy($dg.get(0),{ // tippy options:
+				content: $dSet.get(0),
+				arrow: true,
+				arrowType: 'round',
+				placement: 'left',
+				animation: 'perspective',
+				interactive: true,
+				interactiveBorder: 5,
+				hideOnClick: true,
+				multiple: false,
+				trigger: 'mouseenter focus',
+				size: 'large',
+				theme: 'light',
+				zIndex: 999
+			});
+			
+			let dMap = _DiseaseNodesByGroupId[dg.id].map((d) => {
+				let $dIt = $('<div><div><i class="fas fa-circle" style="color: '+
+					d.data.color+
+					';"></i></div><div><a>'+
+					d.data.name+
+					'</a></div></div>');
+				$dIt.addClass('item');
+				$dIt.bind('click',() => {
+					this.cmBrowser.addSelectionByNodeId(d.data.id);
+					tippy.hideAll();
+					return true;
+				});
+				
+				return $dIt;
+			});
+			$dResult.append(dMap);
+			
+			
+			return $dg;
+		});
+		
+		$legend.append($elemMap);
+		
+		return [$result,$legend];
 	}
 	
 	// Controls and their associated filters

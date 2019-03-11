@@ -189,6 +189,10 @@ a:hover {
   color: #62daea;
 }
 
+.item a {
+	cursor: pointer;
+}
+
 .label {
   display: inline-block;
 }
