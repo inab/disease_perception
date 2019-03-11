@@ -123,7 +123,7 @@
 	{
 		"selector": "edge.CM",
 		"css": {
-			"curve-style": "bezier",
+			"curve-style": "unbundled-bezier",
 			"haystack-radius": "0.5",
 			"opacity": "0.4",
 			"width": "mapData(abs_rel_risk, 0, 50, 1, 8)",
