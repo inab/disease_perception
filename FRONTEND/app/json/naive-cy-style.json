@@ -147,6 +147,14 @@
 		}
 	},
 	{
+		"selector": "edge.confirmed",
+		"css": {
+			"overlay-color": "yellow",
+			"overlay-opacity": "0.2",
+			"overlay-width": "mapData(abs_rel_risk, 0, 50, 2, 9)"
+		}
+	},
+	{
 		"selector": "edge.GI",
 		"css": {
 			"curve-style": "bezier",
