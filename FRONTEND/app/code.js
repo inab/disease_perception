@@ -13,6 +13,7 @@ import $ from 'jquery';
 
 import { ComorbiditiesBrowser } from './comorbidities_browser';
 
+
 $(document).ready(function() {
 	let graphEl = document.getElementById('graph');
 	let configToggleEl = document.getElementById('config-toggle');
@@ -32,5 +33,5 @@ $(document).ready(function() {
 		'loading': graphLoadingEl
 	});
 	
-	browser.switchView('diseases');
+	browser.startApp();
 });

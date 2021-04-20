@@ -3,6 +3,8 @@
 /* globals $: false */
 //import $ from 'jquery';
 
+import Sammy from 'sammy';
+import 'sammy/lib/plugins/sammy.googleanalytics.js';
 import _ from 'lodash';
 
 import 'bootstrap';
@@ -337,10 +339,58 @@ export class ComorbiditiesBrowser {
 			studies: new Studies(this),
 		};
 	}
-
+	
+	startApp() {
+		let app = this.app = Sammy((s) => {
+			// So Sammy can be used from within the commorbidities browser
+			s.use('GoogleAnalytics');
+			
+			s.get(/\#\/([^\/]+)(?:\/(.*))?/, (context,viewName,viewParamsS) => {
+				let viewParams = viewParamsS.length === 0 ? [] : viewParamsS.split('/').map((p) => {
+						return (p.indexOf(',')>0) ? p.split(',').map((el) => parseInt(el)) : parseInt(p);
+					});
+				console.log(viewName,'P',viewParams);
+				this._switchView(viewName,...viewParams);
+			});
+			
+			s.get('', (context) => {
+				context.noTrack();
+				context.redirect('#','diseases');
+			});
+			
+			s.get('#/', (context) => {
+				context.noTrack();
+				context.redirect('#','diseases');
+			});
+		});
+		
+		console.log(app);
+		
+		app.run();
+	}
+	
 	switchView(viewName, ...viewParams) {
+		// This method is needed to keep track of every view change
+		// so the location is updated
+		console.log(viewParams);
+		let viewRoute = '#/' + [viewName,...viewParams].map((el) => {
+				if(el instanceof Array) {
+					return el.map((subel) => encodeURIComponent(subel)).join(',');
+				} else {
+					return encodeURIComponent(el);
+				}
+			}).join('/');
+		this.app.setLocation(viewRoute);
+		
+		//let cp = new this.app.context_prototype(this.app);
+		//cp.redirect(viewRoute);
+	}
+
+	_switchView(viewName, ...viewParams) {
 		if(!(viewName in this.views)) {
 			console.error('This should not happen!!!');
+			this.app.setLocation('');
+			return;
 		}
 		
 		// Saving the parameters
