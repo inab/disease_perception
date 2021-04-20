@@ -151,7 +151,7 @@
 		"css": {
 			"overlay-color": "yellow",
 			"overlay-opacity": "0.2",
-			"overlay-width": "mapData(abs_rel_risk, 0, 50, 2, 9)"
+			"overlay-padding": "mapData(abs_rel_risk, 0, 50, 2, 9)"
 		}
 	},
 	{
