@@ -1,7 +1,8 @@
 {
   "env": {
     "browser": true,
-    "node": true
+    "node": true,
+    "es6": true
   },
   "globals": {
     "angular": false
@@ -9,7 +10,7 @@
   "parser": "@babel/eslint-parser",
   "rules": {
     "no-bitwise": 2,
-    "camelcase": 2,
+    "camelcase": "warn",
     "curly": 2,
     "eqeqeq": 2,
     "wrap-iife": [
@@ -17,7 +18,7 @@
       "any"
     ],
     "indent": [
-      2,
+      "warn",
       "tab",
       {
         "SwitchCase": 1
@@ -29,16 +30,16 @@
         "functions": false
       }
     ],
-    "new-cap": 2,
+    "new-cap": "warn",
     "no-caller": 2,
     "quotes": [
       2,
       "single"
     ],
     "no-undef": 2,
-    "no-unused-vars": 2,
+    "no-unused-vars": "warn",
     "strict": [
-      2,
+      "warn",
       "function"
     ]
   }
