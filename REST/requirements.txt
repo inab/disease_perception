@@ -1,5 +1,9 @@
 flask
 flask-cors
 flask-restplus
+# This one is here to restrict the version of werkzeug,
+# until flask-restplus supports newer versions
+werkzeug < 1.0.0
 flask-compress
 flup
+pyyaml

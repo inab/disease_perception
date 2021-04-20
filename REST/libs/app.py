@@ -34,7 +34,7 @@ def _register_cm_namespaces(api,res_kwargs):
 		for route in route_set['routes']:
 			ns.add_resource(route[0],route[1],resource_class_kwargs=res_kwargs)
 
-def init_comorbidities_app(dbpath):
+def init_comorbidities_app(local_config):
 	#app = Flask('como_network',static_url_path='/',static_folder='static')
 	app = Flask('como_network')
 	
@@ -73,7 +73,8 @@ def init_comorbidities_app(dbpath):
 	)
 	
 	# This is the singleton instance shared by all the resources
-	CMNetwork = ComorbiditiesNetwork(dbpath,api)
+	dbpath = local_config['db']
+	CMNetwork = ComorbiditiesNetwork(dbpath, api)
 	
 	res_kwargs = {'cmnetwork': CMNetwork}
 	
