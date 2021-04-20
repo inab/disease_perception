@@ -2,6 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 const PATHS = {
 	app: path.resolve(__dirname,'app'),
@@ -21,12 +22,16 @@ module.exports = {
 		path: PATHS.dist
 	},
 	plugins:[
+		new ESLintPlugin({
+			files: PATHS.app
+		}),
 		new webpack.ProvidePlugin({
 			// Parts here are needed to have bootstrap working properly
 			$: 'jquery',
 			jQuery: 'jquery',
 			'window.$': 'jquery',
 			'window.jQuery': 'jquery',
+			Sammy: ['sammy', 'default' ],
 			Popper: ['popper.js', 'default'],
 	//		// In case you imported plugins individually, you must also require them here:
 	//		//Util: "exports-loader?Util!bootstrap/js/dist/util",
@@ -61,12 +66,12 @@ module.exports = {
 	],
 	module: {
 		rules: [
-			{
-				enforce: 'pre',
-				test: /\.js$/,
-				include: pathToRegExp(PATHS.app),
-				loader: "jshint-loader"
-			},
+//			{
+//				enforce: 'pre',
+//				test: /\.js$/,
+//				include: pathToRegExp(PATHS.app),
+//				loader: "jshint-loader"
+//			},
 			{
 				test: /\.js$/,
 				exclude: /(node_modules|bower_components)/,
