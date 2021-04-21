@@ -25,7 +25,7 @@
     "url-loader": "^1.1.2",
     "webpack": "^4.29.0",
     "webpack-cli": "^3.2.3",
-    "yarn": "^1.13.0"
+    "yarn": "^1.22.0"
   },
   "private": true,
   "engines": {
@@ -47,25 +47,22 @@
   "scripts": {
     "build": "webpack"
   },
-  "resolutions": {
-    "jquery": "^2.2.4"
-  },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.7.2",
     "bootstrap": "^3.3.7",
     "bootstrap-slider": "^10.0.0",
-    "cytoscape": "^3.5.0",
-    "cytoscape-cola": "^2.3.0",
-    "cytoscape-cose-bilkent": "^4.0.0",
-    "cytoscape-dagre": "^2.2.2",
-    "cytoscape-klay": "^3.1.2",
-    "cytoscape-popper": "^1.0.4",
-    "cytoscape-svg": "^0.1.1",
+    "cytoscape": "^3.18.2",
+    "cytoscape-cola": "^2.4.0",
+    "cytoscape-cose-bilkent": "^4.1.0",
+    "cytoscape-dagre": "^2.3.2",
+    "cytoscape-klay": "^3.1.4",
+    "cytoscape-popper": "^2.0.0",
+    "cytoscape-svg": "^0.3.0",
     "fastclick": "^1.0.6",
-    "jquery": "^2.2.4",
+    "jquery": "^3.6.0",
     "sammy": "^0.7.6",
-    "tippy.js": "^4.0.4",
+    "tippy.js": "^6.3.0",
     "toDataURL": "^0.1.1",
-    "typeahead.js": "^0.11.1"
+    "typeahead.js": "corejavascript/typeahead.js#v1.3.0"
   }
 }

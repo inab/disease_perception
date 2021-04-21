@@ -264,6 +264,11 @@ a:hover {
 	max-width: 25%;
 }
 
+.tippy-content {
+	text-align: center;
+	font-size: 10px;
+}
+
 .tippy-content .scrollblock {
 	display: none;
 }

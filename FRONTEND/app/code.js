@@ -6,7 +6,12 @@ import 'bootstrap-slider/dist/css/bootstrap-slider.css';
 import '@fortawesome/fontawesome-free';
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'tippy.js';
+import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
+import 'tippy.js/themes/material.css';
+import 'tippy.js/animations/scale.css';
+import 'tippy.js/animations/perspective.css';
+import 'tippy.js/dist/svg-arrow.css';
 import './styles/style.css';
 
 import $ from 'jquery';

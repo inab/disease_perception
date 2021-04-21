@@ -37,7 +37,7 @@ cytoscape.use( cysvg );
 // Tooltips attached to graph elements
 import popper from 'cytoscape-popper';
 cytoscape.use( popper );
-import tippy from 'tippy.js';
+import tippy, {roundArrow, sticky} from 'tippy.js';
 
 // toDataURL support
 import urlfy from 'toDataURL';
@@ -119,16 +119,17 @@ export class ComorbiditiesBrowser {
 		
 		let tipSearch = tippy(ui.$search.get(0),{ // tippy options:
 			content: ui.$searchBody.get(0),
-			arrow: true,
-			arrowType: 'round',
+			arrow: roundArrow,
 			placement: 'right-start',
 			animation: 'perspective',
 			interactive: true,
 			interactiveBorder: 5,
 			hideOnClick: false,
-			multiple: false,
+			popperOptions: {
+				positionFixed: true,
+			},
 			trigger: 'mouseenter focus',
-			size: 'large',
+			//FIXME: size: 'large',
 			theme: 'light',
 			zIndex: 999,
 			onShown: () => {
@@ -154,17 +155,18 @@ export class ComorbiditiesBrowser {
 		
 		let tip = tippy(ui.$legend.get(0),{ // tippy options:
 			content: ui.$legendBody.get(0),
-			arrow: true,
-			arrowType: 'round',
+			arrow: roundArrow,
 			placement: 'bottom-end',
 			animation: 'perspective',
 			interactive: true,
 			interactiveBorder: 5,
 			hideOnClick: false,
-			multiple: false,
 			maxWidth: '50rem',
+			popperOptions: {
+				positionFixed: true,
+			},
 			trigger: 'mouseenter focus',
-			size: 'large',
+			//FIXME: size: 'large',
 			theme: 'light',
 			zIndex: 999
 		});
@@ -198,16 +200,17 @@ export class ComorbiditiesBrowser {
 		
 		let tipSnapshot = tippy(ui.$snapshot.get(0),{ // tippy options:
 			content: $snapshotBody.get(0),
-			arrow: true,
-			arrowType: 'round',
+			arrow: roundArrow,
 			placement: 'bottom-end',
 			animation: 'perspective',
 			interactive: true,
 			interactiveBorder: 5,
 			hideOnClick: false,
-			multiple: false,
+			popperOptions: {
+				positionFixed: true,
+			},
 			trigger: 'mouseenter focus',
-			size: 'large',
+			//FIXME: size: 'large',
 			theme: 'light',
 			zIndex: 999
 		});
@@ -1241,20 +1244,23 @@ export class ComorbiditiesBrowser {
 		if(!node.scratch('tooltip')) {
 			let content = this.currentView.makeNodeTooltipContent(node);
 			let ref = node.popperRef(); // used only for positioning
-			let nodetip = tippy(ref, { // tippy options:
-				content: content,
-				trigger: 'manual',
-				arrow: true,
-				arrowType: 'round',
-				placement: 'bottom',
+			let nodetip = tippy(document.getElementById('graph'), { // tippy options:
 				animation: 'perspective',
+				arrow: roundArrow,
+				content: content,
+				hideOnClick: false,
+				getReferenceClientRect: ref.getBoundingClientRect,
 				interactive: true,
 				interactiveBorder: 5,
-				hideOnClick: false,
-				multiple: false,
+				placement: 'bottom',
+				plugins: [sticky],
+				popperOptions: {
+					positionFixed: true,
+				},
 				sticky: true,
-				size: 'large',
+				//FIXME: size: 'large',
 				theme: 'light',
+				trigger: 'manual',
 				zIndex: 999
 			});
 			node.scratch('tippy',nodetip);
@@ -1276,18 +1282,19 @@ export class ComorbiditiesBrowser {
 		if(!edge.scratch('tooltip')) {
 			let content = this.currentView.makeEdgeTooltipContent(edge);
 			let ref = edge.popperRef(); // used only for positioning
-			let edgetip = tippy(ref, { // tippy options:
-				content: content,
-				trigger: 'manual',
-				arrow: true,
-				arrowType: 'round',
-				placement: 'bottom',
+			let edgetip = tippy(document.createElement('div'), { // tippy options:
 				animation: 'perspective',
+				arrow: roundArrow,
+				content: content,
 				//followCursor: true,
+				//plugins: [followCursor],
+				getReferenceClientRect: ref.getBoundingClientRect,
 				hideOnClick: false,
-				multiple: false,
+				placement: 'bottom',
+				plugins: [sticky],
 				sticky: true,
-				theme: 'dark',
+				theme: 'material',
+				trigger: 'manual',
 				zIndex: 999
 			});
 			edge.scratch('tippy',edgetip);

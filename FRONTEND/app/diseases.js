@@ -3,7 +3,7 @@
 /* globals $: false */
 //import $ from 'jquery';
 
-import tippy from 'tippy.js';
+import tippy, {roundArrow, hideAll as tippyHideAll} from 'tippy.js';
 
 // Singleton variables
 var _Diseases;
@@ -247,7 +247,7 @@ export class Diseases {
 			$dg.bind('click',() => {
 				let diseaseIds = _DiseaseNodesByGroupId[dg.id].map((d) => d.data.id);
 				this.cmBrowser.addSelectionByNodeId(diseaseIds);
-				tippy.hideAll();
+				tippyHideAll();
 				return true;
 			});
 			
@@ -262,17 +262,18 @@ export class Diseases {
 			// And nest a tooltip with the diseases
 			let tip = tippy($dg.get(0),{ // tippy options:
 				content: $dSet.get(0),
-				arrow: true,
-				arrowType: 'round',
+				arrow: roundArrow,
 				placement: 'left',
 				animation: 'perspective',
 				interactive: true,
 				interactiveBorder: 5,
 				maxWidth: '50rem',
 				hideOnClick: false,
-				multiple: false,
+				popperOptions: {
+					positionFixed: true,
+				},
 				trigger: 'mouseenter focus',
-				size: 'large',
+				//FIXME: size: 'large',
 				theme: 'light',
 				zIndex: 999
 			});
@@ -286,7 +287,7 @@ export class Diseases {
 				$dIt.addClass('item');
 				$dIt.bind('click',() => {
 					this.cmBrowser.addSelectionByNodeId(d.data.id);
-					tippy.hideAll();
+					tippyHideAll();
 					return true;
 				});
 				
