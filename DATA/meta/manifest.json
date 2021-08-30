@@ -1,0 +1,199 @@
+{
+	"_schema": "http://disease-perception.bsc.es/schemas/1.0/metadata-manifest",
+	"schemas": [
+		"node_types/node.json",
+		"edge_types/digraph_edge.json",
+		"edge_types/has_edge.json",
+		"edge_types/isa_edge.json",
+		"edge_types/ungraph_edge.json",
+		"edge_types/hyper/digraph_hyperedge.json",
+		"edge_types/hyper/ungraph_hyperedge.json",
+		"hypergraph_types/hypergraph.json"
+	],
+	"node_types": [
+		{
+			"name": "disease",
+			"desc": "A disease",
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		},
+		{
+			"name": "disease_group",
+			"desc": "A group of diseases, sharing some common root or symptom",
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		},
+		{
+			"name": "patient_subgroup",
+			"desc": "A subgroup of patients having the same disease and behaviour",
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		},
+		{
+			"name": "gene",
+			"desc": "A gene which was overexpressed or the opposite in a patient or a patient group",
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		},
+		{
+			"name": "drug",
+			"desc": "A drug used by some patient",
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		},
+		{
+			"name": "patient",
+			"desc": "A patient",
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		},
+		{
+			"name": "study",
+			"desc": "A study which groups several patients",
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		},
+		{
+			"name": "supporting_source",
+			"desc": "A source supporting some evidence",
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		}
+	],
+	"edge_types": [
+		{
+			"name": "disease_group_has_diseases",
+			"desc": "A group of diseases usually share common symptoms, but they can have very different origins",
+			"node_type_a": "disease_group",
+			"node_type_b": "disease",
+			"is_directed": true,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/has_edge"
+		},
+		{
+			"name": "disease_has_patient_subgroups",
+			"desc": "In the set of all the patients suffering a disease, there are patient subgroups which could represent different subtypes or stages of the same disease",
+			"node_type_a": "disease",
+			"node_type_b": "patient_subgroup",
+			"is_directed": true,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/has_edge"
+		},
+		{
+			"name": "patient_subgroup_has_patients",
+			"desc": "A patient subgroup has one or more patients sharing common properties",
+			"node_type_a": "patient_subgroup",
+			"node_type_b": "patient",
+			"is_directed": true,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/has_edge"
+		},
+		{
+			"name": "study_has_patients",
+			"desc": "A study is composed by one or more patients",
+			"node_type_a": "study",
+			"node_type_b": "patient",
+			"is_directed": true,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/has_edge"
+		},
+		{
+			"name": "patient_drug_maps",
+			"desc": "",
+			"node_type_a": "patient",
+			"node_type_b": "drug",
+			"is_directed": false,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/ungraph_edge",
+			"weight": {
+				"name": "regulation_sign",
+				"desc": "Sign of the regulation"
+			}
+		},
+		{
+			"name": "patient_gene_maps",
+			"desc": "",
+			"node_type_a": "patient",
+			"node_type_b": "gene",
+			"is_directed": false,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/ungraph_edge",
+			"weight": {
+				"name": "regulation_sign",
+				"desc": "Sign of the regulation"
+			}
+		},
+		{
+			"name": "patient_graph",
+			"desc": "",
+			"node_type_a": "patient",
+			"node_type_b": "patient",
+			"is_directed": false,
+			"is_symmetric": true,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/ungraph_edge",
+			"weight": {
+				"name": "interaction_sign",
+				"desc": "Sign of the interaction"
+			}
+		},
+		{
+			"name": "disease_digraph",
+			"desc": "",
+			"node_type_a": "disease",
+			"node_type_b": "disease",
+			"is_directed": true,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/digraph_edge",
+			"weight": {
+				"name": "relative_risk",
+				"desc": "The co-morbidity score of suffering t_id disease if it is being suffered f_id"
+			}
+		},
+		{
+			"name": "patient_subgroup_digraph",
+			"desc": "",
+			"node_type_a": "patient_subgroup",
+			"node_type_b": "patient_subgroup",
+			"is_directed": true,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/digraph_edge",
+			"weight": {
+				"name": "relative_risk",
+				"desc": "The co-morbidity score of suffering disease in patient subgroup t_id if it is being suffered disease in patient subgroup f_id"
+			}
+		},
+		{
+			"name": "patient_subgroup_drug_intersects",
+			"desc": "",
+			"node_type_a": "patient_subgroup",
+			"node_type_b": "drug",
+			"is_directed": false,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/ungraph_edge",
+			"weight": {
+				"name": "regulation_sign",
+				"desc": "Sign of the regulation"
+			}
+		},
+		{
+			"name": "patient_subgroup_gene_intersects",
+			"desc": "",
+			"node_type_a": "patient_subgroup",
+			"node_type_b": "gene",
+			"is_directed": false,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/ungraph_edge",
+			"weight": {
+				"name": "regulation_sign",
+				"desc": "Sign of the regulation"
+			}
+		}
+	],
+	"hyperedge_types": [
+		{
+			"name": "source_supports_comorbidity",
+			"desc": "",
+			"node_types": [
+				"disease",
+				"disease",
+				"supporting_source"
+			],
+			"is_tuple": true,
+			"is_directed": true,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/hyper/digraph_hyperedge"
+		}
+	]
+}

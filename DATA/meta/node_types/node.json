@@ -1,0 +1,49 @@
+{
+	"$id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"_schema": {
+			"type": "string",
+			"default": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		},
+		"_id": {
+			"type": "string"
+		},
+		"name": {
+			"type": "string"
+		},
+		"pids": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"ns": {
+						"title": "Namespace (or prefix) of the permanent id",
+						"type": "string",
+						"examples": [
+							"icd9",
+							"icd10"
+						]
+					},
+					"pid": {
+						"title": "A valid persistent id declared in the namespace",
+						"type": "string"
+					}
+				},
+				"required": [
+					"ns",
+					"pid"
+				]
+			}
+		},
+		"properties": {
+			"title": "Various properties",
+			"type": "object"
+		}
+	},
+	"required": [
+		"_id",
+		"name"
+	]
+}

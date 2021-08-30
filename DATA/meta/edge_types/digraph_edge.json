@@ -1,0 +1,40 @@
+{
+	"$id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/digraph_edge",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"description": "Directed edge",
+	"type": "object",
+	"properties": {
+		"_schema": {
+			"type": "string",
+			"default": "http://disease-perception.bsc.es/schemas/1.0/edge_types/digraph_edge"
+		},
+		"_id": {
+			"type": "string",
+			"description": "Optional unique id of the edge"
+		},
+		"f_id": {
+			"title": "The origin id of the edge",
+			"type": "string"
+		},
+		"t_id": {
+			"title": "The destination id of the edge",
+			"type": "string"
+		},
+		"weight": {
+			"title": "The weight of this directed edge",
+			"type": "number"
+		},
+		"is_directed": {
+			"type": "boolean",
+			"const": true
+		},
+		"properties": {
+			"title": "Various properties",
+			"type": "object"
+		}
+	},
+	"required": [
+		"f_id",
+		"t_id"
+	]
+}

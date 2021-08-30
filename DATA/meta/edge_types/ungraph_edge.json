@@ -1,0 +1,40 @@
+{
+	"$id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/ungraph_edge",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"description": "Undirected edge",
+	"type": "object",
+	"properties": {
+		"_schema": {
+			"type": "string",
+			"default": "http://disease-perception.bsc.es/schemas/1.0/edge_types/ungraph_edge"
+		},
+		"_id": {
+			"type": "string",
+			"description": "Optional unique id of the edge"
+		},
+		"f_id": {
+			"title": "One of the node ids involved in the relation",
+			"type": "string"
+		},
+		"t_id": {
+			"title": "The other node id involved in the relation",
+			"type": "string"
+		},
+		"weight": {
+			"title": "The weight of this undirected edge",
+			"type": "number"
+		},
+		"is_directed": {
+			"type": "boolean",
+			"const": false
+		},
+		"properties": {
+			"title": "Various properties",
+			"type": "object"
+		}
+	},
+	"required": [
+		"f_id",
+		"t_id"
+	]
+}

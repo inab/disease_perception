@@ -1,0 +1,35 @@
+{
+	"$id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/has_edge",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"_schema": {
+			"type": "string",
+			"default": "http://disease-perception.bsc.es/schemas/1.0/edge_types/has_edge"
+		},
+		"_id": {
+			"type": "string",
+			"description": "Optional unique id of the edge"
+		},
+		"f_id": {
+			"title": "The node id which contains",
+			"type": "string"
+		},
+		"t_id": {
+			"title": "The node id which is within",
+			"type": "string"
+		},
+		"is_directed": {
+			"type": "boolean",
+			"const": true
+		},
+		"properties": {
+			"title": "Various properties",
+			"type": "object"
+		}
+	},
+	"required": [
+		"f_id",
+		"t_id"
+	]
+}

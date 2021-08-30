@@ -1,0 +1,304 @@
+_schema: http://disease-perception.bsc.es/schemas/1.0/data-manifest
+hypergraphs:
+  - metafile: hypergraph.yaml
+    datafiles:
+      - file: disease_group.tsv
+        maps:
+          - class: node
+            type: disease_group
+            key:
+              - '"DG"'
+              - id
+            mappings:
+              - '"name"': name
+            
+      - file: disease_group_properties.tsv
+        maps:
+          - class: node
+            type: disease_group
+            join:
+              - '"DG"'
+              - disease_group_id
+            mappings:
+              - '"properties"':
+                  property: value
+            
+      - file: disease.tsv
+        maps:
+          - class: node
+            type: disease
+            key:
+              - '"D"'
+              - id
+            mappings:
+              - '"name"': name
+          - class: edge
+            type: disease_group_has_diseases
+            key_f:
+              - '"DG"'
+              - disease_group_id
+            key_t:
+              - '"D"'
+              - id
+            
+      - file: disease_properties.tsv
+        maps:
+          - class: node
+            type: disease
+            join:
+              - '"D"'
+              - disease_id
+            switch:
+              when:
+                - property: property
+                  value: '"color"'
+                  mappings:
+                    - '"properties"':
+                        property: value
+              default:
+                mappings:
+                  - '"pids"':
+                      - '"ns"': property
+                        '"pid"': value
+            
+      - file: patient_subgroup.tsv
+        maps:
+          - class: node
+            type: patient_subgroup
+            key:
+              - '"PS"'
+              - id
+            mappings:
+              - '"name"': name
+          - class: edge
+            type: disease_has_patient_subgroups
+            key_f:
+              - '"D"'
+              - disease_id
+            key_t:
+              - '"PS"'
+              - id
+            
+      - file: gene.tsv
+        maps:
+          - class: node
+            type: gene
+            key:
+              - '"GN"'
+              - id
+            mappings:
+              - '"name"': gene_symbol
+              - '"pids"':
+                - '"ns"': '"ensembl"'
+                  '"pid"': ensembl_id
+                - '"ns"': '"uniprot"'
+                  '"pid"': uniprot_id
+            
+      - file: study.tsv
+        maps:
+          - class: node
+            type: study
+            key:
+              - '"ST"'
+              - id
+            mappings:
+              - '"name"': geo_arrayexpress_code
+              - '"pids"':
+                - '"ns"': '"geo_arrayexpress"'
+                  '"pid"': geo_arrayexpress_code
+            
+      - file: drug.tsv
+        maps:
+          - class: node
+            type: drug
+            key:
+              - '"DR"'
+              - id
+            mappings:
+              - '"name"': name
+            
+      - file: supporting_papers.tsv
+        maps:
+          - class: node
+            type: supporting_source
+            key:
+              - '"SP"'
+              - id
+            mappings:
+              - '"name"': id
+              - '"pids"':
+                - '"ns"': '"pubmed"'
+                  '"pid"': pubmed_id
+                - '"ns"': '"doi"'
+                  '"pid"': doi
+            
+            
+      - file: patient.tsv
+        maps:
+          - class: node
+            type: patient
+            key:
+              - '"P"'
+              - id
+            mappings:
+              - '"name"': id
+          - class: edge
+            type: patient_subgroup_has_patients
+            key_f:
+              - '"PS"'
+              - patient_subgroup_id
+            key_t:
+              - '"P"'
+              - id
+          - class: edge
+            type: study_has_patients
+            key_f:
+              - '"ST"'
+              - study_id
+            key_t:
+              - '"P"'
+              - id
+            
+      - file: patient_drug_maps.tsv.xz
+        maps:
+          - class: edge
+            type: patient_drug_maps
+            key:
+              - '"PDM"'
+              - id
+            key_f:
+              - '"P"'
+              - patient_id
+            key_t:
+              - '"DR"'
+              - drug_id
+            mappings:
+              - '"weight"': regulation_sign::number
+            
+      - file: patient_gene_maps.tsv.xz
+        maps:
+          - class: edge
+            type: patient_gene_maps
+            key:
+              - '"PGM"'
+              - id
+            key_f:
+              - '"P"'
+              - patient_id
+            key_t:
+              - '"GN"'
+              - gene_id
+            mappings:
+              - '"weight"': regulation_sign::number
+            
+      - file: patient_graph.tsv.xz
+        maps:
+          - class: edge
+            type: patient_graph
+            key:
+              - '"PPG"'
+              - id
+            key_f:
+              - '"P"'
+              - patient_a_id
+            key_t:
+              - '"P"'
+              - patient_b_id
+            mappings:
+              - '"weight"': interaction_sign::number
+            
+      - file: disease_digraph.tsv
+        maps:
+          - class: edge
+            type: disease_digraph
+            key:
+              - '"DDG"'
+              - id
+            key_f:
+              - '"D"'
+              - disease_a_id
+            key_t:
+              - '"D"'
+              - disease_b_id
+            mappings:
+              - '"weight"': relative_risk::number
+            
+      - file: disease_digraph_properties.tsv
+        maps:
+          - class: edge
+            type: disease_digraph
+            join:
+              - '"DDG"'
+              - disease_digraph_id
+            mappings:
+              - '"properties"':
+                  property: value
+          - class: hyperedge
+            type: source_supports_comorbidity
+            keys:
+              - class: edge
+                type: disease_digraph
+                key:
+                  - '"DDG"'
+                  - disease_digraph_id
+              - class: node
+                type: supporting_source
+                key:
+                  - '"SP"'
+                  - value
+            unpack:
+              - val: value
+                split:
+                  - '" "'
+                
+                
+            
+      - file: patient_subgroup_digraph.tsv
+        maps:
+          - class: edge
+            type: patient_subgroup_digraph
+            key:
+              - '"PSPSD"'
+              - id
+            key_f:
+              - '"PS"'
+              - patient_subgroup_a_id
+            key_t:
+              - '"PS"'
+              - patient_subgroup_b_id
+            mappings:
+              - '"weight"': relative_risk::number
+            
+      - file: patient_subgroup_drug_intersect.tsv
+        maps:
+          - class: edge
+            type: patient_subgroup_drug_intersects
+            key:
+              - '"PSDI"'
+              - id
+            key_f:
+              - '"PS"'
+              - patient_subgroup_id
+            key_t:
+              - '"DR"'
+              - drug_id
+            mappings:
+              - '"weight"': regulation_sign::number
+            
+      - file: patient_subgroup_gene_intersect.tsv
+        maps:
+          - class: edge
+            type: patient_subgroup_gene_intersects
+            filter_out:
+              - patient_subgroup_id: '"NA"'
+            key:
+              - '"PSGI"'
+              - id
+            key_f:
+              - '"PS"'
+              - patient_subgroup_id
+            key_t:
+              - '"GN"'
+              - gene_id
+            mappings:
+              - '"weight"': regulation_sign::number

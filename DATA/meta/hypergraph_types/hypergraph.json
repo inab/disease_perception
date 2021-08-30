@@ -1,0 +1,118 @@
+{
+	"$id": "http://disease-perception.bsc.es/schemas/1.0/hypergraph_types/hypergraph",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"_schema": {
+			"type": "string",
+			"const": "http://disease-perception.bsc.es/schemas/1.0/hypergraph_types/hypergraph"
+		},
+		"_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"_generated": {
+			"title": "Official date when this dataset was generated",
+			"type": "string",
+			"format": "date-time"
+		},
+		"name": {
+			"title": "Short name of this hypergraph",
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 256
+		},
+		"description": {
+			"title": "A description",
+			"description": "A detailed description of this hypergraph, in Markdown",
+			"type": "string"
+		},
+		"attributions": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"title": "The name of the contributor",
+						"type": "string"
+					},
+					"roles": {
+						"title": "The different roles of this attribution",
+						"type": "array",
+						"items": {
+							"type": "string",
+							"description": "The valid roles come from CASRAI CRediT, and can be visited through http://credit.niso.org/contributor-roles/{term}/",
+							"enum": [
+								"conceptualization",
+								"data-curation",
+								"formal-analysis",
+								"funding-acquisition",
+								"investigation",
+								"methodology",
+								"project-administration",
+								"resources",
+								"software",
+								"supervision",
+								"validation",
+								"visualization",
+								"writing-original-draft",
+								"writing-review-editing"
+							]
+						},
+						"uniqueItems": true
+					},
+					"pid": {
+						"title": "A public, unique id of the contributor. Accepted ones are ORCID or ISNI ids",
+						"type": "string",
+						"pattern": "^orcid:[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]|isni:[0-9]{15}[0-9X]{1}$"
+					}
+				},
+				"required": [
+					"name",
+					"pid"
+				]
+			},
+			"uniqueItems": true
+		},
+		"licence": {
+			"title": "The hypergraph data distribution licence",
+			"type": "string",
+			"format": "uri"
+		},
+		"pids": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"ns": {
+						"title": "Namespace (or prefix) of the permanent id",
+						"type": "string",
+						"examples": [
+							"doi"
+						]
+					},
+					"pid": {
+						"title": "A valid persistent id declared in the namespace",
+						"type": "string"
+					}
+				},
+				"required": [
+					"ns",
+					"pid"
+				]
+			}
+		},
+		"properties": {
+			"title": "Various properties",
+			"type": "object"
+		}
+	},
+	"required": [
+		"_id",
+		"_schema",
+		"_generated",
+		"name",
+		"attributions",
+		"licence"
+	]
+}

@@ -1,0 +1,41 @@
+{
+	"$id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/hyper/digraph_hyperedge",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"description": "Directed hyperedge",
+	"type": "object",
+	"properties": {
+		"_schema": {
+			"type": "string",
+			"default": "http://disease-perception.bsc.es/schemas/1.0/edge_types/hyper/digraph_hyperedge"
+		},
+		"_id": {
+			"type": "string",
+			"description": "Optional unique id of the hyperedge"
+		},
+		"node_ids": {
+			"title": "Node ids involved in the relation. Order does matter",
+			"type": "array",
+			"items": {
+				"type": "string",
+				"minLength": 1
+			},
+			"minItems": 2,
+			"uniqueItems": false
+		},
+		"weight": {
+			"title": "The weight of this directed hyperedge",
+			"type": "number"
+		},
+		"is_directed": {
+			"type": "boolean",
+			"const": true
+		},
+		"properties": {
+			"title": "Various properties",
+			"type": "object"
+		}
+	},
+	"required": [
+		"node_ids"
+	]
+}

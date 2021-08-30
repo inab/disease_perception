@@ -1,0 +1,29 @@
+_schema: http://disease-perception.bsc.es/schemas/1.0/hypergraph_types/hypergraph
+_id: disease_perception
+_generated: "2019-02-26T00:00:00+01:00"
+name: Disease Perception
+description: ""
+attributions:
+  - name: Jon Sánchez-Valle
+    roles:
+      - conceptualization
+      - data-curation
+      - formal-analysis
+      - funding-acquisition
+      - investigation
+      - methodology
+      - project-administration
+      - resources
+      - software
+      - supervision
+      - validation
+      - visualization
+      - writing-original-draft
+      - writing-review-editing
+    pid: orcid:0000-0001-7959-6326
+licence: "https://europepmc.org/article/PMC/7275044#id603780"
+pids:
+  - ns: doi
+    pid: 10.1038/s41467-020-16540-x
+  - ns: doi
+    pid: 10.5281/zenodo.1306893
