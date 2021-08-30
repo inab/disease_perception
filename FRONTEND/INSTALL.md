@@ -33,10 +33,10 @@ npm install --no-save yarn
 yarn --frozen-lockfile
 ```
 
-* Now, you have to run `webpack` in order to prepare and deploy the BSC Comorbidities browser site, which will be deployed at `../REST/static` subdirectory.
+* Now, you have to run `webpack` in order to prepare and deploy the BSC Comorbidities browser site, which will be deployed at `../BACKEND/static` subdirectory.
 
 ```bash
 webpack -p --progress --colors
 ```
 
-* Congratulations! Disease PERCEPTION Comorbidities browser is available at the `../REST/static` subdirectory.
+* Congratulations! Disease PERCEPTION Comorbidities browser is available at the `../BACKEND/static` subdirectory.

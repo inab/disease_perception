@@ -6,7 +6,7 @@ const ESLintPlugin = require('eslint-webpack-plugin');
 
 const PATHS = {
 	app: path.resolve(__dirname,'app'),
-	dist: path.resolve(__dirname,'..','REST','static')
+	dist: path.resolve(__dirname,'..','BACKEND','static')
 };
 
 function escapeRegExpString(str) { return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&"); }
