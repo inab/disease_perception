@@ -7,3 +7,10 @@ werkzeug < 1.0.0
 flask-compress
 flup
 pyyaml
+
+# This is needed to be sure the embedded SQLite3 version
+# is at least 3.31.0. GENERATED ALWAYS AS was introduced
+# in that version (see https://www.sqlite.org/lang_createtable.html#the_generated_always_as_clause)
+pysqlite3-binary >= 0.4.2
+jsonschema[format] >= 3.0.0
+filetype

@@ -1,0 +1,186 @@
+{
+	"$id": "http://disease-perception.bsc.es/schemas/1.0/metadata-manifest",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "The metadata manifest schema",
+	"type": "object",
+	"properties": {
+		"_schema": {
+			"title": "The metadata manifest schema",
+			"type": "string",
+			"const": "http://disease-perception.bsc.es/schemas/1.0/metadata-manifest"
+		},
+		"schemas": {
+			"title": "JSON Schemas used in payloads",
+			"description": "Paths to JSON Schemas of payload node types, edge types, hyperedge types and hypergraph. When they are relative, the reference is the base directory of the metadata file.",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"node_types": {
+			"description": "The list of declared node types, along with the JSON Schemas to be used for their payloads",
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1
+					},
+					"desc": {
+						"type": "string"
+					},
+					"schema_id": {
+						"type": "string",
+						"format": "uri"
+					}
+				},
+				"required": [
+					"name",
+					"schema_id"
+				]
+			}
+		},
+		"edge_types": {
+			"description": "The list of declared edge types, along with the JSON Schemas to be used for their payloads",
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1
+					},
+					"desc": {
+						"type": "string"
+					},
+					"node_type_a": {
+						"type": "string",
+						"minLength": 1
+					},
+					"node_type_b": {
+						"type": "string",
+						"minLength": 1
+					},
+					"is_directed": {
+						"description": "Is this edge type representing directed edges?",
+						"type": "boolean"
+					},
+					"is_symmetric": {
+						"description": "Is this edge type representing edges which fulfil symmetric property?",
+						"type": "boolean"
+					},
+					"weight": {
+						"description": "Not all the edge types have weights. When they have, these properties are used to describe the edge",
+						"type": "object",
+						"properties": {
+							"name": {
+								"title": "Short name of the weight",
+								"type": "string",
+								"minLength": 1
+							},
+							"desc": {
+								"title": "Description of the weight",
+								"type": "string",
+								"minLength": 1
+							}
+						},
+						"required": [
+							"name",
+							"desc"
+						]
+					},
+					"schema_id": {
+						"type": "string",
+						"format": "uri"
+					}
+				},
+				"required": [
+					"name",
+					"node_type_a",
+					"node_type_b",
+					"is_directed",
+					"is_symmetric",
+					"schema_id"
+				]
+			}
+		},
+		"hyperedge_types": {
+			"description": "The list of declared hyperedge types, along with the JSON Schemas to be used for their payloads",
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1
+					},
+					"desc": {
+						"type": "string"
+					},
+					"node_types": {
+						"description": "The allowed node types for the nodes involved in the hyperedges",
+						"type": "array",
+						"items": {
+							"type": "string",
+							"minLength": 1
+						},
+						"minItems": 1
+					},
+					"is_tuple": {
+						"description": "Is this hyperedge type representing a tuple, where its number of nodes always matches the number of allowed node types?",
+						"type": "boolean"
+					},
+					"is_directed": {
+						"description": "Is this hyperedge type representing directed edges?",
+						"type": "boolean"
+					},
+					"is_symmetric": {
+						"description": "Is this hyperedge type representing edges which fulfil symmetric property?",
+						"type": "boolean"
+					},
+					"weight": {
+						"description": "Not all the hyperedge types have weights. When they have, these properties are used to describe the edge",
+						"type": "object",
+						"properties": {
+							"name": {
+								"title": "Short name of the weight",
+								"type": "string",
+								"minLength": 1
+							},
+							"desc": {
+								"title": "Description of the weight",
+								"type": "string",
+								"minLength": 1
+							}
+						},
+						"required": [
+							"name",
+							"desc"
+						]
+					},
+					"schema_id": {
+						"type": "string",
+						"format": "uri"
+					}
+				},
+				"required": [
+					"name",
+					"node_types",
+					"is_tuple",
+					"is_directed",
+					"is_symmetric",
+					"schema_id"
+				]
+			}
+		}
+	},
+	"required": [
+		"_schema",
+		"schemas",
+		"node_types",
+		"edge_types",
+		"hyperedge_types"
+	],
+	"additionalProperties": false
+}

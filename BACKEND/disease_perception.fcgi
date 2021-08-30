@@ -11,7 +11,7 @@ case "$BASEDIR" in
 		;;
 esac
 
-PYBASEDIR="${BASEDIR}/.pyRESTenv"
+PYBASEDIR="${BASEDIR}/.pyBenv"
 # Is there a prepared Python environment??
 if [ ! -d "$PYBASEDIR" ] ; then
 	python3 -m venv "$PYBASEDIR"

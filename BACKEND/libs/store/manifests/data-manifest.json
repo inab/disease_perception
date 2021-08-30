@@ -1,0 +1,279 @@
+{
+	"$id": "http://disease-perception.bsc.es/schemas/1.0/data-manifest",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "The metadata manifest schema",
+	"type": "object",
+	"$defs": {
+		"symbol": {
+			"type": "string",
+			"pattern": "^(\"[^\"]+\"|[^\":]+)(::(string|number|integer|boolean))?$"
+		},
+		"mappings": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"minProperties": 1
+			},
+			"minItems": 1
+		},
+		"key": {
+			"type": "array",
+			"items": {
+				"$ref": "#/$defs/symbol"
+			}
+		},
+		"filters": {
+			"description": "Each one of the elements of this array is a filtering condition. The whole condition is fulfilled if any of the filtering conditions is true.",
+			"type": "array",
+			"items": {
+				"description": "A filtering condition is fulfilled if all the mapped results from the keys match to the mapped results of their corresponding values",
+				"type": "object",
+				"propertyNames": {
+					"$ref": "#/$defs/symbol"
+				},
+				"additionalProperties": {
+					"$ref": "#/$defs/symbol"
+				},
+				"minProperties": 1
+			},
+			"minItems": 1
+		},
+		"class": {
+			"type": "string",
+			"enum": [
+				"node",
+				"edge",
+				"hyperedge"
+			]
+		},
+		"elemType": {
+			"description": "The name of the type of node/edge/hyperedge",
+			"type": "string"
+		}
+	},
+	"properties": {
+		"_schema": {
+			"title": "The metadata manifest schema",
+			"type": "string",
+			"const": "http://disease-perception.bsc.es/schemas/1.0/data-manifest"
+		},
+		"hypergraphs": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"metafile": {
+						"description": "The path to the YAML / JSON manifest file describing this hypergraph. If it is relative, the reference is the current directory",
+						"type": "string"
+					},
+					"datafiles": {
+						"descripion": "The list of data files to be processed",
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"file": {
+									"description": "The path to the (compressed) tabular file to be processed. If it is relative, the reference is the directory where this data manifest lives",
+									"type": "string",
+									"minLength": 1
+								},
+								"maps": {
+									"type": "array",
+									"items": {
+										"properties": {
+											"class": {
+												"$ref": "#/$defs/class"
+											},
+											"type": {
+												"$ref": "#/$defs/elemType"
+											},
+											"key": {
+												"$ref": "#/$defs/key"
+											},
+											"join": {
+												"$ref": "#/$defs/key"
+											},
+											"filter_in": {
+												"$ref": "#/$defs/filters"
+											},
+											"filter_out": {
+												"$ref": "#/$defs/filters"
+											},
+											"unpack": {
+												"type": "array",
+												"items": {
+													"type": "object",
+													"properties": {
+														"val": {
+															"description": "The name of the column to be splitted by",
+															"type": "string",
+															"minLength": 1
+														},
+														"split": {
+															"description": "The split string, which can be a compound expression, like in keys",
+															"$ref": "#/$defs/key"
+														}
+													},
+													"required": [
+														"val",
+														"split"
+													]
+												},
+												"minItems": 1
+											},
+											"mappings": {
+												"$ref": "#/$defs/mappings"
+											},
+											"switch": {
+												"type": "object",
+												"properties": {
+													"when": {
+														"type": "array",
+														"items": {
+															"type": "object",
+															"properties": {
+																"property": {
+																	"type": "string",
+																	"minLength": 1
+																},
+																"value": {
+																	"type": "string",
+																	"minLength": 1
+																},
+																"mappings": {
+																	"$ref": "#/$defs/mappings"
+																}
+															},
+															"required": [
+																"property",
+																"value",
+																"mappings"
+															]
+														},
+														"minItems": 1
+													},
+													"default": {
+														"type": "object",
+														"properties": {
+															"mappings": {
+																"$ref": "#/$defs/mappings"
+															}
+														},
+														"required": [
+															"mappings"
+														]
+													}
+												},
+												"required": [
+													"when"
+												]
+											}
+										},
+										"required": [
+											"class",
+											"type"
+										],
+										"allOf": [
+											{
+												"not": {
+													"required": [
+														"switch",
+														"mappings"
+													]
+												}
+											},
+											{
+												"not": {
+													"required": [
+														"key",
+														"join"
+													]
+												}
+											}
+										],
+										"if": {
+											"properties": {
+												"class": {
+													"const": "edge"
+												}
+											},
+											"required": [
+												"key"
+											]
+										},
+										"then": {
+											"properties": {
+												"key_f": {
+													"$ref": "#/$defs/key"
+												},
+												"key_t": {
+													"$ref": "#/$defs/key"
+												}
+											},
+											"required": [
+												"key_f",
+												"key_t"
+											]
+										},
+										"else": {
+											"if": {
+												"properties": {
+													"class": {
+														"const": "hyperedge"
+													}
+												}
+											},
+											"then": {
+												"properties": {
+													"keys": {
+														"description": "The keys of the nodes explicitly or implicitly involved in this hyperedge. When an edge or hyperedge are referred, their involved nodes are going to be added.",
+														"type": "array",
+														"items": {
+															"type": "object",
+															"properties": {
+																"class": {
+																	"$ref": "#/$defs/class"
+																},
+																"type": {
+																	"$ref": "#/$defs/elemType"
+																},
+																"key": {
+																	"$ref": "#/$defs/key"
+																}
+															},
+															"required": [
+																"class",
+																"type",
+																"key"
+															]
+														},
+														"minItems": 1
+													}
+												},
+												"required": [
+													"keys"
+												]
+											}
+										}
+									},
+									"minItems": 1
+								}
+							},
+							"required": [
+								"file",
+								"maps"
+							]
+						},
+						"minItems": 1
+					}
+				}
+			},
+			"minItems": 1
+		}
+	},
+	"required": [
+		"_schema",
+		"hypergraphs"
+	],
+	"additionalProperties": false
+}
