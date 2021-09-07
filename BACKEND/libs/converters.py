@@ -12,8 +12,8 @@ class ListConverter(BaseConverter):
 		arguments.
 	"""
 
-	def __init__(self, map, subconverterName='string', sep=',', *subconverterParams):
-		BaseConverter.__init__(self, map)
+	def __init__(self, mapping, subconverterName='string', sep=',', *subconverterParams):
+		super().__init__(mapping)
 		self.sep = sep
 		self.subconverterName = subconverterName
 		self.subconverterParams = subconverterParams
@@ -27,6 +27,6 @@ class ListConverter(BaseConverter):
 		
 		return results
 	
-	def to_url(self, values):
-		return self.sep.join(BaseConverter.to_url(str(value))
-			for value in values)
+	def to_url(self, value):
+		return self.sep.join(map(lambda v: super().to_url(str(v)), value))
+		#return self.sep.join(map(lambda v: BaseConverter.to_url(str(v)), value))
