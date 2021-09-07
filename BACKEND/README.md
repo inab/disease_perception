@@ -6,10 +6,14 @@
   python offline_data_loader.py DB/net_comorbidity.db ../DATA/meta/manifest.json ../DATA/disease-perception/data-manifest.yaml
   ```
 
-* The API can be run at http://localhost:5000 in debug mode using the next command line:
+* The API can be run at http://localhost:5000 in standalone or debug mode using the next command lines:
 
   ```bash
-  ./disease_perception.fcgi
+  ./disease_perception.fcgi standalone
+  ```
+
+  ```bash
+  ./disease_perception.fcgi debug
   ```
 
   If you open http://localhost:5000/api , you can test the API using [Swagger UI](https://swagger.io/swagger-ui/). The API definition is reachable at http://localhost:5000/api/swagger.json 
