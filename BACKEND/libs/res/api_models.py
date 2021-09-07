@@ -3,8 +3,10 @@
 # coding: utf-8
 
 import sys, os
+import copy
 
 from flask_restplus import Namespace, Api, Resource, fields
+from typing import List, NamedTuple, Union
 
 class CMResource(Resource):
 	'''This class eases passing the instance of the comorbidity network query API'''
@@ -17,9 +19,212 @@ class CMResource(Resource):
 NS = Namespace('cm','Comorbidities network info')
 #ns = api.namespace('cm', description='Comorbidities network queries')
 
+class CMResPath(NamedTuple):
+	"""
+	Definition of the resource and its relative paths
+	"""
+	res: Resource
+	paths: Union[str,List[str]]
+
+class CMRoutes(NamedTuple):
+	"""
+	Definition of the routes of all the resources with a common path
+	"""
+	ns: Namespace
+	path: str
+	routes: List[CMResPath]
+
 ########################
 # The different models #
 ########################
+HYPERGRAPHS_NS = Namespace('hypergraphs','Stored hypergraphs')
+
+simple_hypergraph_schema = {
+	'properties': {
+		'_id': {
+			'type': 'string',
+			'description': 'The hypergraph id'
+		},
+		'stored_at': {
+			'type': 'string',
+			'description': 'When this hypergraph was stored',
+			'format': 'date-time'
+		},
+		'updated_at': {
+			'type': 'string',
+			'description': 'When this hypergraph was updated',
+			'format': 'date-time'
+		}
+	},
+	'type': 'object',
+	'required': [ '_id', 'stored_at' ]
+}
+
+simple_hypergraph_model = HYPERGRAPHS_NS.model('SimpleHypergraph', {
+	'_id': fields.String(required=True, description=simple_hypergraph_schema['properties']['_id']['description']),
+	'stored_at': fields.DateTime(required=True, description=simple_hypergraph_schema['properties']['stored_at']['description']),
+	'updated_at': fields.DateTime(required=True, description=simple_hypergraph_schema['properties']['updated_at']['description']),
+})
+
+simple_hypergraph_model_schema = HYPERGRAPHS_NS.schema_model('SimpleHypergraph', simple_hypergraph_schema)
+
+hypergraph_schema = {
+	"$id": "http://disease-perception.bsc.es/schemas/1.0/hypergraph_types/hypergraph",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"_schema": {
+			"type": "string",
+			"const": "http://disease-perception.bsc.es/schemas/1.0/hypergraph_types/hypergraph"
+		},
+		"_id": {
+			"type": "string",
+			"minLength": 1
+		},
+		"_generated": {
+			"title": "Official date when this dataset was generated",
+			"type": "string",
+			"format": "date-time"
+		},
+		"name": {
+			"title": "Short name of this hypergraph",
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 256
+		},
+		"description": {
+			"title": "A description",
+			"description": "A detailed description of this hypergraph, in Markdown",
+			"type": "string"
+		},
+		"attributions": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"title": "The name of the contributor",
+						"type": "string"
+					},
+					"roles": {
+						"title": "The different roles of this attribution",
+						"type": "array",
+						"items": {
+							"type": "string",
+							"description": "The valid roles come from CASRAI CRediT, and can be visited through http://credit.niso.org/contributor-roles/{term}/",
+							"enum": [
+								"conceptualization",
+								"data-curation",
+								"formal-analysis",
+								"funding-acquisition",
+								"investigation",
+								"methodology",
+								"project-administration",
+								"resources",
+								"software",
+								"supervision",
+								"validation",
+								"visualization",
+								"writing-original-draft",
+								"writing-review-editing"
+							]
+						},
+						"uniqueItems": True
+					},
+					"pid": {
+						"title": "A public, unique id of the contributor. Accepted ones are ORCID or ISNI ids",
+						"type": "string",
+						"pattern": "^orcid:[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]|isni:[0-9]{15}[0-9X]{1}$"
+					}
+				},
+				"required": [
+					"name",
+					"pid"
+				]
+			},
+			"uniqueItems": True
+		},
+		"licence": {
+			"title": "The hypergraph data distribution licence",
+			"type": "string",
+			"format": "uri"
+		},
+		"pids": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"ns": {
+						"title": "Namespace (or prefix) of the permanent id",
+						"type": "string",
+						"examples": [
+							"doi"
+						]
+					},
+					"pid": {
+						"title": "A valid persistent id declared in the namespace",
+						"type": "string"
+					}
+				},
+				"required": [
+					"ns",
+					"pid"
+				]
+			}
+		},
+		"properties": {
+			"title": "Various properties",
+			"type": "object"
+		}
+	},
+	"required": [
+		"_id",
+		"_schema",
+		"_generated",
+		"name",
+		"attributions",
+		"licence"
+	]
+}
+h_s_props = hypergraph_schema['properties']
+
+complete_hypergraph_schema = copy.deepcopy(simple_hypergraph_schema)
+complete_hypergraph_schema['properties']['payload'] = hypergraph_schema
+
+h_attribution_model = HYPERGRAPHS_NS.model('Attribution', {
+	'name': fields.String(required=True, description=h_s_props['attributions']['items']['properties']['name']['title']),
+	'roles': fields.List(fields.String, description=h_s_props['attributions']['items']['properties']['roles']['title']),
+	'pid': fields.String(required=True, description=h_s_props['attributions']['items']['properties']['pid']['title']),
+})
+
+pid_model = HYPERGRAPHS_NS.model('PID', {
+	'ns':  fields.String(required=True, description=h_s_props['pids']['items']['properties']['ns']['title']),
+	'pid':  fields.String(required=True, description=h_s_props['pids']['items']['properties']['pid']['title']),
+})
+
+embedded_hypergraph_model = HYPERGRAPHS_NS.model('HypergraphPayload', {
+	'_schema': fields.String(required=True, default=h_s_props['_schema']['const']),
+	'_id': fields.String(required=True),
+	'_generated': fields.DateTime(required=True, description=h_s_props['_generated']['title']),
+	'name': fields.String(required=True, description=h_s_props['name']['title']),
+	'description': fields.String(description=h_s_props['description']['title']),
+	'attributions': fields.List(fields.Nested(h_attribution_model), required=True),
+	'licence': fields.String(required=True, description=h_s_props['licence']['title']),
+	'pids': fields.List(fields.Nested(pid_model)),
+	'properties': fields.Raw(description=h_s_props['properties']['title']),
+})
+
+hypergraph_model = HYPERGRAPHS_NS.model('Hypergraph', {
+	'_id': fields.String(required=True, description=simple_hypergraph_schema['properties']['_id']['description']),
+	'stored_at': fields.DateTime(required=True, description=simple_hypergraph_schema['properties']['stored_at']['description']),
+	'updated_at': fields.DateTime(required=True, description=simple_hypergraph_schema['properties']['updated_at']['description']),
+	'payload': fields.Nested(embedded_hypergraph_model),
+})
+
+# This content is already available in the repo
+hypergraph_model_schema = HYPERGRAPHS_NS.schema_model('Hypergraph', complete_hypergraph_schema)
+
+
 GENES_NS = Namespace('genes','Comorbidities related genes')
 
 simple_gene_model = GENES_NS.model('SimpleGene', {
