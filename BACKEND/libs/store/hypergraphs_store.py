@@ -69,6 +69,13 @@ class HypergraphsStore(object):
 		
 		self._bootstrap_store()
 	
+	def getCursor(self, batchSize:Optional[int] = None) -> sqlite3.Cursor:
+		cur = self.conn.cursor()
+		if isinstance(batchSize, int):
+			cur.arraysize = batchSize
+		
+		return cur
+	
 	def isStoreBootstrapped(self) -> bool:
 		# Query to know about the number of tables.
 		# When there is no table, the store is empty
@@ -515,18 +522,29 @@ class HypergraphsStore(object):
 		for hypergraphDesc in data_manifest['hypergraphs']:
 			self.uploadHypergraph(hypergraphDesc, data_manifestBasePath)
 	
-	def getHypergraphMetadataId(self, hmId: str) -> int:
+	def getHypergraphMetadataId(self, hmId: HypergraphPayloadId) -> HypergraphId:
 		h_id = None
 		stored_at = None
+		updated_at = None
 		with self.conn:
 			cur = self.conn.cursor()
-			for hm in cur.execute('SELECT h_id, stored_at FROM hypergraph WHERE h_payload_id=?', (hmId,)):
+			for hm in cur.execute('SELECT h_id, stored_at, updated_at FROM hypergraph WHERE h_payload_id=?', (hmId,)):
 				h_id = hm[0]
 				stored_at = hm[1]
+				updated_at = hm[2]
 				break
 			cur.close()
 		
-		return h_id, stored_at
+		return HypergraphId(h_id=h_id, h_payload_id=hmId, stored_at=stored_at, updated_at=updated_at)
+	
+	def getHypergraphByInternalId(self, h_id: InternalHypergraphId) -> Any:
+		with self.conn:
+			cur = self.conn.cursor()
+			for hm in cur.execute('SELECT payload FROM hypergraph WHERE h_id=?', (h_id,)):
+				return json.loads(hm[0])
+				break
+		
+		return None
 	
 	def registeredNodes(self, cur: sqlite3.Cursor, hId: InternalHypergraphId) -> List[NodeId]:
 		"""
@@ -573,6 +591,16 @@ class HypergraphsStore(object):
 				retHash[he[0]] = heId
 				retval.append(heId)
 		
+		return retval
+	
+	def registeredHypergraphs(self, cur: sqlite3.Cursor) -> List[HypergraphId]:
+		"""
+		Retrieves the list of known hypergraphs
+		"""
+		retval = []
+		for h in cur.execute('SELECT h_id, stored_at, updated_at, h_payload_id FROM hypergraph'):
+			retval.append(HypergraphId(h_id=h[0], stored_at=h[1], updated_at=h[2], h_payload_id=h[3]))
+			
 		return retval
 	
 	def getNodeByGraphAndId(self, hId: InternalHypergraphId, nodeId: NodePayloadId) -> Tuple[InternalNodeId, InternalNodeTypeId, Any]:
@@ -648,10 +676,12 @@ class HypergraphsStore(object):
 		# Last, store it!
 		hId = None
 		# First, remove previous version of this hypergraph
-		prevHId, stored_at = self.getHypergraphMetadataId(hm['_id'])
+		prev = self.getHypergraphMetadataId(hm['_id'])
 				
 		# Now, adding the metadata
-		if prevHId is not None:
+		if prev is not None:
+			prevHId = prev.h_id
+			stored_at = prev.stored_at
 			self.logger.info(f"Removing hypergraph {prevHId}")
 			try:
 				cur.execute('DELETE FROM hyperedge WHERE h_id=?', (prevHId,))
