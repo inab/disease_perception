@@ -17,9 +17,11 @@ from .res.drugs import ROUTES as DRUG_ROUTES
 from .res.studies import ROUTES as STUDY_ROUTES
 from .res.diseases import ROUTES as DISEASE_ROUTES
 from .res.patients import ROUTES as PATIENT_ROUTES
+from .res.hypergraphs import ROUTES as HYPERGRAPH_ROUTES
 
 ROUTE_SETS = [
 	ROOT_ROUTES,
+	HYPERGRAPH_ROUTES,
 	GENE_ROUTES,
 	DRUG_ROUTES,
 	STUDY_ROUTES,
@@ -29,10 +31,10 @@ ROUTE_SETS = [
 
 def _register_cm_namespaces(api,res_kwargs):
 	for route_set in ROUTE_SETS:
-		ns = route_set['ns']
-		api.add_namespace(ns,route_set['path'])
-		for route in route_set['routes']:
-			ns.add_resource(route[0],route[1],resource_class_kwargs=res_kwargs)
+		ns = route_set.ns
+		api.add_namespace(ns,route_set.path)
+		for route in route_set.routes:
+			ns.add_resource(route.res,route.paths,resource_class_kwargs=res_kwargs)
 
 def init_comorbidities_app(local_config):
 	#app = Flask('como_network',static_url_path='/',static_folder='static')
