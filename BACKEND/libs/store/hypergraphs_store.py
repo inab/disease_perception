@@ -115,7 +115,9 @@ class HypergraphsStore(object):
 		conn.execute("""PRAGMA encoding = 'UTF-8'""")
 		conn.execute("""PRAGMA locking_mode = NORMAL""")
 		if readonly:
-			conn.execute("""PRAGMA journal_mode = TRUNCATE""")
+			#conn.execute("""PRAGMA journal_mode = TRUNCATE""")
+			conn.execute("""PRAGMA query_only = ON""")
+			self.schema_initialized = True
 		else:
 			conn.execute("""PRAGMA journal_mode = WAL""")
 			conn.execute("""PRAGMA foreign_keys = ON""")
