@@ -4,7 +4,12 @@
 
 import sys, os
 
-from .api_models import CMResource, DISEASE_NS, disease_model, disease_comorbidity_model, disease_patient_subgroup_comorbidity_model, simple_disease_group_model, disease_group_model, patient_subgroup_intersect_genes_model, patient_subgroup_intersect_drugs_model
+from .api_models import CMResPath, CMRoutes, CMResource, \
+    DISEASE_NS, disease_model, disease_comorbidity_model, \
+    disease_patient_subgroup_comorbidity_model, \
+    simple_disease_group_model, disease_group_model, \
+    patient_subgroup_intersect_genes_model, \
+    patient_subgroup_intersect_drugs_model
 
 class DiseaseList(CMResource):
 	'''Shows a list of all the diseases'''
@@ -103,20 +108,20 @@ class DiseaseGroupDiseases(CMResource):
 		'''It gets the list of diseases in this group'''
 		return self.cmn.diseases(disease_group_id=id)
 
-ROUTES={
-	'ns': DISEASE_NS,
-	'path': '/diseases',
-	'routes': [
-		(DiseaseList,''),
-		(Disease,'/<int:id>'),
-		(DiseaseComorbidities,'/<int:id>/comorbidities'),
-		(ListDiseaseComorbidities,'/comorbidities'),
-		(DiseasePatientSubgroupComorbidities,'/<list(int,sep=","):disease_ids>/patients/subgroups/comorbidities'),
-		(DiseasePatientSubgroupComorbidities,'/<list(int,sep=","):disease_ids>/patients/subgroups/comorbidities/min_size/<int:min_size>'),
-		(DiseasePatientSubgroupIntersectGenes,'/<list(int,sep=","):disease_ids>/patients/subgroups/genes'),
-		(DiseasePatientSubgroupIntersectDrugs,'/<list(int,sep=","):disease_ids>/patients/subgroups/drugs'),
-		(DiseaseGroupList,'/groups'),
-		(DiseaseGroupDiseases,'/groups/<int:id>'),
-		(DiseaseGroup,'/groups/<int:id>/info')
+ROUTES = CMRoutes(
+	ns=DISEASE_NS,
+	path='/diseases',
+	routes=[
+		CMResPath(DiseaseList,''),
+		CMResPath(Disease,'/<int:id>'),
+		CMResPath(DiseaseComorbidities,'/<int:id>/comorbidities'),
+		CMResPath(ListDiseaseComorbidities,'/comorbidities'),
+		CMResPath(DiseasePatientSubgroupComorbidities,'/<list(int,sep=","):disease_ids>/patients/subgroups/comorbidities'),
+		CMResPath(DiseasePatientSubgroupComorbidities,'/<list(int,sep=","):disease_ids>/patients/subgroups/comorbidities/min_size/<int:min_size>'),
+		CMResPath(DiseasePatientSubgroupIntersectGenes,'/<list(int,sep=","):disease_ids>/patients/subgroups/genes'),
+		CMResPath(DiseasePatientSubgroupIntersectDrugs,'/<list(int,sep=","):disease_ids>/patients/subgroups/drugs'),
+		CMResPath(DiseaseGroupList,'/groups'),
+		CMResPath(DiseaseGroupDiseases,'/groups/<int:id>'),
+		CMResPath(DiseaseGroup,'/groups/<int:id>/info')
 	]
-}
+)

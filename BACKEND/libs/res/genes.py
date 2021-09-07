@@ -4,7 +4,7 @@
 
 import sys, os
 
-from .api_models import CMResource, GENES_NS, gene_model
+from .api_models import CMResPath, CMRoutes, CMResource, GENES_NS, gene_model
 
 # Now, the routes
 #@GENES_NS.route('',resource_class_kwargs={'cmnetwork': CMNetwork})
@@ -28,11 +28,11 @@ class Gene(CMResource):
 		'''It gets detailed gene information'''
 		return self.cmn.gene(symbol)
 
-ROUTES={
-	'ns': GENES_NS,
-	'path': '/genes',
-	'routes': [
-		(GeneList,''),
-		(Gene,'/<string:symbol>')
+ROUTES = CMRoutes(
+	ns=GENES_NS,
+	path='/genes',
+	routes=[
+		CMResPath(GeneList,''),
+		CMResPath(Gene,'/<string:symbol>')
 	]
-}
+)

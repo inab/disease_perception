@@ -4,7 +4,7 @@
 
 import sys, os
 
-from .api_models import CMResource, DRUGS_NS, drug_model
+from .api_models import CMResPath, CMRoutes, CMResource, DRUGS_NS, drug_model
 
 class DrugList(CMResource):
 	'''Shows a list of all the drugs related in comorbidity studies'''
@@ -24,11 +24,11 @@ class Drug(CMResource):
 		'''It gets detailed drug information'''
 		return self.cmn.drug(id)
 
-ROUTES={
-	'ns': DRUGS_NS,
-	'path': '/drugs',
-	'routes': [
-		(DrugList,''),
-		(Drug,'/<int:id>')
+ROUTES = CMRoutes(
+	ns=DRUGS_NS,
+	path='/drugs',
+	routes=[
+		CMResPath(DrugList,''),
+		CMResPath(Drug,'/<int:id>')
 	]
-}
+)

@@ -4,7 +4,11 @@
 
 import sys, os
 
-from .api_models import CMResource, PATIENT_NS, patient_model, patient_subgroup_model, patient_subgroup_intersect_genes_model, patient_subgroup_intersect_drugs_model, patient_map_genes_model, patient_map_drugs_model, patients_interaction_model
+from .api_models import CMResPath, CMRoutes, CMResource, \
+    PATIENT_NS, patient_model, patient_subgroup_model, \
+    patient_subgroup_intersect_genes_model, \
+    patient_subgroup_intersect_drugs_model, patient_map_genes_model, \
+    patient_map_drugs_model, patients_interaction_model
 
 class PatientList(CMResource):
 	'''Shows a list of all the patient subgroups'''
@@ -133,23 +137,23 @@ class PatientSubgroupPatientsInteraction(CMResource):
 		'''It gets the interactions among the patients of the query patient subgroup'''
 		return self.cmn.patients_interactions(patient_subgroup_ids=ids)
 
-ROUTES={
-	'ns': PATIENT_NS,
-	'path': '/patients',
-	'routes': [
-		(PatientList,''),
-		(Patient,'/<int:id>'),
-		(PatientsMapGenes,'/<list(int,sep=","):ids>/genes'),
-		(PatientsMapDrugs,'/<list(int,sep=","):ids>/drugs'),
-		(PatientsInteraction,'/<list(int,sep=","):ids>/interaction'),
-		(PatientSubgroupList,'/subgroups'),
-		(PatientSubgroupPatients,'/subgroups/<int:id>'),
-		(PatientSubgroupPatients,'/subgroups/<int:id>/patients'),
-		(PatientSubgroupsIntersectGenes,'/subgroups/<list(int,sep=","):ids>/genes'),
-		(PatientSubgroupsIntersectDrugs,'/subgroups/<list(int,sep=","):ids>/drugs'),
-		(PatientSubgroupPatientsMapGenes,'/subgroups/<list(int,sep=","):ids>/patients/genes'),
-		(PatientSubgroupPatientsMapDrugs,'/subgroups/<list(int,sep=","):ids>/patients/drugs'),
-		(PatientSubgroupPatientsInteraction,'/subgroups/<list(int,sep=","):ids>/patients/interaction'),
-		(PatientSubgroup,'/subgroups/<int:id>/info'),
+ROUTES = CMRoutes(
+	ns=PATIENT_NS,
+	path='/patients',
+	routes=[
+		CMResPath(PatientList,''),
+		CMResPath(Patient,'/<int:id>'),
+		CMResPath(PatientsMapGenes,'/<list(int,sep=","):ids>/genes'),
+		CMResPath(PatientsMapDrugs,'/<list(int,sep=","):ids>/drugs'),
+		CMResPath(PatientsInteraction,'/<list(int,sep=","):ids>/interaction'),
+		CMResPath(PatientSubgroupList,'/subgroups'),
+		CMResPath(PatientSubgroupPatients,'/subgroups/<int:id>'),
+		CMResPath(PatientSubgroupPatients,'/subgroups/<int:id>/patients'),
+		CMResPath(PatientSubgroupsIntersectGenes,'/subgroups/<list(int,sep=","):ids>/genes'),
+		CMResPath(PatientSubgroupsIntersectDrugs,'/subgroups/<list(int,sep=","):ids>/drugs'),
+		CMResPath(PatientSubgroupPatientsMapGenes,'/subgroups/<list(int,sep=","):ids>/patients/genes'),
+		CMResPath(PatientSubgroupPatientsMapDrugs,'/subgroups/<list(int,sep=","):ids>/patients/drugs'),
+		CMResPath(PatientSubgroupPatientsInteraction,'/subgroups/<list(int,sep=","):ids>/patients/interaction'),
+		CMResPath(PatientSubgroup,'/subgroups/<int:id>/info'),
 	]
-}
+)

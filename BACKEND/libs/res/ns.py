@@ -6,14 +6,14 @@ import sys, os
 
 from flask_restplus import Namespace, Resource
 
-from .api_models import CMResource, NS
+from .api_models import CMRoutes, CMResPath, CMResource, NS
 
 # Nothing done (yet!)
 
-ROUTES={
-	'ns': NS,
-	'path': '/',
+ROUTES = CMRoutes(
+	ns=NS,
+	path='/',
 	# Nothing done (yet!)
-	'routes': [
+	routes=[
 	]
-}
+)

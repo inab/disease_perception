@@ -4,7 +4,8 @@
 
 import sys, os
 
-from .api_models import CMResource, STUDIES_NS, study_model
+from .api_models import CMResPath, CMRoutes, CMResource, \
+    STUDIES_NS, study_model
 
 class StudyList(CMResource):
 	'''Shows a list of all the studies used to build the comorbidity network'''
@@ -24,11 +25,11 @@ class Study(CMResource):
 		'''It gets detailed study information'''
 		return self.cmn.study(study_id)
 
-ROUTES={
-	'ns': STUDIES_NS,
-	'path': '/studies',
-	'routes': [
-		(StudyList,''),
-		(Study,'/<string:study_id>')
+ROUTES = CMRoutes(
+	ns=STUDIES_NS,
+	path='/studies',
+	routes=[
+		CMResPath(StudyList,''),
+		CMResPath(Study,'/<string:study_id>')
 	]
-}
+)
