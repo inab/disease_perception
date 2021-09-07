@@ -4,24 +4,68 @@
 
 #import sys, os
 
+import datetime
 import sqlite3
 import urllib
-
+from .store.hypergraphs_store import *
 
 # This class manages all the database queries
 class ComorbiditiesNetwork(object):
-	def __init__(self,dbpath,api,itersize=100):
+	def __init__(self, dbpath, api, itersize=100):
 		self.api = api
-		self.db = sqlite3.connect('file:'+urllib.parse.quote(dbpath)+'?mode=ro',uri=True, check_same_thread=False)
+		self.hgdb = HypergraphsStore(dbpath, readonly=True)
 		self.dbpath = dbpath
 		self.itersize = itersize
+		self.cachedHypergraphs = {}
 	
 	def _getCursor(self):
-		cur = self.db.cursor()
-		cur.arraysize = self.itersize
-		return cur
+		return self.hgdb.getCursor(self.itersize)
+	
+	def _populateHypergraphs(self):
+		"""
+		Only try populating when empty
+		"""
+		if len(self.cachedHypergraphs) == 0:
+			cur = self._getCursor()
+			try:
+				self.cachedHypergraphs = {
+					hId.h_payload_id: hId
+					for hId in self.hgdb.registeredHypergraphs(cur)
+				}
+			finally:
+				# Assuring the cursor is properly closed
+				cur.close()
+	
+	def hypergraphs(self):
+		self._populateHypergraphs()
+		res = []
+		res.extend(map(lambda hId: {
+			'_id': hId.h_payload_id,
+			'stored_at': datetime.datetime.fromtimestamp(hId.stored_at, tz=datetime.timezone.utc),
+			'updated_at': datetime.datetime.fromtimestamp(hId.updated_at, tz=datetime.timezone.utc),
+		}, self.cachedHypergraphs.values()))
 		
-	def genes(self,symbol=None):
+		return res
+		
+	def hypergraph(self, _id):
+		# First, get the internal graph id
+		self._populateHypergraphs()
+		hId = self.cachedHypergraphs.get(_id)
+		if hId is None:
+			self.api.abort(404, "Hypergraph {} was not found in the database".format(_id))
+		
+		payload = self.hgdb.getHypergraphByInternalId(hId.h_id)
+		if payload is None:
+			self.api.abort(404, "Payload of hypergraph {} was not found in the database".format(_id))
+		
+		return {
+			'_id': hId.h_payload_id,
+			'stored_at': datetime.datetime.fromtimestamp(hId.stored_at, tz=datetime.timezone.utc),
+			'updated_at': datetime.datetime.fromtimestamp(hId.updated_at, tz=datetime.timezone.utc),
+			'payload': payload
+		}
+	
+	def genes(self, symbol=None):
 		res = []
 		cur = self._getCursor()
 		try:
