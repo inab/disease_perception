@@ -37,6 +37,8 @@ InternalEdgeTypeId = NewType('InternalEdgeTypeId', int)
 InternalHyperedgeTypeId = NewType('InternalHyperedgeTypeId', int)
 SchemaId = NewType('SchemaId', str)
 
+HypergraphPayloadId = NewType('HypergraphPayloadId', str)
+
 InternalNodeId = NewType('InternalNodeId', int)
 NodePayloadId = NewType('NodePayloadId', str)
 
@@ -74,6 +76,14 @@ class HyperedgeType(NamedTuple):
 	name: str
 	schema_id: SchemaId
 	weight_name: Optional[str]
+
+class HypergraphId(NamedTuple):
+	"""
+	"""
+	h_id: InternalHypergraphId
+	stored_at: int
+	updated_at: int
+	h_payload_id: HypergraphPayloadId
 
 class NodeId(NamedTuple):
 	"""
