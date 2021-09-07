@@ -154,10 +154,12 @@ CREATE TABLE IF NOT EXISTS node (
 	-- payload is JSON formatted
 	payload TEXT NOT NULL,
 	n_payload_id TEXT GENERATED ALWAYS AS (json_extract(payload, '$._id')) STORED NOT NULL,
+	n_payload_name TEXT GENERATED ALWAYS AS (json_extract(payload, '$.name')) STORED NOT NULL,
 	FOREIGN KEY (h_id) REFERENCES hypergraph(h_id),
 	FOREIGN KEY (nt_id) REFERENCES node_type(nt_id),
 	UNIQUE (n_payload_id, h_id)
 );
+CREATE INDEX IF NOT EXISTS node_by_payload_name ON node(n_payload_name);
 
 CREATE TABLE IF NOT EXISTS edge (
 	-- The internal unique id of this edge
@@ -190,6 +192,7 @@ CREATE TABLE IF NOT EXISTS edge (
 	FOREIGN KEY (to_id) REFERENCES node(n_id),
 	UNIQUE (e_payload_id, h_id)
 );
+CREATE INDEX IF NOT EXISTS edge_by_payload_weight ON edge(e_payload_weight);
 
 CREATE TABLE IF NOT EXISTS hyperedge (
 	-- The internal unique id of this hyperedge
@@ -205,14 +208,18 @@ CREATE TABLE IF NOT EXISTS hyperedge (
 	annotation_payload TEXT,
 	-- payload is JSON formatted
 	payload TEXT NOT NULL,
-	weight REAL GENERATED ALWAYS AS (json_extract(payload, '$.weight')) STORED,
+	-- In case there is an id for the hyperedge, it should be unique
+	he_payload_id TEXT GENERATED ALWAYS AS (json_extract(payload, '$._id')) STORED,
+	he_payload_weight REAL GENERATED ALWAYS AS (json_extract(payload, '$.weight')) STORED,
 	-- As the graph entry holds this info, it is not needed to have
 	-- it repeated on each one of the edge entries
 	-- schema_id TEXT GENERATED ALWAYS AS (json_extract(payload, '$._schema')) VIRTUAL NOT NULL,
 	-- FOREIGN KEY schema_id REFERENCES json_schemas(schema_id),
 	FOREIGN KEY (h_id) REFERENCES hypergraph(h_id),
-	FOREIGN KEY (het_id) REFERENCES hyperedge_type(het_id)
+	FOREIGN KEY (het_id) REFERENCES hyperedge_type(het_id),
+	UNIQUE (he_payload_id, h_id)
 );
+CREATE INDEX IF NOT EXISTS hyperedge_by_payload_weight ON hyperedge(he_payload_weight);
 
 CREATE TABLE IF NOT EXISTS hyperedge_node(
 	-- The internal unique id of this hyperedge node pair
