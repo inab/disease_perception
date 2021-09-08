@@ -4,6 +4,8 @@
 
 import sys, os
 
+from typing import Optional
+
 from .api_models import CMResPath, CMRoutes, CMResource, \
     NODES_NS, simple_node_model, node_model
 
@@ -42,7 +44,7 @@ class NodesByName(CMResource):
 	'''Return the detailed information of the nodes with the same name and type'''
 	@NODES_NS.doc('list_nodes_by_name')
 	@NODES_NS.marshal_list_with(node_model)
-	def get(self, h_id:str, node_type:str, name:str):
+	def get(self, h_id:str, node_type:str, name:Optional[str] = None):
 		'''It gets detailed node information'''
 		return self.cmn.queryNode(h_id, node_type, name=name)
 
@@ -52,6 +54,7 @@ ROUTES = CMRoutes(
 	path='/h/<string:h_id>/n/<string:node_type>',
 	routes=[
 		CMResPath(NodeList,''),
+		CMResPath(NodesByName,'/'),
 		CMResPath(NodesByName,'/name/<string:name>'),
 		CMResPath(NodeById,'/id/<string:_id>')
 	]
