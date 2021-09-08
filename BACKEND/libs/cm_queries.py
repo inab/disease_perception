@@ -46,6 +46,40 @@ class ComorbiditiesNetwork(object):
 			'payload': payload
 		}
 	
+	def nodeTypes(self, h_payload_id):
+		nodeTypes = self.hgdb.getNodeTypesByGraph(h_payload_id)
+		if nodeTypes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database")
+		
+		res = []
+		res.extend(map(lambda nt: {
+				'name': nt.name,
+				'h_id': h_payload_id,
+				'schema_id': nt.schema_id,
+			}, nodeTypes))
+		
+		return res
+	
+	def fetchNodeType(self, h_payload_id, name):
+		nodeTypes = self.hgdb.getNodeTypesByGraph(h_payload_id, name)
+		if nodeTypes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database")
+		
+		if len(nodeTypes) == 0:
+			self.api.abort(404, f"Hypergraph {h_payload_id} does not contain nodes of type {name}")
+		
+		res = []
+		res.extend(map(lambda nt: {
+			'name': nt.name,
+			'h_id': h_payload_id,
+			'schema_id': nt.schema_id,
+			'description': nt.description,
+			'number': nt.number,
+			'payload': nt.payload
+		}, nodeTypes))
+		
+		return res
+	
 	def nodes(self, h_payload_id, node_type):
 		nodes = self.hgdb.registeredNodesByGraphAndNodeType(h_payload_id, node_type)
 		if nodes is None:
@@ -62,7 +96,7 @@ class ComorbiditiesNetwork(object):
 		return res
 		
 	def queryNode(self, h_payload_id, node_type, _id=None, name=None):
-		nodes = self.hgdb.getNodesByGraphAndNodeType(h_payload_id, 'gene', name=name, _id=_id)
+		nodes = self.hgdb.getNodesByGraphAndNodeType(h_payload_id, node_type, name=name, _id=_id)
 		if nodes is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type?)")
 		if len(nodes) == 0:

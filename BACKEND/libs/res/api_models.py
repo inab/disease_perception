@@ -332,6 +332,87 @@ node_model = NODES_NS.model('Node', {
 
 node_model_schema = NODES_NS.schema_model('Node', complete_node_schema)
 
+
+NODE_TYPES_NS = Namespace('node_types','Hypergraph\'s node types')
+
+simple_node_type_schema = {
+	'properties': {
+		'name': {
+			'type': 'string',
+			'description': 'The name of the node type'
+		},
+		'h_id': {
+			'type': 'string',
+			'description': 'The hypergraph id where there is at least a node of this type'
+		},
+		'schema_id': {
+			'type': 'string',
+			'description': 'The URI of the JSON Schemas used to model payloads for nodes of this type'
+		}
+	},
+	'type': 'object',
+	'required': [ 'name', 'h_id', 'schema_id' ]
+}
+
+simple_node_type_model = NODE_TYPES_NS.model('SimpleNodeType', {
+	'name': fields.String(required=True, description=simple_node_type_schema['properties']['name']['description']),
+	'h_id': fields.String(required=True, description='The id of the hypergraph where the node is'),
+	'schema_id': fields.String(required=True, description=simple_node_type_schema['properties']['schema_id']['description']),
+})
+
+simple_node_type_model_schema = NODE_TYPES_NS.schema_model('SimpleNodeType', simple_node_type_schema)
+
+node_type_schema = {
+	'properties': {
+		'name': {
+			'type': 'string',
+			'description': 'The name of the node type'
+		},
+		'h_id': {
+			'type': 'string',
+			'description': 'The hypergraph id where there is at least a node of this type'
+		},
+		'schema_id': {
+			'type': 'string',
+			'description': 'The URI of the JSON Schemas used to model payloads for nodes of this type'
+		},
+		'number': {
+			'type': 'integer',
+			'description': 'Number of nodes of this type in this hypergraph',
+			'minimum': 1
+		},
+		'nodes_link': {
+			'type': 'string',
+			'description': 'The link to the REST resource with the nodes',
+			'format': 'uri'
+		},
+		'description': {
+			'type': 'string',
+			'description': 'An optional description'
+		},
+		'payload': {
+			'description': 'The optional payload of the node type'
+		}
+	},
+	'type': 'object',
+	'required': [ 'name', 'h_id', 'schema_id' ]
+}
+
+nt_s_props = node_type_schema['properties']
+
+node_type_model = NODE_TYPES_NS.model('NodeType', {
+	'name': fields.String(required=True, description=nt_s_props['name']['description']),
+	'h_id': fields.String(required=True, description='The id of the hypergraph where the node is'),
+	'schema_id': fields.String(required=True, description=nt_s_props['schema_id']['description']),
+	'number': fields.Integer(required=True, description=nt_s_props['number']['description']),
+	'nodes_link': fields.Raw(required=True),
+	'description': fields.String(description=nt_s_props['description']['description']),
+	'payload': fields.Raw(description=nt_s_props['payload']['description']),
+})
+
+node_type_model_schema = NODE_TYPES_NS.schema_model('NodeType', node_type_schema)
+
+
 GENES_NS = Namespace('genes','Comorbidities related genes')
 
 simple_gene_model = GENES_NS.model('SimpleGene', {

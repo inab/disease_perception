@@ -606,6 +606,30 @@ class HypergraphsStore(object):
 		self._populateNodeTypesCache()
 		return self.cachedNodeTypes.values()
 	
+	def getNodeTypesByGraph(self, h_payload_id: HypergraphPayloadId, name: Optional[str] = None) -> Iterator[NodeType]:
+		"""
+		Retrieves the list of known nodes types from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		retval = []
+		with self.conn:
+			cur = self.conn.cursor()
+			query = 'SELECT nt.nt_id, nt.nt_name, nt.node_schema_id, nt.nt_desc, nt.payload, COUNT(nt.nt_id) FROM node_type nt, node n WHERE n.h_id=? AND n.nt_id=nt.nt_id'
+			params = [ hId.h_id ]
+			if (name is not None) and len(name) > 0:
+				query += ' AND nt.nt_name=?'
+				params.append(name)
+			for nt in cur.execute(query + ' GROUP BY nt.nt_id', params):
+				retval.append(NodeType(nt_id=nt[0], name=nt[1], schema_id=nt[2], description=nt[3], payload=None if nt[4] is None else json.loads(nt[4]), number=nt[5]))
+			cur.close()
+		
+		return retval
+	
+	
 	def _populateEdgeTypesCache(self, invalidateCache:bool = False):
 		"""
 		Only try populating when empty
