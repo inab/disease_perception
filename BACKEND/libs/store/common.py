@@ -91,6 +91,8 @@ class NodeId(NamedTuple):
 	n_id: InternalNodeId
 	nt_id: InternalNodeTypeId
 	n_payload_id: NodePayloadId
+	n_payload_name: str
+	payload: Optional[Any] = None
 
 class EdgeId(NamedTuple):
 	"""
