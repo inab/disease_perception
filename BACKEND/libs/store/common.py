@@ -56,6 +56,9 @@ class NodeType(NamedTuple):
 	nt_id: InternalNodeTypeId
 	name: str
 	schema_id: SchemaId
+	description: Optional[str] = None
+	number: Optional[int] = 0
+	payload: Optional[Any] = None
 
 class EdgeType(NamedTuple):
 	"""
