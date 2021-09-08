@@ -16,47 +16,28 @@ class ComorbiditiesNetwork(object):
 		self.hgdb = HypergraphsStore(dbpath, readonly=True)
 		self.dbpath = dbpath
 		self.itersize = itersize
-		self.cachedHypergraphs = {}
 	
 	def _getCursor(self):
 		return self.hgdb.getCursor(self.itersize)
 	
-	def _populateHypergraphs(self):
-		"""
-		Only try populating when empty
-		"""
-		if len(self.cachedHypergraphs) == 0:
-			cur = self._getCursor()
-			try:
-				self.cachedHypergraphs = {
-					hId.h_payload_id: hId
-					for hId in self.hgdb.registeredHypergraphs(cur)
-				}
-			finally:
-				# Assuring the cursor is properly closed
-				cur.close()
-	
 	def hypergraphs(self):
-		self._populateHypergraphs()
 		res = []
 		res.extend(map(lambda hId: {
 			'_id': hId.h_payload_id,
 			'stored_at': datetime.datetime.fromtimestamp(hId.stored_at, tz=datetime.timezone.utc),
 			'updated_at': datetime.datetime.fromtimestamp(hId.updated_at, tz=datetime.timezone.utc),
-		}, self.cachedHypergraphs.values()))
+		}, self.hgdb.hypergraphs))
 		
 		return res
 		
 	def hypergraph(self, _id):
 		# First, get the internal graph id
-		self._populateHypergraphs()
-		hId = self.cachedHypergraphs.get(_id)
+		hId, payload = self.hgdb.getHypergraphById(_id)
 		if hId is None:
 			self.api.abort(404, "Hypergraph {} was not found in the database".format(_id))
 		
-		payload = self.hgdb.getHypergraphByInternalId(hId.h_id)
 		if payload is None:
-			self.api.abort(404, "Payload of hypergraph {} was not found in the database".format(_id))
+			self.api.abort(404, "Payload of hypergraph {} was not available in the database".format(_id))
 		
 		return {
 			'_id': hId.h_payload_id,
@@ -64,6 +45,44 @@ class ComorbiditiesNetwork(object):
 			'updated_at': datetime.datetime.fromtimestamp(hId.updated_at, tz=datetime.timezone.utc),
 			'payload': payload
 		}
+	
+	def nodes(self, h_payload_id, node_type):
+		nodes = self.hgdb.registeredNodesByGraphAndNodeType(h_payload_id, node_type)
+		if nodes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type?)")
+		
+		res = []
+		res.extend(map(lambda n: {
+				'_id': n.n_payload_id,
+				'_type': node_type,
+				'h_id': h_payload_id,
+				'name': n.n_payload_name
+			}, nodes))
+		
+		return res
+		
+	def queryNode(self, h_payload_id, node_type, _id=None, name=None):
+		nodes = self.hgdb.getNodesByGraphAndNodeType(h_payload_id, 'gene', name=name, _id=_id)
+		if nodes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type?)")
+		if len(nodes) == 0:
+			errmsg = f"No node of type {node_type} was not found in the hypergraph {h_payload_id} with the query criteria"
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			if name is not None:
+				errmsg += f' (id {name})'
+			self.api.abort(404, errmsg)
+		
+		res = []
+		res.extend(map(lambda n: {
+				'_id': n.n_payload_id,
+				'_type': node_type,
+				'h_id': h_payload_id,
+				'name': n.n_payload_name,
+				'payload': n.payload
+			}, nodes))
+		
+		return res
 	
 	def genes(self, symbol=None):
 		res = []

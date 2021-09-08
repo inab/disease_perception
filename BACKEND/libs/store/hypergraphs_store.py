@@ -14,7 +14,7 @@ import json
 import logging
 import os
 import os.path
-from typing import Any, List, Mapping, Tuple, Optional , Union
+from typing import Any, Iterator, List, Mapping, Tuple, Optional , Union
 import urllib.parse
 import sys
 
@@ -63,6 +63,12 @@ class HypergraphsStore(object):
 			errmsg = "SQLite JSON1 extension is not available. Check your installation"
 			self.logger.critical(errmsg)
 			raise HypergraphsStoreException(errmsg)
+		
+		# These are to improve performance
+		self.cachedHypergraphs = {}
+		self.cachedNodeTypes = {}
+		self.cachedEdgeTypes = {}
+		self.cachedHyperedgeTypes = {}
 		
 		# Connect / create the database
 		self._connect_store(dbfilename, readonly=readonly)
@@ -398,10 +404,11 @@ class HypergraphsStore(object):
 		return numLoaded
 	
 	def _store_node_types(self, loadable_node_types: List[Mapping[str, Any]]) -> int:
+		numLoaded = 0
+		self._invalidateNodeTypesCache()
 		with self.conn:
 			cur = self.conn.cursor()
 			rollback = False
-			numLoaded = 0
 			try:
 				cur.executemany('INSERT INTO node_type(nt_name, nt_desc, node_schema_id) VALUES (?, ?, ?)', (
 					(nt['name'], nt['desc'], nt['schema_id'])
@@ -425,11 +432,12 @@ class HypergraphsStore(object):
 		return numLoaded
 	
 	def _store_edge_types(self, loadable_edge_types: List[Mapping[str, Any]]) -> int:
+		numLoaded = 0
+		self._invalidateEdgeTypesCache()
 		ntHash = { nt.name: nt.nt_id for nt in self.registeredNodeTypes() }
 		with self.conn:
 			cur = self.conn.cursor()
 			rollback = False
-			numLoaded = 0
 			try:
 				cur.executemany('INSERT INTO edge_type(et_name,et_desc,a_nt_id,b_nt_id,is_directed,is_symmetric,edge_schema_id,weight_name,weight_desc) VALUES (?,?,?,?,?,?,?,?,?)', (
 					(et['name'], et['desc'], ntHash[et['node_type_a']], ntHash[et['node_type_b']], et['is_directed'], et['is_symmetric'], et['schema_id'], et.get('weight',{}).get('name'), et.get('weight',{}).get('desc'))
@@ -453,11 +461,12 @@ class HypergraphsStore(object):
 		return numLoaded
 	
 	def _store_hyperedge_types(self, loadable_hyperedge_types: List[Mapping[str, Any]]) -> int:
+		numLoaded = 0
+		self._invalidateHyperedgeTypesCache()
 		ntHash = { nt.name: nt.nt_id for nt in self.registeredNodeTypes() }
 		with self.conn:
 			cur = self.conn.cursor()
 			rollback = False
-			numLoaded = 0
 			try:
 				# Main body
 				cur.executemany('INSERT INTO hyperedge_type(het_name,het_desc,is_tuple,is_directed,is_symmetric,hyperedge_schema_id,weight_name,weight_desc) VALUES (?,?,?,?,?,?,?,?)', (
@@ -537,24 +546,174 @@ class HypergraphsStore(object):
 		
 		return HypergraphId(h_id=h_id, h_payload_id=hmId, stored_at=stored_at, updated_at=updated_at)
 	
-	def getHypergraphByInternalId(self, h_id: InternalHypergraphId) -> Any:
+	def getHypergraphById(self, h_payload_id: HypergraphPayloadId) -> Tuple[HypergraphId, Any]:
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None, None
+		
+		payload = None
 		with self.conn:
 			cur = self.conn.cursor()
-			for hm in cur.execute('SELECT payload FROM hypergraph WHERE h_id=?', (h_id,)):
-				return json.loads(hm[0])
+			for hm in cur.execute('SELECT payload FROM hypergraph WHERE h_id=?', (hId.h_id,)):
+				payload = json.loads(hm[0])
 				break
 		
-		return None
+		return hId, payload
 	
-	def registeredNodes(self, cur: sqlite3.Cursor, hId: InternalHypergraphId) -> List[NodeId]:
+	def _populateHypergraphsCache(self, invalidateCache:bool = False):
+		"""
+		Only try populating when empty
+		"""
+		if not invalidateCache:
+			invalidateCache = len(self.cachedHypergraphs) == 0
+		if invalidateCache:
+			cur = self.getCursor()
+			try:
+				self.cachedHypergraphs = {
+					hId.h_payload_id: hId
+					for hId in self.registeredHypergraphs(cur)
+				}
+			finally:
+				# Assuring the cursor is properly closed
+				cur.close()
+	
+	def _invalidateHypergraphsCache(self):
+		self.cachedHypergraphs = {}
+	
+	@property
+	def hypergraphs(self) ->  Iterator[HypergraphId]:
+		self._populateHypergraphsCache()
+		return self.cachedHypergraphs.values()
+	
+	def _populateNodeTypesCache(self, invalidateCache:bool = False):
+		"""
+		Only try populating when empty
+		"""
+		if not invalidateCache:
+			invalidateCache = len(self.cachedNodeTypes) == 0
+		if invalidateCache:
+			self.cachedNodeTypes = {
+				ntId.name: ntId
+				for ntId in self.registeredNodeTypes()
+			}
+	
+	def _invalidateNodeTypesCache(self):
+		self.cachedNodeTypes = {}
+	
+	@property
+	def nodeTypes(self) ->  Iterator[NodeType]:
+		self._populateNodeTypesCache()
+		return self.cachedNodeTypes.values()
+	
+	def _populateEdgeTypesCache(self, invalidateCache:bool = False):
+		"""
+		Only try populating when empty
+		"""
+		if not invalidateCache:
+			invalidateCache = len(self.cachedEdgeTypes) == 0
+		if invalidateCache:
+			self.cachedEdgeTypes = {
+				etId.name: etId
+				for etId in self.registeredEdgeTypes()
+			}
+	
+	def _invalidateEdgeTypesCache(self):
+		self.cachedEdgeTypes = {}
+	
+	@property
+	def edgeTypes(self) ->  Iterator[EdgeType]:
+		self._populateEdgeTypesCache()
+		return self.cachedEdgeTypes.values()
+	
+	def _populateHyperedgeTypesCache(self, invalidateCache:bool = False):
+		"""
+		Only try populating when empty
+		"""
+		if not invalidateCache:
+			invalidateCache = len(self.cachedHyperedgeTypes) == 0
+		if invalidateCache:
+			self.cachedHyperedgeTypes = {
+				hetId.name: hetId
+				for hetId in self.registeredHyperedgeTypes()
+			}
+	
+	def _invalidateHyperedgeTypesCache(self):
+		self.cachedHyperedgeTypes = {}
+	
+	@property
+	def hyperedgeTypes(self) ->  Iterator[HyperedgeType]:
+		self._populateHyperedgeTypesCache()
+		return self.cachedHyperedgeTypes.values()
+	
+	def registeredNodes(self, cur: sqlite3.Cursor, h_id: InternalHypergraphId, nt_id: Optional[InternalNodeTypeId] = None) -> List[NodeId]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
 		"""
 		retval = []
+		query = 'SELECT n_id, nt_id, n_payload_id, n_payload_name FROM node WHERE h_id=?'
+		if nt_id is None:
+			params = (h_id,)
+		else:
+			query += ' AND nt_id=?'
+			params = (h_id, nt_id)
+		for n in cur.execute(query, params):
+			retval.append(NodeId(n_id=n[0], nt_id=n[1], n_payload_id=n[2], n_payload_name=n[3]))
+		
+		return retval
+	
+	def registeredNodesByGraphAndNodeType(self, h_payload_id: HypergraphPayloadId, nodeTypeName: str) -> List[NodeId]:
+		"""
+		Retrieves the list of known nodes from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		self._populateNodeTypesCache()
+		ntId = self.cachedNodeTypes.get(nodeTypeName)
+		if ntId is None:
+			return None
+		
+		retval = []
 		with self.conn:
 			cur = self.conn.cursor()
-			for n in cur.execute('SELECT n_id, nt_id, n_payload_id FROM node WHERE h_id=?', (hId,)):
-				retval.append(NodeId(n_id=n[0], nt_id=n[1], n_payload_id=n[2]))
+			query = 'SELECT n_id, nt_id, n_payload_id, n_payload_name FROM node WHERE h_id=? AND nt_id=?'
+			params = [hId.h_id, ntId.nt_id]
+			for n in cur.execute(query, params):
+				retval.append(NodeId(n_id=n[0], nt_id=n[1], n_payload_id=n[2], n_payload_name=n[3]))
+			cur.close()
+		
+		return retval
+	
+	def getNodesByGraphAndNodeType(self, h_payload_id: HypergraphPayloadId, nodeTypeName: str, name: Optional[str] = None, _id: Optional[str] = None) -> List[NodeId]:
+		"""
+		Retrieves the list of known nodes from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		self._populateNodeTypesCache()
+		ntId = self.cachedNodeTypes.get(nodeTypeName)
+		if ntId is None:
+			return None
+		
+		retval = []
+		with self.conn:
+			cur = self.conn.cursor()
+			query = 'SELECT n_id, nt_id, n_payload_id, n_payload_name, payload FROM node WHERE h_id=? AND nt_id=?'
+			params = [hId.h_id, ntId.nt_id]
+			if name is not None:
+				query += ' AND n_payload_name=?'
+				params.append(name)
+			if _id is not None:
+				query += ' AND n_payload_id=?'
+				params.append(_id)
+			for n in cur.execute(query, params):
+				retval.append(NodeId(n_id=n[0], nt_id=n[1], n_payload_id=n[2], n_payload_name=n[3], payload=json.loads(n[4])))
 			cur.close()
 		
 		return retval
@@ -683,6 +842,7 @@ class HypergraphsStore(object):
 			prevHId = prev.h_id
 			stored_at = prev.stored_at
 			self.logger.info(f"Removing hypergraph {prevHId}")
+			self._invalidateHypergraphsCache()
 			try:
 				cur.execute('DELETE FROM hyperedge WHERE h_id=?', (prevHId,))
 				cur.execute('DELETE FROM edge WHERE h_id=?', (prevHId,))
@@ -889,7 +1049,8 @@ class HypergraphsStore(object):
 					# add a new entry in the hash, for
 					# future updates
 					
-					nodeHash[nodePayloadId] = NodeId(n_id=nId, nt_id=nT.nt_id, n_payload_id=nodePayloadId)
+					nodePayloadName = data['name']
+					nodeHash[nodePayloadId] = NodeId(n_id=nId, nt_id=nT.nt_id, n_payload_id=nodePayloadId, n_payload_name=nodePayloadName)
 					fileNewNodes += 1
 			
 			self.logger.debug(f'File {data_filename}: {fileNewNodes} new nodes, {fileUpdates} updates, {ntli.filteredOutLines} filtered out lines')
