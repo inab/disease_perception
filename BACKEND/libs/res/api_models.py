@@ -225,6 +225,113 @@ hypergraph_model = HYPERGRAPHS_NS.model('Hypergraph', {
 hypergraph_model_schema = HYPERGRAPHS_NS.schema_model('Hypergraph', complete_hypergraph_schema)
 
 
+NODES_NS = Namespace('nodes','Hypergraph nodes')
+
+simple_node_model = NODES_NS.model('SimpleNode', {
+	'_id': fields.String(required=True, description='The id of this node as a hypergraph node'),
+	'_type': fields.String(required=True, description='The type of the node'),
+	'h_id': fields.String(required=True, description='The id of the hypergraph where the node is'),
+	'name': fields.String(required=True,description = 'The name of the node'),
+})
+
+simple_node_schema = {
+	'properties': {
+		'_id': {
+			'type': 'string',
+			'description': 'The id of this node as a hypergraph node'
+		},
+		'_type': {
+			'type': 'string',
+			'description': 'The type of the node'
+		},
+		'h_id': {
+			'type': 'string',
+			'description': 'The hypergraph id where the _id makes sense'
+		},
+		'name': {
+			'type': 'string',
+			'description': 'The name of the node'
+		}
+	},
+	'type': 'object',
+	'required': [ '_id', '_type', 'h_id', 'name' ]
+}
+
+simple_node_model_schema = NODES_NS.schema_model('SimpleNode', simple_node_schema)
+
+node_schema = {
+	"$id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"_schema": {
+			"type": "string",
+			"default": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		},
+		"_id": {
+			"type": "string"
+		},
+		"name": {
+			"type": "string"
+		},
+		"pids": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"ns": {
+						"title": "Namespace (or prefix) of the permanent id",
+						"type": "string",
+						"examples": [
+							"icd9",
+							"icd10"
+						]
+					},
+					"pid": {
+						"title": "A valid persistent id declared in the namespace",
+						"type": "string"
+					}
+				},
+				"required": [
+					"ns",
+					"pid"
+				]
+			}
+		},
+		"properties": {
+			"title": "Various properties",
+			"type": "object"
+		}
+	},
+	"required": [
+		"_id",
+		"name"
+	]
+}
+
+n_s_props = node_schema['properties']
+
+complete_node_schema = copy.deepcopy(simple_node_schema)
+complete_node_schema['properties']['payload'] = node_schema
+
+embedded_node_model = NODES_NS.model('NodePayload', {
+	'_schema': fields.String(required=True, default=n_s_props['_schema']['default']),
+	'_id': fields.String(required=True),
+	'name': fields.String(required=True),
+	'pids': fields.List(fields.Nested(pid_model)),
+	'properties': fields.Raw(description=n_s_props['properties']['title']),
+})
+
+node_model = NODES_NS.model('Node', {
+	'_id': fields.String(required=True, description='The id of this node as a hypergraph node'),
+	'_type': fields.String(required=True, description='The type of the node'),
+	'h_id': fields.String(required=True, description='The id of the hypergraph where the node is'),
+	'name': fields.String(required=True,description = 'The name of the node'),
+	'payload': fields.Nested(embedded_node_model),
+})
+
+node_model_schema = NODES_NS.schema_model('Node', complete_node_schema)
+
 GENES_NS = Namespace('genes','Comorbidities related genes')
 
 simple_gene_model = GENES_NS.model('SimpleGene', {
