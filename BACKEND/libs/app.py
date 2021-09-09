@@ -20,12 +20,16 @@ from .res.patients import ROUTES as PATIENT_ROUTES
 from .res.hypergraphs import ROUTES as HYPERGRAPH_ROUTES
 from .res.node_types import ROUTES as NODE_TYPE_ROUTES
 from .res.nodes import ROUTES as NODE_ROUTES
+from .res.edge_types import ROUTES as EDGE_TYPE_ROUTES
+from .res.edges import ROUTES as EDGE_ROUTES
 
 ROUTE_SETS = [
 	ROOT_ROUTES,
 	HYPERGRAPH_ROUTES,
 	NODE_TYPE_ROUTES,
+	EDGE_TYPE_ROUTES,
 	NODE_ROUTES,
+	EDGE_ROUTES,
 	GENE_ROUTES,
 	DRUG_ROUTES,
 	STUDY_ROUTES,

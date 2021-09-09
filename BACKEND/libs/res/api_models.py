@@ -230,6 +230,7 @@ NODES_NS = Namespace('nodes','Hypergraph nodes')
 simple_node_model = NODES_NS.model('SimpleNode', {
 	'_id': fields.String(required=True, description='The id of this node as a hypergraph node'),
 	'_type': fields.String(required=True, description='The type of the node'),
+	'internal_id': fields.Integer(required=True, description='The internal id of this node as a hypergraph node. This value can change from one load to another in the database'),
 	'h_id': fields.String(required=True, description='The id of the hypergraph where the node is'),
 	'name': fields.String(required=True,description = 'The name of the node'),
 })
@@ -244,6 +245,10 @@ simple_node_schema = {
 			'type': 'string',
 			'description': 'The type of the node'
 		},
+		'internal_id': {
+			'type': 'integer',
+			'description': 'The internal id of this node as a hypergraph node. This value can change from one load to another in the database'
+		},
 		'h_id': {
 			'type': 'string',
 			'description': 'The hypergraph id where the _id makes sense'
@@ -254,7 +259,7 @@ simple_node_schema = {
 		}
 	},
 	'type': 'object',
-	'required': [ '_id', '_type', 'h_id', 'name' ]
+	'required': [ '_id', '_type', 'internal_id', 'h_id', 'name' ]
 }
 
 simple_node_model_schema = NODES_NS.schema_model('SimpleNode', simple_node_schema)
@@ -326,6 +331,7 @@ node_model = NODES_NS.model('Node', {
 	'_id': fields.String(required=True, description='The id of this node as a hypergraph node'),
 	'_type': fields.String(required=True, description='The type of the node'),
 	'h_id': fields.String(required=True, description='The id of the hypergraph where the node is'),
+	'internal_id': fields.Integer(required=True, description='The internal id of this node as a hypergraph node. This value can change from one load to another in the database'),
 	'name': fields.String(required=True,description = 'The name of the node'),
 	'payload': fields.Nested(embedded_node_model),
 })
@@ -411,6 +417,224 @@ node_type_model = NODE_TYPES_NS.model('NodeType', {
 })
 
 node_type_model_schema = NODE_TYPES_NS.schema_model('NodeType', node_type_schema)
+
+
+
+
+
+EDGES_NS = Namespace('edges','Hypergraph edges')
+
+simple_edge_model = EDGES_NS.model('SimpleEdge', {
+	'_id': fields.String(required=True, description='The id of this edge as a hypergraph edge'),
+	'_type': fields.String(required=True, description='The type of the edge'),
+	'internal_id': fields.Integer(required=True, description='The internal id of this edge as a hypergraph edge. This value can change from one load to another in the database'),
+	'h_id': fields.String(required=True, description='The id of the hypergraph where the edge is'),
+	'weight': fields.Float(description='The weight of the edge'),
+	'f_id': fields.String(required=True, description='The id of the node where this edge starts'),
+	't_id': fields.String(required=True, description='The id of the node where this edge ends'),
+	'f_internal_id': fields.Integer(required=True, description='The internal id of the node where this edge starts'),
+	't_internal_id': fields.Integer(required=True, description='The internal id of the node where this edge ends'),
+})
+
+simple_edge_schema = {
+	'properties': {
+		'_id': {
+			'type': 'string',
+			'description': 'The optional id of this edge as a hypergraph edge'
+		},
+		'_type': {
+			'type': 'string',
+			'description': 'The type of the edge'
+		},
+		'internal_id': {
+			'type': 'integer',
+			'description': 'The internal id of this edge as a hypergraph edge. This value can change from one load to another in the database'
+		},
+		'h_id': {
+			'type': 'string',
+			'description': 'The hypergraph id where the edge was declared'
+		},
+		'f_id': {
+			'type': 'string',
+			'description': 'The id of the node where this edge starts'
+		},
+		't_id': {
+			'type': 'string',
+			'description': 'The id of the node where this edge ends'
+		},
+		'weight': {
+			'type': 'number',
+			'description': 'The weight of the edge'
+		},
+		'f_internal_id': {
+			'type': 'integer',
+			'description': 'The internal id of the node where this edge starts'
+		},
+		't_internal_id': {
+			'type': 'integer',
+			'description': 'The internal id of the node where this edge ends'
+		},
+	},
+	'type': 'object',
+	'required': [ 'internal_id', '_id', '_type', 'h_id', 'f_id', 't_id', 'f_internal_id', 't_internal_id' ]
+}
+
+simple_edge_model_schema = EDGES_NS.schema_model('SimpleEdge', simple_edge_schema)
+
+complete_edge_schema = copy.deepcopy(simple_edge_schema)
+complete_edge_schema['properties'].update({
+	'payload': {
+		'description': 'The optional payload'
+	}
+})
+
+wce = fields.Wildcard(fields.Raw)
+edge_model = EDGES_NS.model('Edge', {
+	'_id': fields.String(required=True, description='The id of this edge as a hypergraph edge'),
+	'_type': fields.String(required=True, description='The type of the edge'),
+	'internal_id': fields.Integer(required=True, description='The internal id of this edge as a hypergraph edge. This value can change from one load to another in the database'),
+	'h_id': fields.String(required=True, description='The id of the hypergraph where the edge is'),
+	'weight': fields.Float(skip_none=True, description='The weight of the edge'),
+	'f_id': fields.String(required=True, description='The id of the node where this edge starts'),
+	't_id': fields.String(required=True, description='The id of the node where this edge ends'),
+	'f_internal_id': fields.Integer(required=True, description='The internal id of the node where this edge starts'),
+	't_internal_id': fields.Integer(required=True, description='The internal id of the node where this edge ends'),
+#	'payload': {
+#		'*': wce,
+#	},
+	'payload': fields.Raw(description='The optional payload'),
+})
+
+edge_model_schema = EDGES_NS.schema_model('Edge', complete_edge_schema)
+
+
+EDGE_TYPES_NS = Namespace('edge_types','Hypergraph\'s edge types')
+
+simple_edge_type_schema = {
+	'properties': {
+		'name': {
+			'type': 'string',
+			'description': 'The name of the edge type'
+		},
+		'h_id': {
+			'type': 'string',
+			'description': 'The hypergraph id where there is at least a edge of this type'
+		},
+		'schema_id': {
+			'type': 'string',
+			'description': 'The URI of the JSON Schemas used to model payloads for edges of this type'
+		}
+	},
+	'type': 'object',
+	'required': [ 'name', 'h_id', 'schema_id' ]
+}
+
+simple_edge_type_model = EDGE_TYPES_NS.model('SimpleEdgeType', {
+	'name': fields.String(required=True, description=simple_edge_type_schema['properties']['name']['description']),
+	'h_id': fields.String(required=True, description='The id of the hypergraph where the edge is'),
+	'schema_id': fields.String(required=True, description=simple_edge_type_schema['properties']['schema_id']['description']),
+})
+
+simple_edge_type_model_schema = EDGE_TYPES_NS.schema_model('SimpleEdgeType', simple_edge_type_schema)
+
+edge_type_schema = {
+	'properties': {
+		'name': {
+			'type': 'string',
+			'description': 'The name of the edge type'
+		},
+		'h_id': {
+			'type': 'string',
+			'description': 'The hypergraph id where there is at least a edge of this type'
+		},
+		'schema_id': {
+			'type': 'string',
+			'description': 'The URI of the JSON Schemas used to model payloads for edges of this type'
+		},
+		'weight_name': {
+			'type': 'string',
+			'description': 'The name of the weights used for edges of this type'
+		},
+		'weight_desc': {
+			'type': 'string',
+			'description': 'The description of the weights used for edges of this type'
+		},
+		'number': {
+			'type': 'integer',
+			'description': 'Number of edges of this type in this hypergraph',
+			'minimum': 1
+		},
+		'edges_link': {
+			'type': 'string',
+			'description': 'The link to the REST resource with the edges',
+			'format': 'uri'
+		},
+		'from_node_type': {
+			'type': 'string',
+			'description': 'The node type origin of all the edges of this type'
+		},
+		'from_node_type_link': {
+			'type': 'string',
+			'description': 'The link to the REST resource of the origin node type',
+			'format': 'uri'
+		},
+		'from_nodes_link': {
+			'type': 'string',
+			'description': 'The link to the REST resource of the origin nodes',
+			'format': 'uri'
+		},
+		'to_node_type': {
+			'type': 'string',
+			'description': 'The node type destination of all the edges of this type'
+		},
+		'to_node_type_link': {
+			'type': 'string',
+			'description': 'The link to the REST resource of the destination node type',
+			'format': 'uri'
+		},
+		'to_nodes_link': {
+			'type': 'string',
+			'description': 'The link to the REST resource of the destination nodes',
+			'format': 'uri'
+		},
+		'description': {
+			'type': 'string',
+			'description': 'An optional description'
+		},
+		'payload': {
+			'description': 'The optional payload of the edge type'
+		}
+	},
+	'type': 'object',
+	'required': [ 'name', 'h_id', 'schema_id' ]
+}
+
+et_s_props = edge_type_schema['properties']
+
+edge_type_model = EDGE_TYPES_NS.model('EdgeType', {
+	'name': fields.String(required=True, description=et_s_props['name']['description']),
+	'h_id': fields.String(required=True, description='The id of the hypergraph where the edge is'),
+	'schema_id': fields.String(required=True, description=et_s_props['schema_id']['description']),
+	'weight_name': fields.String(description=et_s_props['weight_name']['description']),
+	'weight_desc': fields.String(description=et_s_props['weight_desc']['description']),
+	'number': fields.Integer(required=True, description=et_s_props['number']['description']),
+	'edges_link': fields.Raw(required=True),
+	'from_node_type': fields.String(required=True, description=et_s_props['from_node_type']['description']),
+	'from_node_type_link': fields.Raw(required=True),
+	'from_nodes_link': fields.Raw(required=True),
+	'to_node_type': fields.String(required=True, description=et_s_props['to_node_type']['description']),
+	'to_node_type_link': fields.Raw(required=True),
+	'to_nodes_link': fields.Raw(required=True),
+	'description': fields.String(description=et_s_props['description']['description']),
+	'payload': fields.Raw(description=et_s_props['payload']['description']),
+})
+
+edge_type_model_schema = EDGE_TYPES_NS.schema_model('EdgeType', edge_type_schema)
+
+
+
+
+
 
 
 GENES_NS = Namespace('genes','Comorbidities related genes')

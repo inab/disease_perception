@@ -35,12 +35,16 @@ InternalHypergraphId = NewType('InternalHypergraphId', int)
 InternalNodeTypeId = NewType('InternalNodeTypeId', int)
 InternalEdgeTypeId = NewType('InternalEdgeTypeId', int)
 InternalHyperedgeTypeId = NewType('InternalHyperedgeTypeId', int)
+NodeTypeName = NewType('NodeTypeName', str)
+EdgeTypeName = NewType('EdgeTypeName', str)
+HyperedgeTypeName = NewType('HyperedgeTypeName', str)
 SchemaId = NewType('SchemaId', str)
 
 HypergraphPayloadId = NewType('HypergraphPayloadId', str)
 
 InternalNodeId = NewType('InternalNodeId', int)
 NodePayloadId = NewType('NodePayloadId', str)
+NodePayloadName = NewType('NodePayloadName', str)
 
 InternalEdgeId = NewType('InternalEdgeId', int)
 EdgePayloadId = NewType('EdgePayloadId', str)
@@ -48,13 +52,15 @@ EdgePayloadId = NewType('EdgePayloadId', str)
 InternalHyperedgeId = NewType('InternalHyperedgeId', int)
 HyperedgePayloadId = NewType('HyperedgePayloadId', str)
 
+EpochSeconds = NewType('EpochSeconds', int)
+
 class NodeType(NamedTuple):
 	"""
 	nt_id: The unique internal id of the node type
 	name: The unique name of the node type
 	"""
 	nt_id: InternalNodeTypeId
-	name: str
+	name: NodeTypeName
 	schema_id: SchemaId
 	description: Optional[str] = None
 	number: Optional[int] = 0
@@ -66,9 +72,15 @@ class EdgeType(NamedTuple):
 	name: The unique name of the edge type
 	"""
 	et_id: InternalEdgeTypeId
-	name: str
+	name: EdgeTypeName
 	schema_id: SchemaId
-	weight_name: Optional[str]
+	weight_name: Optional[str] = None
+	weight_desc: Optional[str] = None
+	description: Optional[str] = None
+	number: Optional[int] = 0
+	payload: Optional[Any] = None
+	from_type: Optional[NodeTypeName] = None
+	to_type: Optional[NodeTypeName] = None
 
 class HyperedgeType(NamedTuple):
 	"""
@@ -76,7 +88,7 @@ class HyperedgeType(NamedTuple):
 	name: The unique name of the hyperedge type
 	"""
 	het_id: InternalHyperedgeTypeId
-	name: str
+	name: HyperedgeTypeName
 	schema_id: SchemaId
 	weight_name: Optional[str]
 
@@ -84,8 +96,8 @@ class HypergraphId(NamedTuple):
 	"""
 	"""
 	h_id: InternalHypergraphId
-	stored_at: int
-	updated_at: int
+	stored_at: EpochSeconds
+	updated_at: EpochSeconds
 	h_payload_id: HypergraphPayloadId
 
 class NodeId(NamedTuple):
@@ -94,7 +106,7 @@ class NodeId(NamedTuple):
 	n_id: InternalNodeId
 	nt_id: InternalNodeTypeId
 	n_payload_id: NodePayloadId
-	n_payload_name: str
+	n_payload_name: NodePayloadName
 	payload: Optional[Any] = None
 
 class EdgeId(NamedTuple):
@@ -105,6 +117,10 @@ class EdgeId(NamedTuple):
 	e_payload_id: EdgePayloadId
 	from_id: InternalNodeId
 	to_id: InternalNodeId
+	from_payload_id: Optional[NodePayloadId] = None
+	to_payload_id: Optional[NodePayloadId] = None
+	weight: Optional[float] = None
+	payload: Optional[Any] = None
 
 class HyperedgeId(NamedTuple):
 	"""
@@ -117,7 +133,7 @@ class HyperedgeId(NamedTuple):
 class HyperedgeMemberDef(NamedTuple):
 	"""
 	"""
-	className: str
+	className: Union[NodeTypeName, EdgeTypeName, HyperedgeTypeName]
 	keyType: Union[NodeType, EdgeType, HyperedgeType]
 	key: List[str]
 

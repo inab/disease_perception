@@ -3,6 +3,7 @@
 # coding: utf-8
 
 import sys, os
+from typing import Optional
 
 from .api_models import CMResPath, CMRoutes, CMResource, \
     NODE_TYPES_NS, simple_node_type_model, node_type_model
@@ -10,30 +11,31 @@ from .api_models import CMResPath, CMRoutes, CMResource, \
 from .nodes import NodeList
 
 # Now, the routes
+@NODE_TYPES_NS.response(404, 'Hypergraph not found')
 @NODE_TYPES_NS.param('h_id', 'The hypergraph id')
 class NodeTypeList(CMResource):
-	'''Shows a list of all the nodes in a give hypergraph'''
+	'''Shows a list of all the node types in a given hypergraph'''
 	@NODE_TYPES_NS.doc('list_node_types')
 	@NODE_TYPES_NS.marshal_list_with(simple_node_type_model)
 	def get(self, h_id:str):
 		'''List all node types'''
 		return self.cmn.nodeTypes(h_id)
 
-@NODE_TYPES_NS.response(404, 'Node type not found')
+@NODE_TYPES_NS.response(404, 'Hypergraph or node type not found')
 @NODE_TYPES_NS.param('h_id', 'The hypergraph id')
-@NODE_TYPES_NS.param('node_type', 'The node type')
+@NODE_TYPES_NS.param('n_type', 'The node type name')
 class NodeType(CMResource):
-	'''Return the detailed information of a node given its _id and type'''
+	'''Return the detailed information of a node type in the context of a hypergraph'''
 	@NODE_TYPES_NS.doc('node_type')
-	@NODE_TYPES_NS.marshal_list_with(node_type_model)
-	def get(self, h_id:str, node_type:str = None):
+	@NODE_TYPES_NS.marshal_with(node_type_model)
+	def get(self, h_id:str, n_type:Optional[str] = None):
 		'''It gets detailed node type information'''
-		res = self.cmn.fetchNodeType(h_id, node_type)
+		res = self.cmn.fetchNodeType(h_id, n_type)
 		for r in res:
-			print(self.api.url_for(NodeList, h_id=r['h_id'], node_type=r['name'], _external=True), file=sys.stderr)
-			r['nodes_link'] = self.api.url_for(NodeList, h_id=r['h_id'], node_type=r['name'], _external=True)
+			r['nodes_link'] = self.api.url_for(NodeList, h_id=r['h_id'], n_type=r['name'], _external=True)
 		
-		return res
+		
+		return res  if n_type is None  else  res[0]
 
 
 ROUTES = CMRoutes(
@@ -42,6 +44,6 @@ ROUTES = CMRoutes(
 	routes=[
 		CMResPath(NodeTypeList,''),
 		CMResPath(NodeType,'/'),
-		CMResPath(NodeType,'/<string:node_type>'),
+		CMResPath(NodeType,'/<string:n_type>'),
 	]
 )

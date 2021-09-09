@@ -6,22 +6,34 @@
 
 import datetime
 import sqlite3
+try:
+	# Trying to load a newer version
+	import pysqlite3
+	if pysqlite3.sqlite_version_info > sqlite3.sqlite_version_info:
+		del sqlite3
+		import pysqlite3 as sqlite3
+	else:
+		del pysqlite3
+except:
+	pass
+from typing import Any, List, Mapping, Optional
 import urllib
 from .store.hypergraphs_store import *
+from .store.common import *
 
 # This class manages all the database queries
 class ComorbiditiesNetwork(object):
-	def __init__(self, dbpath, api, itersize=100):
+	def __init__(self, dbpath:str, api, itersize:int=100):
 		self.api = api
-		self.hgdb = HypergraphsStore(dbpath, readonly=True)
-		self.dbpath = dbpath
-		self.itersize = itersize
+		self.hgdb = HypergraphsStore(dbpath, readonly=True)	# type: HypergraphsStore
+		self.dbpath = dbpath	# type: str
+		self.itersize = itersize	# type: int
 	
-	def _getCursor(self):
+	def _getCursor(self) -> sqlite3.Cursor:
 		return self.hgdb.getCursor(self.itersize)
 	
-	def hypergraphs(self):
-		res = []
+	def hypergraphs(self) -> List[Mapping[str, Any]]:
+		res = []	# type: List[Mapping[str, Any]]
 		res.extend(map(lambda hId: {
 			'_id': hId.h_payload_id,
 			'stored_at': datetime.datetime.fromtimestamp(hId.stored_at, tz=datetime.timezone.utc),
@@ -30,9 +42,9 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 		
-	def hypergraph(self, _id):
+	def hypergraph(self, _id: HypergraphPayloadId) -> Mapping[str, Any]:
 		# First, get the internal graph id
-		hId, payload = self.hgdb.getHypergraphById(_id)
+		hId, payload = self.hgdb.getHypergraphById(_id)	# type: Optional[HypergraphId], Optional[Any]
 		if hId is None:
 			self.api.abort(404, "Hypergraph {} was not found in the database".format(_id))
 		
@@ -46,12 +58,12 @@ class ComorbiditiesNetwork(object):
 			'payload': payload
 		}
 	
-	def nodeTypes(self, h_payload_id):
-		nodeTypes = self.hgdb.getNodeTypesByGraph(h_payload_id)
+	def nodeTypes(self, h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
+		nodeTypes = self.hgdb.getNodeTypesByGraph(h_payload_id)	# type: Optional[List[NodeId]]
 		if nodeTypes is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database")
 		
-		res = []
+		res = []	# type: List[Mapping[str, Any]]
 		res.extend(map(lambda nt: {
 				'name': nt.name,
 				'h_id': h_payload_id,
@@ -60,15 +72,15 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
-	def fetchNodeType(self, h_payload_id, name):
-		nodeTypes = self.hgdb.getNodeTypesByGraph(h_payload_id, name)
+	def fetchNodeType(self, h_payload_id: HypergraphPayloadId, name:NodeTypeName) -> List[Mapping[str, Any]]:
+		nodeTypes = self.hgdb.getNodeTypesByGraph(h_payload_id, name)	# type: Optional[List[NodeId]]
 		if nodeTypes is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database")
 		
 		if len(nodeTypes) == 0:
 			self.api.abort(404, f"Hypergraph {h_payload_id} does not contain nodes of type {name}")
 		
-		res = []
+		res = []	# type: List[Mapping[str, Any]]
 		res.extend(map(lambda nt: {
 			'name': nt.name,
 			'h_id': h_payload_id,
@@ -80,7 +92,45 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
-	def nodes(self, h_payload_id, node_type):
+	def edgeTypes(self, h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
+		edgeTypes = self.hgdb.getMinimalEdgeTypesByGraph(h_payload_id)
+		if edgeTypes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database")
+		
+		res = []
+		res.extend(map(lambda et: {
+				'name': et.name,
+				'h_id': h_payload_id,
+				'schema_id': et.schema_id,
+			}, edgeTypes))
+		
+		return res
+	
+	def fetchEdgeType(self, h_payload_id: HypergraphPayloadId, name: EdgeTypeName) -> List[Mapping[str, Any]]:
+		edgeTypes = self.hgdb.getEdgeTypesByGraph(h_payload_id, name)
+		if edgeTypes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database")
+		
+		if len(edgeTypes) == 0:
+			self.api.abort(404, f"Hypergraph {h_payload_id} does not contain edges of type {name}")
+		
+		res = []
+		res.extend(map(lambda et: {
+			'name': et.name,
+			'h_id': h_payload_id,
+			'schema_id': et.schema_id,
+			'description': et.description,
+			'weight_name': et.weight_name,
+			'weight_desc': et.weight_desc,
+			'from_node_type': et.from_type.name,
+			'to_node_type': et.to_type.name,
+			'number': et.number,
+			'payload': et.payload
+		}, edgeTypes))
+		
+		return res
+	
+	def nodes(self, h_payload_id, node_type: NodeTypeName) -> List[Mapping[str, Any]]:
 		nodes = self.hgdb.registeredNodesByGraphAndNodeType(h_payload_id, node_type)
 		if nodes is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type?)")
@@ -89,32 +139,84 @@ class ComorbiditiesNetwork(object):
 		res.extend(map(lambda n: {
 				'_id': n.n_payload_id,
 				'_type': node_type,
+				'internal_id': n.n_id,
 				'h_id': h_payload_id,
 				'name': n.n_payload_name
 			}, nodes))
 		
 		return res
 		
-	def queryNode(self, h_payload_id, node_type, _id=None, name=None):
-		nodes = self.hgdb.getNodesByGraphAndNodeType(h_payload_id, node_type, name=name, _id=_id)
+	def queryNode(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, internal_id: InternalNodeId = None, _id: NodePayloadId = None, name: str = None) -> List[Mapping[str, Any]]:
+		nodes = self.hgdb.getNodesByGraphAndNodeType(h_payload_id, node_type, name=name, _id=_id, internal_id=internal_id)
 		if nodes is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type?)")
 		if len(nodes) == 0:
 			errmsg = f"No node of type {node_type} was not found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
 			if _id is not None:
 				errmsg += f' (id {_id})'
 			if name is not None:
-				errmsg += f' (id {name})'
+				errmsg += f' (name {name})'
 			self.api.abort(404, errmsg)
 		
 		res = []
 		res.extend(map(lambda n: {
 				'_id': n.n_payload_id,
 				'_type': node_type,
+				'internal_id': n.n_id,
 				'h_id': h_payload_id,
 				'name': n.n_payload_name,
 				'payload': n.payload
 			}, nodes))
+		
+		return res
+	
+	def edges(self, h_payload_id: HypergraphPayloadId, edge_type: EdgeTypeName) -> List[Mapping[str, Any]]:
+		edges = self.hgdb.registeredEdgesByGraphAndEdgeType(h_payload_id, edge_type)
+		if edges is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {edge_type} edge type?)")
+		
+		res = []
+		res.extend(map(lambda e: {
+				'internal_id': e.e_id,
+				'_id': e.e_payload_id,
+				'_type': edge_type,
+				'h_id': h_payload_id,
+				'f_id': e.from_payload_id,
+				't_id': e.to_payload_id,
+				'f_internal_id': e.from_id,
+				't_internal_id': e.to_id,
+				'weight': e.weight,
+			}, edges))
+		
+		return res
+		
+	def queryEdge(self, h_payload_id: HypergraphPayloadId, edge_type: EdgeTypeName, _id: Optional[EdgePayloadId] = None, internal_id: Optional[InternalEdgeId] = None) -> List[Mapping[str, Any]]:
+		edges = self.hgdb.getEdgesByGraphAndEdgeType(h_payload_id, edge_type, internal_id=internal_id, _id=_id)
+		if edges is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {edge_type} edge type?)")
+		if len(edges) == 0:
+			errmsg = f"No edge of type {edge_type} was not found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			self.api.abort(404, errmsg)
+		
+		res = []
+		res.extend(map(lambda e: {
+				'internal_id': e.e_id,
+				'_id': e.e_payload_id,
+				'_type': edge_type,
+				'h_id': h_payload_id,
+				'f_id': e.from_payload_id,
+				't_id': e.to_payload_id,
+				'f_internal_id': e.from_id,
+				't_internal_id': e.to_id,
+				'weight': e.weight,
+				'payload': e.payload,
+			}, edges))
 		
 		return res
 	
