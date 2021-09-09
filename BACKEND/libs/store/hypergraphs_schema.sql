@@ -159,6 +159,7 @@ CREATE TABLE IF NOT EXISTS node (
 	FOREIGN KEY (nt_id) REFERENCES node_type(nt_id),
 	UNIQUE (n_payload_id, h_id)
 );
+CREATE INDEX IF NOT EXISTS node_by_h_id_and_nt_id ON node(h_id, nt_id);
 CREATE INDEX IF NOT EXISTS node_by_payload_name ON node(n_payload_name);
 
 CREATE TABLE IF NOT EXISTS edge (
@@ -192,6 +193,7 @@ CREATE TABLE IF NOT EXISTS edge (
 	FOREIGN KEY (to_id) REFERENCES node(n_id),
 	UNIQUE (e_payload_id, h_id)
 );
+CREATE INDEX IF NOT EXISTS edge_by_h_id_and_et_id ON edge(h_id, et_id);
 CREATE INDEX IF NOT EXISTS edge_by_payload_weight ON edge(e_payload_weight);
 
 CREATE TABLE IF NOT EXISTS hyperedge (
@@ -219,6 +221,7 @@ CREATE TABLE IF NOT EXISTS hyperedge (
 	FOREIGN KEY (het_id) REFERENCES hyperedge_type(het_id),
 	UNIQUE (he_payload_id, h_id)
 );
+CREATE INDEX IF NOT EXISTS hyperedge_by_h_id_and_het_id ON hyperedge(h_id, het_id);
 CREATE INDEX IF NOT EXISTS hyperedge_by_payload_weight ON hyperedge(he_payload_weight);
 
 CREATE TABLE IF NOT EXISTS hyperedge_node(
