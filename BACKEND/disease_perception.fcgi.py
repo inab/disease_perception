@@ -54,7 +54,7 @@ if __name__ == '__main__':
 			# Debug mode should not be tied to any interface
 			host = "127.0.0.1"
 		
-		app.run(debug=debug, port=port, host=host, threaded=False, processes=1)
+		app.run(debug=debug, port=port, host=host, threaded=not debug, processes=1)
 	else:
 		from flup.server.fcgi import WSGIServer
 
