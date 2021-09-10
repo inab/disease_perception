@@ -79,8 +79,8 @@ class EdgeType(NamedTuple):
 	description: Optional[str] = None
 	number: Optional[int] = 0
 	payload: Optional[Any] = None
-	from_type: Optional[NodeTypeName] = None
-	to_type: Optional[NodeTypeName] = None
+	from_type: Optional[NodeType] = None
+	to_type: Optional[NodeType] = None
 
 class HyperedgeType(NamedTuple):
 	"""
@@ -90,7 +90,12 @@ class HyperedgeType(NamedTuple):
 	het_id: InternalHyperedgeTypeId
 	name: HyperedgeTypeName
 	schema_id: SchemaId
-	weight_name: Optional[str]
+	weight_name: Optional[str] = None
+	weight_desc: Optional[str] = None
+	description: Optional[str] = None
+	number: Optional[int] = 0
+	payload: Optional[Any] = None
+	node_types: Optional[List[NodeType]] = None
 
 class HypergraphId(NamedTuple):
 	"""
@@ -129,6 +134,9 @@ class HyperedgeId(NamedTuple):
 	het_id: InternalHyperedgeTypeId
 	he_payload_id: HyperedgePayloadId
 	n_ids: List[InternalNodeId]
+	n_payload_ids: Optional[List[NodePayloadId]] = None
+	weight: Optional[float] = None
+	payload: Optional[Any] = None
 
 class HyperedgeMemberDef(NamedTuple):
 	"""
