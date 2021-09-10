@@ -72,7 +72,8 @@ class HypergraphsStore(object):
 		self.cachedNodeTypesByInternalId = {}
 		self.cachedEdgeTypesByName = {}
 		self.cachedEdgeTypesByInternalId = {}
-		self.cachedHyperedgeTypes = {}
+		self.cachedHyperedgeTypesByName = {}
+		self.cachedHyperedgeTypesByInternalId = {}
 		
 		# Connect / create the database
 		self._connect_store(dbfilename, readonly=readonly)
@@ -704,7 +705,6 @@ FROM edge_type et
 			return None
 		
 		self._populateNodeTypesCache()
-		self._populateEdgeTypesCache()
 		retval = []
 		with self.conn:
 			cur = self.conn.cursor()
@@ -740,20 +740,101 @@ FROM edge_type et
 		Only try populating when empty
 		"""
 		if not invalidateCache:
-			invalidateCache = len(self.cachedHyperedgeTypes) == 0
+			invalidateCache = len(self.cachedHyperedgeTypesByInternalId) == 0
 		if invalidateCache:
-			self.cachedHyperedgeTypes = {
+			self.cachedHyperedgeTypesByName = {
 				hetId.name: hetId
+				for hetId in self.registeredHyperedgeTypes()
+			}
+			self.cachedHyperedgeTypesByInternalId = {
+				hetId.het_id: hetId
 				for hetId in self.registeredHyperedgeTypes()
 			}
 	
 	def _invalidateHyperedgeTypesCache(self):
-		self.cachedHyperedgeTypes = {}
+		self.cachedHyperedgeTypesByInternalId = {}
+		self.cachedHyperedgeTypesByName = {}
 	
 	@property
 	def hyperedgeTypes(self) ->  Iterator[HyperedgeType]:
 		self._populateHyperedgeTypesCache()
-		return self.cachedHyperedgeTypes.values()
+		return self.cachedHyperedgeTypesByInternalId.values()
+	
+	def getMinimalHyperedgeTypesByGraph(self, h_payload_id: HypergraphPayloadId) -> Iterator[EdgeType]:
+		"""
+		Retrieves the list of known edge types from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		retval = []
+		with self.conn:
+			cur = self.conn.cursor()
+			query = '''
+SELECT het.het_id, het.het_name, het.hyperedge_schema_id, (SELECT TRUE FROM hyperedge he WHERE he.h_id=? AND he.het_id=het.het_id LIMIT 1)
+FROM hyperedge_type het
+'''
+			params = [ hId.h_id ]
+			for het in cur.execute(query, params):
+				retval.append(HyperedgeType(
+					het_id=het[0],
+					name=het[1],
+					schema_id=het[2],
+				))
+			cur.close()
+		
+		return retval
+	
+	def getHyperedgeTypesByGraph(self, h_payload_id: HypergraphPayloadId, name: Optional[str] = None) -> Iterator[EdgeType]:
+		"""
+		Retrieves the list of known edge types from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		self._populateNodeTypesCache()
+		retval = []
+		retvalHash = {}
+		with self.conn:
+			cur = self.conn.cursor()
+			query = '''
+SELECT het.het_id, het.het_name, het.hyperedge_schema_id, het.het_desc, het.weight_name, het.weight_desc, het_nt.nt_id, het.payload, (SELECT COUNT(*) FROM hyperedge he WHERE he.h_id=? AND he.het_id=het.het_id) AS count
+FROM hyperedge_type het, hyperedge_type_node_type het_nt
+WHERE het.het_id = het_nt.het_id
+ORDER BY het_nt.het_nt_id
+'''
+			params = [ hId.h_id ]
+			if (name is not None) and len(name) > 0:
+				query += ' AND het.het_name=?'
+				params.append(name)
+			for het in cur.execute(query, params):
+				if het[8] == 0:
+					continue
+				node_type = self.cachedNodeTypesByInternalId.get(het[6])
+				hetId = retvalHash.get(het[0])
+				if hetId is None:
+					hetId = HyperedgeType(
+						het_id=het[0],
+						name=het[1],
+						schema_id=het[2],
+						description=het[3],
+						weight_name=het[4],
+						weight_desc=het[5],
+						node_types=[ node_type ],
+						payload=None if het[7] is None else json.loads(het[7]),
+						number=het[8]
+					)
+					retval.append(hetId)
+					retvalHash[het[0]] = hetId
+				else:
+					hetId.node_types.append(node_type)
+			cur.close()
+		
+		return retval
 	
 	def registeredNodes(self, cur: sqlite3.Cursor, h_id: InternalHypergraphId, nt_id: Optional[InternalNodeTypeId] = None) -> List[NodeId]:
 		"""
@@ -771,7 +852,7 @@ FROM edge_type et
 		
 		return retval
 	
-	def registeredNodesByGraphAndNodeType(self, h_payload_id: HypergraphPayloadId, nodeTypeName: str) -> List[NodeId]:
+	def registeredNodesByGraphAndNodeType(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName) -> List[NodeId]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
 		"""
@@ -796,7 +877,7 @@ FROM edge_type et
 		
 		return retval
 	
-	def getNodesByGraphAndNodeType(self, h_payload_id: HypergraphPayloadId, nodeTypeName: str, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> List[NodeId]:
+	def getNodesByGraphAndNodeType(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> List[NodeId]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
 		"""
@@ -845,7 +926,7 @@ FROM edge_type et
 		
 		return retval
 	
-	def registeredEdgesByGraphAndEdgeType(self, h_payload_id: HypergraphPayloadId, edgeTypeName: str) -> List[EdgeId]:
+	def registeredEdgesByGraphAndEdgeType(self, h_payload_id: HypergraphPayloadId, edgeTypeName: EdgeTypeName) -> List[EdgeId]:
 		"""
 		Retrieves the list of known edges from this hypergraph
 		"""
@@ -879,7 +960,7 @@ FROM edge_type et
 		
 		return retval
 	
-	def getEdgesByGraphAndEdgeType(self, h_payload_id: HypergraphPayloadId, edgeTypeName: str, internal_id: Optional[InternalEdgeId] = None, _id: Optional[EdgePayloadId] = None) -> List[EdgeId]:
+	def getEdgesByGraphAndEdgeType(self, h_payload_id: HypergraphPayloadId, edgeTypeName: EdgeTypeName, internal_id: Optional[InternalEdgeId] = None, _id: Optional[EdgePayloadId] = None) -> List[EdgeId]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
 		"""
@@ -936,6 +1017,108 @@ FROM edge_type et
 				heId = HyperedgeId(he_id=he[0], het_id=he[1], he_payload_id=he[2], n_id=[he[3]]) 
 				retHash[he[0]] = heId
 				retval.append(heId)
+		
+		return retval
+	
+	def registeredHyperedgesByGraphAndHyperedgeType(self, h_payload_id: HypergraphPayloadId, hyperedgeTypeName: HyperedgeTypeName) -> List[HyperedgeId]:
+		"""
+		Retrieves the list of known edges from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		self._populateHyperedgeTypesCache()
+		hetId = self.cachedHyperedgeTypesByName.get(hyperedgeTypeName)
+		if hetId is None:
+			return None
+		
+		retval = []
+		retvalHash = {}
+		with self.conn:
+			cur = self.conn.cursor()
+			query = '''
+SELECT he.he_id, he.het_id, he.he_payload_id, he.he_payload_weight, he_n.n_id, n.n_payload_id
+FROM hyperedge he, hyperedge_node he_n, node n
+WHERE he.h_id=?
+AND he.het_id=?
+AND he.he_id = he_n.he_id
+AND he_n.n_id = n.n_id
+ORDER BY he_n.he_n_id
+'''
+			params = [hId.h_id, hetId.het_id]
+			for he in cur.execute(query, params):
+				heId = retvalHash.get(he[0])
+				if heId is None:
+					heId = HyperedgeId(
+						he_id=he[0],
+						het_id=he[1],
+						he_payload_id=he[2],
+						weight=he[3],
+						n_ids=[ he[4] ],
+						n_payload_ids=[ he[5] ],
+					)
+					retval.append(heId)
+					retvalHash[he[0]] = heId
+				else:
+					heId.n_ids.append(he[4])
+					heId.n_payload_ids.append(he[5])
+			cur.close()
+		
+		return retval
+	
+	def getHyperedgesByGraphAndHyperedgeType(self, h_payload_id: HypergraphPayloadId, hyperedgeTypeName: HyperedgeTypeName, internal_id: Optional[InternalHyperedgeId] = None, _id: Optional[EdgePayloadId] = None) -> List[HyperedgeId]:
+		"""
+		Retrieves the list of known nodes from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		self._populateHyperedgeTypesCache()
+		hetId = self.cachedHyperedgeTypesByName.get(hyperedgeTypeName)
+		if hetId is None:
+			return None
+		
+		retval = []
+		retvalHash = {}
+		with self.conn:
+			cur = self.conn.cursor()
+			query = '''
+SELECT he.he_id, he.het_id, he.he_payload_id, he.he_payload_weight, he_n.n_id, n.n_payload_id, he.payload
+FROM hyperedge he, hyperedge_node he_n, node n
+WHERE he.h_id=?
+AND he.het_id=?
+AND he.he_id = he_n.he_id
+AND he_n.n_id = n.n_id
+'''
+			params = [hId.h_id, hetId.het_id]
+			if internal_id is not None:
+				query += ' AND he.he_id=?'
+				params.append(internal_id)
+			if _id is not None:
+				query += ' AND he.he_payload_id=?'
+				params.append(_id)
+			for he in cur.execute(query + ' ORDER BY he_n.he_n_id', params):
+				heId = retvalHash.get(he[0])
+				if heId is None:
+					heId = HyperedgeId(
+						he_id=he[0],
+						het_id=he[1],
+						he_payload_id=he[2],
+						weight=he[3],
+						n_ids=[ he[4] ],
+						n_payload_ids=[ he[5] ],
+						payload=None if he[6] is None else json.loads(he[6])
+					)
+					retval.append(heId)
+					retvalHash[he[0]] = heId
+				else:
+					heId.n_ids.append(he[4])
+					heId.n_payload_ids.append(he[5])
+			cur.close()
 		
 		return retval
 	
