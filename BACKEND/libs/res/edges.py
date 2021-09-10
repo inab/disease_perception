@@ -49,7 +49,7 @@ class EdgeById(CMResource):
 @EDGES_NS.param('h_id', 'The hypergraph id')
 @EDGES_NS.param('e_type', 'The edge type name')
 class Edges(CMResource):
-	'''Return the detailed information of the edges with the same name and type'''
+	'''Return the detailed information of the edges with the same type'''
 	@EDGES_NS.doc('list_edges_full')
 	@EDGES_NS.marshal_list_with(edge_model, skip_none=True)
 	def get(self, h_id:str, e_type:str):
