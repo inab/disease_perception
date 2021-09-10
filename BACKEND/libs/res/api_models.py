@@ -13,6 +13,7 @@ class CMResource(Resource):
 	def __init__(self,api=None,*args,**kwargs):
 		super().__init__(api,*args,**kwargs)
 		self.cmn = kwargs['cmnetwork']
+		self.default_h_id = kwargs['default_hypergraph']
 
 
 

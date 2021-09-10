@@ -121,7 +121,10 @@ def init_comorbidities_app(local_config):
 	dbpath = local_config['db']
 	CMNetwork = ComorbiditiesNetwork(dbpath, api)
 	
-	res_kwargs = {'cmnetwork': CMNetwork}
+	res_kwargs = {
+		'cmnetwork': CMNetwork,
+		'default_hypergraph': local_config.get('default_hypergraph')
+	}
 	
 	_register_cm_namespaces(api,res_kwargs)
 	

@@ -14,10 +14,10 @@ source .pyBenv/bin/activate
 pip install --upgrade pip wheel
 pip install -r requirements.txt -c constraints.txt
 # Next commands are to assure a static swagger ui interface is in place
-if [ ! -d .pyRESTenv/lib/python3*/site-packages/flask_restplus/static ] ; then
+if [ ! -d .pyRESTenv/lib/python3*/site-packages/flask_restx/static ] ; then
 	wget --content-disposition https://github.com/swagger-api/swagger-ui/archive/v3.52.0.tar.gz
 	tar xf swagger-ui-3.52.0.tar.gz swagger-ui-3.52.0/dist
-	mv swagger-ui-3.52.0/dist .pyRESTenv/lib/python3*/site-packages/flask_restplus/static
+	mv swagger-ui-3.52.0/dist .pyRESTenv/lib/python3*/site-packages/flask_restx/static
 	rm -r swagger-ui-3.52.0*
 fi
 ```

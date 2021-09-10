@@ -32,6 +32,9 @@ if os.path.exists(config_file):
 else:
 	local_config = {}
 
+if 'default_hypergraph' not in local_config:
+	local_config['default_hypergraph'] = 'disease_perception'
+
 # Connection to the database, setting up the default path
 dbpath = local_config.setdefault("db", os.path.join('DB','net_comorbidity.db'))
 if not os.path.isabs(dbpath):

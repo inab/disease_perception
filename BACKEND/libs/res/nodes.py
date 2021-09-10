@@ -46,6 +46,17 @@ class NodeById(CMResource):
 		'''It gets detailed node information'''
 		return self.cmn.queryNode(h_id, n_type, _id=_id)[0]
 
+@NODES_NS.response(404, 'Hypergraph or node type not found')
+@NODES_NS.param('h_id', 'The hypergraph id')
+@NODES_NS.param('n_type', 'The node type name')
+class NodesDetailed(CMResource):
+	'''Return the detailed information of the nodes with the same type'''
+	@NODES_NS.doc('list_nodes_detailed')
+	@NODES_NS.marshal_list_with(node_model)
+	def get(self, h_id:str, n_type:str):
+		'''It gets detailed node information'''
+		return self.cmn.queryNode(h_id, n_type)
+
 @NODES_NS.response(404, 'Hypergraph or node type or node not found')
 @NODES_NS.param('h_id', 'The hypergraph id')
 @NODES_NS.param('n_type', 'The node type name')
@@ -64,7 +75,7 @@ ROUTES = CMRoutes(
 	path='/h/<string:h_id>/n/<string:n_type>',
 	routes=[
 		CMResPath(NodeList,''),
-		CMResPath(NodesByName,'/'),
+		CMResPath(NodesDetailed,'/'),
 		CMResPath(NodesByName,'/name/<string:name>'),
 		CMResPath(NodeByInternalId,'/i_id/<int:internal_id>'),
 		CMResPath(NodeById,'/id/<string:_id>'),
