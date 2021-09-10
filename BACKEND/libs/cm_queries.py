@@ -130,6 +130,43 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
+	def hyperedgeTypes(self, h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
+		hyperedgeTypes = self.hgdb.getMinimalHyperedgeTypesByGraph(h_payload_id)
+		if hyperedgeTypes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database")
+		
+		res = []
+		res.extend(map(lambda et: {
+				'name': et.name,
+				'h_id': h_payload_id,
+				'schema_id': et.schema_id,
+			}, hyperedgeTypes))
+		
+		return res
+	
+	def fetchHyperedgeType(self, h_payload_id: HypergraphPayloadId, name: HyperedgeTypeName) -> List[Mapping[str, Any]]:
+		hyperedgeTypes = self.hgdb.getHyperedgeTypesByGraph(h_payload_id, name)
+		if hyperedgeTypes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database")
+		
+		if len(hyperedgeTypes) == 0:
+			self.api.abort(404, f"Hypergraph {h_payload_id} does not contain hyperedges of type {name}")
+		
+		res = []
+		res.extend(map(lambda het: {
+			'name': het.name,
+			'h_id': h_payload_id,
+			'schema_id': het.schema_id,
+			'description': het.description,
+			'weight_name': het.weight_name,
+			'weight_desc': het.weight_desc,
+			'node_types': list(map(lambda nt: nt.name, het.node_types)),
+			'number': het.number,
+			'payload': het.payload
+		}, hyperedgeTypes))
+		
+		return res
+	
 	def nodes(self, h_payload_id, node_type: NodeTypeName) -> List[Mapping[str, Any]]:
 		nodes = self.hgdb.registeredNodesByGraphAndNodeType(h_payload_id, node_type)
 		if nodes is None:
@@ -183,10 +220,14 @@ class ComorbiditiesNetwork(object):
 				'_id': e.e_payload_id,
 				'_type': edge_type,
 				'h_id': h_payload_id,
-				'f_id': e.from_payload_id,
-				't_id': e.to_payload_id,
-				'f_internal_id': e.from_id,
-				't_internal_id': e.to_id,
+				'f_id': {
+					'_id': e.from_payload_id,
+					'internal_id': e.from_id
+				},
+				't_id': {
+					'_id': e.to_payload_id,
+					'internal_id': e.to_id
+				},
 				'weight': e.weight,
 			}, edges))
 		
@@ -210,13 +251,71 @@ class ComorbiditiesNetwork(object):
 				'_id': e.e_payload_id,
 				'_type': edge_type,
 				'h_id': h_payload_id,
-				'f_id': e.from_payload_id,
-				't_id': e.to_payload_id,
-				'f_internal_id': e.from_id,
-				't_internal_id': e.to_id,
+				'f_id': {
+					'_id': e.from_payload_id,
+					'internal_id': e.from_id
+				},
+				't_id': {
+					'_id': e.to_payload_id,
+					'internal_id': e.to_id
+				},
 				'weight': e.weight,
 				'payload': e.payload,
 			}, edges))
+		
+		return res
+	
+	def hyperedges(self, h_payload_id: HypergraphPayloadId, hyperedge_type: HyperedgeTypeName) -> List[Mapping[str, Any]]:
+		hyperedges = self.hgdb.registeredHyperedgesByGraphAndHyperedgeType(h_payload_id, hyperedge_type)
+		if hyperedges is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {hyperedge_type} hyperedge type?)")
+		
+		res = []
+		res.extend(map(lambda he: {
+				'internal_id': he.he_id,
+				'_id': he.he_payload_id,
+				'_type': hyperedge_type,
+				'h_id': h_payload_id,
+				'node_ids': [
+					{
+						'_id': node_id,
+						'internal_id': internal_node_id
+					}
+					for node_id, internal_node_id in zip(he.n_payload_ids,he.n_ids)
+				],
+				'weight': he.weight,
+			}, hyperedges))
+		
+		return res
+		
+	def queryHyperedge(self, h_payload_id: HypergraphPayloadId, hyperedge_type: HyperedgeTypeName, _id: Optional[HyperedgePayloadId] = None, internal_id: Optional[InternalHyperedgeId] = None) -> List[Mapping[str, Any]]:
+		hyperedges = self.hgdb.getHyperedgesByGraphAndHyperedgeType(h_payload_id, hyperedge_type, internal_id=internal_id, _id=_id)
+		if hyperedges is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {hyperedge_type} hyperedge type?)")
+		if len(hyperedges) == 0:
+			errmsg = f"No hyperedge of type {hyperedge_type} was not found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			self.api.abort(404, errmsg)
+		
+		res = []
+		res.extend(map(lambda he: {
+				'internal_id': he.he_id,
+				'_id': he.he_payload_id,
+				'_type': hyperedge_type,
+				'h_id': h_payload_id,
+				'node_ids': [
+					{
+						'_id': node_id,
+						'internal_id': internal_node_id
+					}
+					for node_id, internal_node_id in zip(he.n_payload_ids,he.n_ids)
+				],
+				'weight': he.weight,
+				'payload': he.payload,
+			}, hyperedges))
 		
 		return res
 	
