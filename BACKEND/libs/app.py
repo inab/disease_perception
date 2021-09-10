@@ -5,7 +5,7 @@
 import sys, os
 
 from flask import Flask, Blueprint, redirect
-from flask_restplus import Api, Namespace, Resource
+from flask_restx import Api, Namespace, Resource
 from flask_cors import CORS
 from flask_compress import Compress
 
@@ -40,6 +40,35 @@ ROUTE_SETS = [
 	DISEASE_ROUTES,
 	PATIENT_ROUTES
 ]
+
+from flask import make_response
+# We have preference for the C based loader and dumper, but the code
+# should fallback to default implementations when C ones are not present
+import yaml
+try:
+	from yaml import CLoader as YAMLLoader, CDumper as YAMLDumper
+except ImportError:
+	from yaml import Loader as YAMLLoader, Dumper as YAMLDumper
+
+def output_yaml(data, code, headers=None):
+    """Makes a Flask response with a JSON encoded body"""
+
+    #settings = current_app.config.get("RESTX_JSON", {})
+    #
+    ## If we're in debug mode, and the indent is not set, we set it to a
+    ## reasonable value here.  Note that this won't override any existing value
+    ## that was set.
+    #if current_app.debug:
+    #    settings.setdefault("indent", 4)
+    #
+    ## always end the json dumps with a new line
+    ## see https://github.com/mitsuhiko/flask/pull/1262
+    #dumped = dumps(data, **settings) + "\n"
+    dumped = yaml.dump(data, Dumper=YAMLDumper)
+
+    resp = make_response(dumped, code)
+    resp.headers.extend(headers or {})
+    return resp
 
 def _register_cm_namespaces(api,res_kwargs):
 	for route_set in ROUTE_SETS:
@@ -85,6 +114,8 @@ def init_comorbidities_app(local_config):
 		license='AGPL-3',
 		default_label='Disease Perception queries'
 	)
+	for mediaType in ('text/yaml', 'text/x-yaml', 'text/yml', 'application/x-yaml', 'application/x-yml', 'application/yaml', 'application/yml'):
+		api.representation(mediaType)(output_yaml)
 	
 	# This is the singleton instance shared by all the resources
 	dbpath = local_config['db']

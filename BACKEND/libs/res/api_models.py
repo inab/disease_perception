@@ -5,7 +5,7 @@
 import sys, os
 import copy
 
-from flask_restplus import Namespace, Api, Resource, fields
+from flask_restx import Namespace, Api, Resource, fields
 from typing import List, NamedTuple, Union
 
 class CMResource(Resource):
