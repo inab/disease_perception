@@ -12,8 +12,8 @@ class CMResource(Resource):
 	'''This class eases passing the instance of the comorbidity network query API'''
 	def __init__(self,api=None,*args,**kwargs):
 		super().__init__(api,*args,**kwargs)
-		self.cmn = kwargs['cmnetwork']
-		self.default_h_id = kwargs['default_hypergraph']
+		self.cmn = kwargs['cmnetwork']	# type: ComorbiditiesNetwork
+		self.default_h_id = kwargs['default_hypergraph']	# type: HypergraphPayloadId
 
 
 
@@ -437,7 +437,7 @@ simple_edge_model = EDGES_NS.model('SimpleEdge', {
 	'h_id': fields.String(required=True, description='The id of the hypergraph where the edge is'),
 	'weight': fields.Float(description='The weight of the edge'),
 	'f_id': fields.Nested(e_node_id, required=True, description='The id of the node where this edge starts'),
-	't_id': fields.String(e_node_id, required=True, description='The id of the node where this edge ends'),
+	't_id': fields.Nested(e_node_id, required=True, description='The id of the node where this edge ends'),
 })
 
 simple_edge_schema = {
