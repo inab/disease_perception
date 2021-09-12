@@ -16,7 +16,7 @@ import json
 import logging
 import os
 import os.path
-from typing import Any, Iterator, List, Mapping, Tuple, Optional , Union
+from typing import Any, Iterable, Iterator, List, Mapping, Tuple, Optional , Union
 import urllib.parse
 import sys
 
@@ -190,11 +190,24 @@ class HypergraphsStore(object):
 		return retval
 	
 	def registeredEdgeTypes(self) -> List[EdgeType]:
+		self._populateNodeTypesCache()
 		retval = []
 		with self.conn:
 			cur = self.conn.cursor()
-			for sch in cur.execute('SELECT et_id, et_name, edge_schema_id, weight_name FROM edge_type'):
-				retval.append(EdgeType(et_id=sch[0], name=sch[1], schema_id=sch[2], weight_name=sch[3]))
+			for sch in cur.execute('SELECT et_id, et_name, edge_schema_id, weight_name, weight_desc, a_nt_id, b_nt_id FROM edge_type'):
+				from_type = self.cachedNodeTypesByInternalId.get(sch[5])
+				to_type = self.cachedNodeTypesByInternalId.get(sch[6])
+				retval.append(
+					EdgeType(
+						et_id=sch[0],
+						name=sch[1],
+						schema_id=sch[2],
+						weight_name=sch[3],
+						weight_desc=sch[4],
+						from_type=from_type,
+						to_type=to_type,
+					)
+				)
 			cur.close()
 		
 		return retval
@@ -911,6 +924,152 @@ ORDER BY het_nt.het_nt_id
 		
 		return retval
 	
+	def getEdgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, from_to: bool, edgeTypeName: Optional[EdgeTypeName] = None, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> Iterable[Tuple[List[EdgeId], EdgeTypeName]]:
+		"""
+		Retrieves the list of known nodes from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		self._populateNodeTypesCache()
+		ntId = self.cachedNodeTypesByName.get(nodeTypeName)
+		if ntId is None:
+			return None
+		
+		self._populateEdgeTypesCache()
+		etId = None
+		if edgeTypeName is not None:
+			etId = self.cachedEdgeTypesByName.get(edgeTypeName)
+			if etId is None:
+				return None
+		
+		retval_batches = {}
+		with self.conn:
+			cur = self.conn.cursor()
+			query = '''
+SELECT e.e_id, e.et_id, e.e_payload_id, e.e_payload_weight, e.from_id, e.to_id, e.e_payload_f_id, e.e_payload_t_id
+FROM node n, edge e
+WHERE n.h_id=?
+AND n.nt_id=?
+AND e.h_id = n.h_id
+'''
+			params = [hId.h_id, ntId.nt_id]
+			
+			if internal_id is not None:
+				query += ' AND n.n_id=?'
+				params.append(internal_id)
+			if name is not None:
+				query += ' AND n.n_payload_name=?'
+				params.append(name)
+			if _id is not None:
+				query += ' AND n.n_payload_id=?'
+				params.append(_id)
+				
+			# Additional join conditions
+			if from_to:
+				query += ' AND n.n_id = e.to_id'
+			else:
+				query += ' AND n.n_id = e.from_id'
+			
+			if etId is not None:
+				query += ' AND e.et_id = ?'
+				params.append(etId.et_id)
+			
+			for e in cur.execute(query, params):
+				cur_et_id = e[1]
+				edge = EdgeId(
+					e_id=e[0],
+					et_id=cur_et_id,
+					e_payload_id=e[2],
+					weight=e[3],
+					from_id=e[4],
+					to_id=e[5],
+					from_payload_id=e[6],
+					to_payload_id=e[7]
+				)
+				retval_et = retval_batches.get(cur_et_id)
+				if retval_et is None:
+					curEtId = self.cachedEdgeTypesByInternalId.get(cur_et_id)
+					retval_batches[cur_et_id] = ( [ edge ], curEtId.name )
+				else:
+					retval_et[0].append(edge)
+			cur.close()
+		
+		return retval_batches.values()
+	
+	def getNodesEdgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, from_to: bool, edgeTypeName: Optional[EdgeTypeName] = None, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> Iterable[Tuple[List[EdgeId], EdgeTypeName]]:
+		"""
+		Retrieves the list of known nodes from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		self._populateNodeTypesCache()
+		ntId = self.cachedNodeTypesByName.get(nodeTypeName)
+		if ntId is None:
+			return None
+		
+		self._populateEdgeTypesCache()
+		etId = None
+		if edgeTypeName is not None:
+			etId = self.cachedEdgeTypesByName.get(edgeTypeName)
+			if etId is None:
+				return None
+		
+		retval_batches = {}
+		with self.conn:
+			cur = self.conn.cursor()
+			query = '''
+SELECT nr.n_id, nr.nt_id, nr.n_payload_id, nr.n_payload_name
+FROM node n, edge e, node nr
+WHERE n.h_id=?
+AND n.nt_id=?
+AND e.h_id = n.h_id
+'''
+			params = [hId.h_id, ntId.nt_id]
+			
+			if internal_id is not None:
+				query += ' AND n.n_id=?'
+				params.append(internal_id)
+			if name is not None:
+				query += ' AND n.n_payload_name=?'
+				params.append(name)
+			if _id is not None:
+				query += ' AND n.n_payload_id=?'
+				params.append(_id)
+				
+			# Additional join conditions
+			if from_to:
+				query += ' AND n.n_id = e.to_id AND e.from_id = nr.n_id'
+			else:
+				query += ' AND n.n_id = e.from_id AND e.to_id = nr.n_id'
+			
+			if etId is not None:
+				query += ' AND e.et_id = ?'
+				params.append(etId.et_id)
+			
+			for n in cur.execute(query, params):
+				cur_nt_id = n[1]
+				node = NodeId(
+					n_id=n[0],
+					nt_id=cur_nt_id,
+					n_payload_id=n[2],
+					n_payload_name=n[3],
+				)
+				retval_nt = retval_batches.get(cur_nt_id)
+				if retval_nt is None:
+					curNtId = self.cachedNodeTypesByInternalId.get(cur_nt_id)
+					retval_batches[cur_nt_id] = ( [ node ], curNtId.name )
+				else:
+					retval_nt[0].append(node)
+			cur.close()
+		
+		return retval_batches.values()
+	
 	def registeredEdges(self, cur: sqlite3.Cursor, hId: InternalHypergraphId, etId: Union[InternalEdgeTypeId, List[InternalEdgeTypeId]]) -> List[EdgeId]:
 		"""
 		Retrieves the list of known edges from this hypergraph
@@ -1000,6 +1159,58 @@ ORDER BY het_nt.het_nt_id
 			cur.close()
 		
 		return retval
+	
+	def getNodesByGraphAndEdge(self, h_payload_id: HypergraphPayloadId, edgeTypeName: EdgeTypeName, from_to: bool, internal_id: Optional[InternalEdgeId] = None, _id: Optional[EdgePayloadId] = None) -> Tuple[List[NodeId], NodeTypeName]:
+		"""
+		Retrieves the list of known nodes from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None, None
+		
+		self._populateEdgeTypesCache()
+		etId = self.cachedEdgeTypesByName.get(edgeTypeName)
+		if etId is None:
+			return None, None
+		
+		import pprint
+		pprint.pprint(etId)
+		
+		retval = []
+		with self.conn:
+			cur = self.conn.cursor()
+			query = '''
+SELECT n.n_id, n.nt_id, n.n_payload_id, n.n_payload_name
+FROM edge e, node n
+WHERE e.h_id=?
+AND e.et_id=?
+'''
+			params = [hId.h_id, etId.et_id]
+			if internal_id is not None:
+				query += ' AND e.e_id=?'
+				params.append(internal_id)
+			if _id is not None:
+				query += ' AND e.e_payload_id=?'
+				params.append(_id)
+			
+			if from_to:
+				ntId = etId.to_type
+				query += ' AND n.n_id = e.to_id'
+			else:
+				ntId = etId.from_type
+				query += ' AND n.n_id = e.from_id'
+			
+			for n in cur.execute(query, params):
+				retval.append(NodeId(
+					n_id=n[0],
+					nt_id=n[1],
+					n_payload_id=n[2],
+					n_payload_name=n[3],
+				))
+			cur.close()
+		
+		return retval, ntId.name
 	
 	def registeredHyperedges(self, cur: sqlite3.Cursor, hId: InternalHypergraphId, hetId: Union[InternalHyperedgeTypeId, List[InternalHyperedgeTypeId]]) -> List[HyperedgeId]:
 		"""
