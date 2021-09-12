@@ -167,11 +167,8 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
-	def nodes(self, h_payload_id, node_type: NodeTypeName) -> List[Mapping[str, Any]]:
-		nodes = self.hgdb.registeredNodesByGraphAndNodeType(h_payload_id, node_type)
-		if nodes is None:
-			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type?)")
-		
+	@staticmethod
+	def _format_simple_nodes(nodes: List[NodeId], node_type: NodeTypeName, h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
 		res = []
 		res.extend(map(lambda n: {
 				'_id': n.n_payload_id,
@@ -182,21 +179,9 @@ class ComorbiditiesNetwork(object):
 			}, nodes))
 		
 		return res
-		
-	def queryNode(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, internal_id: InternalNodeId = None, _id: NodePayloadId = None, name: str = None) -> List[Mapping[str, Any]]:
-		nodes = self.hgdb.getNodesByGraphAndNodeType(h_payload_id, node_type, name=name, _id=_id, internal_id=internal_id)
-		if nodes is None:
-			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type?)")
-		if len(nodes) == 0:
-			errmsg = f"No node of type {node_type} was not found in the hypergraph {h_payload_id} with the query criteria"
-			if internal_id is not None:
-				errmsg += f' (internal id {internal_id})'
-			if _id is not None:
-				errmsg += f' (id {_id})'
-			if name is not None:
-				errmsg += f' (name {name})'
-			self.api.abort(404, errmsg)
-		
+	
+	@staticmethod
+	def _format_nodes(nodes: List[NodeId], node_type: NodeTypeName, h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
 		res = []
 		res.extend(map(lambda n: {
 				'_id': n.n_payload_id,
@@ -209,11 +194,8 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
-	def edges(self, h_payload_id: HypergraphPayloadId, edge_type: EdgeTypeName) -> List[Mapping[str, Any]]:
-		edges = self.hgdb.registeredEdgesByGraphAndEdgeType(h_payload_id, edge_type)
-		if edges is None:
-			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {edge_type} edge type?)")
-		
+	@staticmethod
+	def _format_simple_edges(edges: List[EdgeId], edge_type: EdgeTypeName, h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
 		res = []
 		res.extend(map(lambda e: {
 				'internal_id': e.e_id,
@@ -232,19 +214,9 @@ class ComorbiditiesNetwork(object):
 			}, edges))
 		
 		return res
-		
-	def queryEdge(self, h_payload_id: HypergraphPayloadId, edge_type: EdgeTypeName, _id: Optional[EdgePayloadId] = None, internal_id: Optional[InternalEdgeId] = None) -> List[Mapping[str, Any]]:
-		edges = self.hgdb.getEdgesByGraphAndEdgeType(h_payload_id, edge_type, internal_id=internal_id, _id=_id)
-		if edges is None:
-			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {edge_type} edge type?)")
-		if len(edges) == 0:
-			errmsg = f"No edge of type {edge_type} was not found in the hypergraph {h_payload_id} with the query criteria"
-			if internal_id is not None:
-				errmsg += f' (internal id {internal_id})'
-			if _id is not None:
-				errmsg += f' (id {_id})'
-			self.api.abort(404, errmsg)
-		
+	
+	@staticmethod
+	def _format_edges(edges: List[EdgeId], edge_type: EdgeTypeName, h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
 		res = []
 		res.extend(map(lambda e: {
 				'internal_id': e.e_id,
@@ -265,11 +237,8 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
-	def hyperedges(self, h_payload_id: HypergraphPayloadId, hyperedge_type: HyperedgeTypeName) -> List[Mapping[str, Any]]:
-		hyperedges = self.hgdb.registeredHyperedgesByGraphAndHyperedgeType(h_payload_id, hyperedge_type)
-		if hyperedges is None:
-			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {hyperedge_type} hyperedge type?)")
-		
+	@staticmethod
+	def _format_simple_hyperedges(hyperedges: List[HyperedgeId], hyperedge_type: HyperedgeTypeName, h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
 		res = []
 		res.extend(map(lambda he: {
 				'internal_id': he.he_id,
@@ -287,19 +256,9 @@ class ComorbiditiesNetwork(object):
 			}, hyperedges))
 		
 		return res
-		
-	def queryHyperedge(self, h_payload_id: HypergraphPayloadId, hyperedge_type: HyperedgeTypeName, _id: Optional[HyperedgePayloadId] = None, internal_id: Optional[InternalHyperedgeId] = None) -> List[Mapping[str, Any]]:
-		hyperedges = self.hgdb.getHyperedgesByGraphAndHyperedgeType(h_payload_id, hyperedge_type, internal_id=internal_id, _id=_id)
-		if hyperedges is None:
-			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {hyperedge_type} hyperedge type?)")
-		if len(hyperedges) == 0:
-			errmsg = f"No hyperedge of type {hyperedge_type} was not found in the hypergraph {h_payload_id} with the query criteria"
-			if internal_id is not None:
-				errmsg += f' (internal id {internal_id})'
-			if _id is not None:
-				errmsg += f' (id {_id})'
-			self.api.abort(404, errmsg)
-		
+	
+	@staticmethod
+	def _format_hyperedges(hyperedges: List[HyperedgeId], hyperedge_type: HyperedgeTypeName, h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
 		res = []
 		res.extend(map(lambda he: {
 				'internal_id': he.he_id,
@@ -316,6 +275,188 @@ class ComorbiditiesNetwork(object):
 				'weight': he.weight,
 				'payload': he.payload,
 			}, hyperedges))
+		
+		return res
+	
+	def nodes(self, h_payload_id, node_type: NodeTypeName) -> List[Mapping[str, Any]]:
+		nodes = self.hgdb.registeredNodesByGraphAndNodeType(h_payload_id, node_type)
+		if nodes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type?)")
+		
+		return self._format_simple_nodes(nodes, node_type, h_payload_id)
+	
+	def queryNode(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
+		nodes = self.hgdb.getNodesByGraphAndNodeType(h_payload_id, node_type, name=name, _id=_id, internal_id=internal_id)
+		if nodes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type?)")
+		if len(nodes) == 0:
+			errmsg = f"No node of type {node_type} was not found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			if name is not None:
+				errmsg += f' (name {name})'
+			self.api.abort(404, errmsg)
+		
+		return self._format_nodes(nodes, node_type, h_payload_id)
+	
+	def queryNodeEdges(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, from_to: bool, edge_type: Optional[EdgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
+		edge_batches = self.hgdb.getEdgesByGraphAndNode(h_payload_id, node_type, from_to=from_to, edgeTypeName=edge_type, name=name, _id=_id, internal_id=internal_id)
+		if edge_batches is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type or {edge_type} edge type)")
+		
+		res = []
+		for edges, edge_type in edge_batches:
+			res.extend(self._format_simple_edges(edges, edge_type, h_payload_id))
+		
+		if len(res) == 0:
+			errmsg = f"No node of type {node_type} was not found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			if name is not None:
+				errmsg += f' (name {name})'
+			self.api.abort(404, errmsg)
+		
+		return res
+	
+	def queryNodeEdgesNodes(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, from_to: bool, edge_type: Optional[EdgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
+		node_batches = self.hgdb.getNodesEdgesByGraphAndNode(h_payload_id, node_type, from_to=from_to, edgeTypeName=edge_type, name=name, _id=_id, internal_id=internal_id)
+		if node_batches is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type or {edge_type} edge type)")
+		
+		res = []
+		for nodes, node_type in node_batches:
+			res.extend(self._format_simple_nodes(nodes, node_type, h_payload_id))
+		
+		if len(res) == 0:
+			errmsg = f"No node of type {node_type} was not found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			if name is not None:
+				errmsg += f' (name {name})'
+			self.api.abort(404, errmsg)
+		
+		return res
+	
+	def queryNodeHyperedges(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, hyperedge_type: Optional[HyperedgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
+		hyperedge_batches = self.hgdb.getHyperedgesByGraphAndNode(h_payload_id, node_type, hyperedgeTypeName=hyperedge_type, name=name, _id=_id, internal_id=internal_id)
+		if hyperedge_batches is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type or {hyperedge_type} hyperedge_type?)")
+		
+		res = []
+		for hyperedges, hyperedge_type in hyperedge_batches:
+			res.extend(self._format_simple_hyperedges(hyperedges, hyperedge_type, h_payload_id))
+		
+		if len(res) == 0:
+			errmsg = f"No node of type {node_type} was not found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			if name is not None:
+				errmsg += f' (name {name})'
+			self.api.abort(404, errmsg)
+		
+		return res
+	
+	def queryNodeHyperedgesNodes(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, hyperedge_type: Optional[HyperedgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
+		node_batches = self.hgdb.getNodesHyperedgesByGraphAndNode(h_payload_id, node_type, hyperedgeTypeName=hyperedge_type, name=name, _id=_id, internal_id=internal_id)
+		if node_batches is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type or {hyperedge_type} hyperedge_type?)")
+		
+		res = []
+		for nodes, node_type in node_batches:
+			res.extend(self._format_simple_nodes(nodes, node_type, h_payload_id))
+		
+		if len(res) == 0:
+			errmsg = f"No node of type {node_type} was not found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			if name is not None:
+				errmsg += f' (name {name})'
+			self.api.abort(404, errmsg)
+		
+		return res
+	
+	def edges(self, h_payload_id: HypergraphPayloadId, edge_type: EdgeTypeName) -> List[Mapping[str, Any]]:
+		edges = self.hgdb.registeredEdgesByGraphAndEdgeType(h_payload_id, edge_type)
+		if edges is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {edge_type} edge type?)")
+		
+		return self._format_simple_edges(edges, edge_type, h_payload_id)
+		
+	def queryEdge(self, h_payload_id: HypergraphPayloadId, edge_type: EdgeTypeName, _id: Optional[EdgePayloadId] = None, internal_id: Optional[InternalEdgeId] = None) -> List[Mapping[str, Any]]:
+		edges = self.hgdb.getEdgesByGraphAndEdgeType(h_payload_id, edge_type, internal_id=internal_id, _id=_id)
+		if edges is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {edge_type} edge type?)")
+		if len(edges) == 0:
+			errmsg = f"No edge of type {edge_type} was found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			self.api.abort(404, errmsg)
+		
+		return self._format_edges(edges, edge_type, h_payload_id)
+	
+	def queryEdgeNodes(self, h_payload_id: HypergraphPayloadId, edge_type: EdgeTypeName, from_to: bool, _id: Optional[EdgePayloadId] = None, internal_id: Optional[InternalEdgeId] = None) -> List[Mapping[str, Any]]:
+		nodes, node_type = self.hgdb.getNodesByGraphAndEdge(h_payload_id, edge_type, from_to=from_to, internal_id=internal_id, _id=_id)
+		if nodes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {edge_type} edge type?)")
+		if len(nodes) == 0:
+			errmsg = f"No edge of type {edge_type} was found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			self.api.abort(404, errmsg)
+		
+		return self._format_simple_nodes(nodes, node_type, h_payload_id)
+	
+	def hyperedges(self, h_payload_id: HypergraphPayloadId, hyperedge_type: HyperedgeTypeName) -> List[Mapping[str, Any]]:
+		hyperedges = self.hgdb.registeredHyperedgesByGraphAndHyperedgeType(h_payload_id, hyperedge_type)
+		if hyperedges is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {hyperedge_type} hyperedge type?)")
+		
+		return self._format_simple_hyperedges(hyperedges, hyperedge_type, h_payload_id)
+		
+	def queryHyperedge(self, h_payload_id: HypergraphPayloadId, hyperedge_type: HyperedgeTypeName, _id: Optional[HyperedgePayloadId] = None, internal_id: Optional[InternalHyperedgeId] = None) -> List[Mapping[str, Any]]:
+		hyperedges = self.hgdb.getHyperedgesByGraphAndHyperedgeType(h_payload_id, hyperedge_type, internal_id=internal_id, _id=_id)
+		if hyperedges is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {hyperedge_type} hyperedge type?)")
+		if len(hyperedges) == 0:
+			errmsg = f"No hyperedge of type {hyperedge_type} was not found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			self.api.abort(404, errmsg)
+		
+		return self._format_hyperedges(hyperedges, hyperedge_type, h_payload_id)
+	
+	def queryHyperedgeNodes(self, h_payload_id: HypergraphPayloadId, hyperedge_type: HyperedgeTypeName, from_to: bool, _id: Optional[HyperedgePayloadId] = None, internal_id: Optional[InternalHyperedgeId] = None) -> List[Mapping[str, Any]]:
+		nodes_nt = self.hgdb.getNodesByGraphAndHyperedge(h_payload_id, hyperedge_type, from_to=from_to, internal_id=internal_id, _id=_id)
+		if nodes_nt is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {hyperedge_type} hyperedge type?)")
+		
+		res = []
+		for nodes, node_type in nodes_nt:
+			res.extend(self._format_simple_nodes(nodes, node_type, h_payload_id))
+		
+		if len(res) == 0:
+			errmsg = f"No hyperedge of type {hyperedge_type} was found in the hypergraph {h_payload_id} with the query criteria"
+			if internal_id is not None:
+				errmsg += f' (internal id {internal_id})'
+			if _id is not None:
+				errmsg += f' (id {_id})'
+			self.api.abort(404, errmsg)
 		
 		return res
 	
