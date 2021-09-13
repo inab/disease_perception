@@ -285,8 +285,14 @@ class ComorbiditiesNetwork(object):
 		
 		return self._format_simple_nodes(nodes, node_type, h_payload_id)
 	
-	def queryNode(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
-		nodes = self.hgdb.getNodesByGraphAndNodeType(h_payload_id, node_type, name=name, _id=_id, internal_id=internal_id)
+	def queryNode(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, internal_id: Optional[Union[InternalNodeId, List[InternalNodeId]]] = None, _id: Optional[Union[NodePayloadId, List[NodePayloadId]]] = None, name: Optional[Union[str, List[str]]] = None) -> List[Mapping[str, Any]]:
+		if (name is not None) and not isinstance(name, list):
+			name = [ name ]
+		if (_id is not None) and not isinstance(_id, list):
+			_id = [ _id ]
+		if (internal_id is not None) and not isinstance(internal_id, list):
+			internal_id = [ internal_id ]
+		nodes = self.hgdb.getNodesByGraphAndNodeType(h_payload_id, node_type, names=name, _ids=_id, internal_ids=internal_id)
 		if nodes is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type?)")
 		if len(nodes) == 0:
@@ -301,8 +307,14 @@ class ComorbiditiesNetwork(object):
 		
 		return self._format_nodes(nodes, node_type, h_payload_id)
 	
-	def queryNodeEdges(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, from_to: bool, edge_type: Optional[EdgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
-		edge_batches = self.hgdb.getEdgesByGraphAndNode(h_payload_id, node_type, from_to=from_to, edgeTypeName=edge_type, name=name, _id=_id, internal_id=internal_id)
+	def queryNodeEdges(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, from_to: bool, edge_type: Optional[EdgeTypeName] = None, internal_id: Optional[Union[InternalNodeId, List[InternalNodeId]]] = None, _id: Optional[Union[NodePayloadId, List[NodePayloadId]]] = None, name: Optional[Union[str, List[str]]] = None) -> List[Mapping[str, Any]]:
+		if (name is not None) and not isinstance(name, list):
+			name = [ name ]
+		if (_id is not None) and not isinstance(_id, list):
+			_id = [ _id ]
+		if (internal_id is not None) and not isinstance(internal_id, list):
+			internal_id = [ internal_id ]
+		edge_batches = self.hgdb.getEdgesByGraphAndNode(h_payload_id, node_type, from_to=from_to, edgeTypeName=edge_type, names=name, _ids=_id, internal_ids=internal_id)
 		if edge_batches is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type or {edge_type} edge type)")
 		
@@ -323,7 +335,13 @@ class ComorbiditiesNetwork(object):
 		return res
 	
 	def queryNodeEdgesNodes(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, from_to: bool, edge_type: Optional[EdgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
-		node_batches = self.hgdb.getNodesEdgesByGraphAndNode(h_payload_id, node_type, from_to=from_to, edgeTypeName=edge_type, name=name, _id=_id, internal_id=internal_id)
+		if (name is not None) and not isinstance(name, list):
+			name = [ name ]
+		if (_id is not None) and not isinstance(_id, list):
+			_id = [ _id ]
+		if (internal_id is not None) and not isinstance(internal_id, list):
+			internal_id = [ internal_id ]
+		node_batches = self.hgdb.getNodesEdgesByGraphAndNode(h_payload_id, node_type, from_to=from_to, edgeTypeName=edge_type, names=name, _ids=_id, internal_ids=internal_id)
 		if node_batches is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type or {edge_type} edge type)")
 		
@@ -344,7 +362,13 @@ class ComorbiditiesNetwork(object):
 		return res
 	
 	def queryNodeHyperedges(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, hyperedge_type: Optional[HyperedgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
-		hyperedge_batches = self.hgdb.getHyperedgesByGraphAndNode(h_payload_id, node_type, hyperedgeTypeName=hyperedge_type, name=name, _id=_id, internal_id=internal_id)
+		if (name is not None) and not isinstance(name, list):
+			name = [ name ]
+		if (_id is not None) and not isinstance(_id, list):
+			_id = [ _id ]
+		if (internal_id is not None) and not isinstance(internal_id, list):
+			internal_id = [ internal_id ]
+		hyperedge_batches = self.hgdb.getHyperedgesByGraphAndNode(h_payload_id, node_type, hyperedgeTypeName=hyperedge_type, names=name, _ids=_id, internal_ids=internal_id)
 		if hyperedge_batches is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type or {hyperedge_type} hyperedge_type?)")
 		
@@ -365,7 +389,13 @@ class ComorbiditiesNetwork(object):
 		return res
 	
 	def queryNodeHyperedgesNodes(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, hyperedge_type: Optional[HyperedgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
-		node_batches = self.hgdb.getNodesHyperedgesByGraphAndNode(h_payload_id, node_type, hyperedgeTypeName=hyperedge_type, name=name, _id=_id, internal_id=internal_id)
+		if (name is not None) and not isinstance(name, list):
+			name = [ name ]
+		if (_id is not None) and not isinstance(_id, list):
+			_id = [ _id ]
+		if (internal_id is not None) and not isinstance(internal_id, list):
+			internal_id = [ internal_id ]
+		node_batches = self.hgdb.getNodesHyperedgesByGraphAndNode(h_payload_id, node_type, hyperedgeTypeName=hyperedge_type, names=name, _ids=_id, internal_ids=internal_id)
 		if node_batches is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {node_type} node type or {hyperedge_type} hyperedge_type?)")
 		

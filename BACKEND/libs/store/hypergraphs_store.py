@@ -890,7 +890,7 @@ ORDER BY het_nt.het_nt_id
 		
 		return retval
 	
-	def getNodesByGraphAndNodeType(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> List[NodeId]:
+	def getNodesByGraphAndNodeType(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, names: Optional[List[NodePayloadName]] = None, _ids: Optional[List[NodePayloadId]] = None, internal_ids: Optional[List[InternalNodeId]] = None) -> List[NodeId]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
 		"""
@@ -909,22 +909,34 @@ ORDER BY het_nt.het_nt_id
 			cur = self.conn.cursor()
 			query = 'SELECT n_id, nt_id, n_payload_id, n_payload_name, payload FROM node WHERE h_id=? AND nt_id=?'
 			params = [hId.h_id, ntId.nt_id]
-			if internal_id is not None:
-				query += ' AND n_id=?'
-				params.append(internal_id)
-			if name is not None:
-				query += ' AND n_payload_name=?'
-				params.append(name)
-			if _id is not None:
-				query += ' AND n_payload_id=?'
-				params.append(_id)
+			if (internal_ids is not None) and len(internal_ids) > 0:
+				if len(internal_ids) == 1:
+					query += ' AND n_id=?'
+				else:
+					query += f' AND n_id IN ({",".join(["?"] * len(internal_ids))})'
+				params.extend(internal_ids)
+				
+			if (names is not None) and len(names) > 0:
+				if len(names) == 1:
+					query += ' AND n_payload_name=?'
+				else:
+					query += f' AND n_payload_name IN ({",".join(["?"] * len(names))})'
+				params.extend(names)
+				
+			if (_ids is not None) and len(_ids) > 0:
+				if len(_ids) == 1:
+					query += ' AND n_payload_id=?'
+				else:
+					query += f' AND n_payload_id IN ({",".join(["?"] * len(_ids))})'
+				params.extend(_ids)
+			
 			for n in cur.execute(query, params):
 				retval.append(NodeId(n_id=n[0], nt_id=n[1], n_payload_id=n[2], n_payload_name=n[3], payload=None if n[4] is None else json.loads(n[4])))
 			cur.close()
 		
 		return retval
 	
-	def getEdgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, from_to: bool, edgeTypeName: Optional[EdgeTypeName] = None, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> Iterable[Tuple[List[EdgeId], EdgeTypeName]]:
+	def getEdgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, from_to: bool, edgeTypeName: Optional[EdgeTypeName] = None, names: Optional[List[NodePayloadName]] = None, _ids: Optional[List[NodePayloadId]] = None, internal_ids: Optional[List[InternalNodeId]] = None) -> Iterable[Tuple[List[EdgeId], EdgeTypeName]]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
 		"""
@@ -957,16 +969,27 @@ AND e.h_id = n.h_id
 '''
 			params = [hId.h_id, ntId.nt_id]
 			
-			if internal_id is not None:
-				query += ' AND n.n_id=?'
-				params.append(internal_id)
-			if name is not None:
-				query += ' AND n.n_payload_name=?'
-				params.append(name)
-			if _id is not None:
-				query += ' AND n.n_payload_id=?'
-				params.append(_id)
+			if (internal_ids is not None) and len(internal_ids) > 0:
+				if len(internal_ids) == 1:
+					query += ' AND n.n_id=?'
+				else:
+					query += f' AND n.n_id IN ({",".join(["?"] * len(internal_ids))})'
+				params.extend(internal_ids)
 				
+			if (names is not None) and len(names) > 0:
+				if len(names) == 1:
+					query += ' AND n.n_payload_name=?'
+				else:
+					query += f' AND n.n_payload_name IN ({",".join(["?"] * len(names))})'
+				params.extend(names)
+				
+			if (_ids is not None) and len(_ids) > 0:
+				if len(_ids) == 1:
+					query += ' AND n.n_payload_id=?'
+				else:
+					query += f' AND n.n_payload_id IN ({",".join(["?"] * len(_ids))})'
+				params.extend(_ids)
+			
 			# Additional join conditions
 			if from_to:
 				query += ' AND n.n_id = e.to_id'
@@ -999,7 +1022,7 @@ AND e.h_id = n.h_id
 		
 		return retval_batches.values()
 	
-	def getNodesEdgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, from_to: bool, edgeTypeName: Optional[EdgeTypeName] = None, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> Iterable[Tuple[List[NodeId], NodeTypeName]]:
+	def getNodesEdgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, from_to: bool, edgeTypeName: Optional[EdgeTypeName] = None, names: Optional[List[NodePayloadName]] = None, _ids: Optional[List[NodePayloadId]] = None, internal_ids: Optional[List[InternalNodeId]] = None) -> Iterable[Tuple[List[NodeId], NodeTypeName]]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
 		"""
@@ -1032,15 +1055,26 @@ AND e.h_id = n.h_id
 '''
 			params = [hId.h_id, ntId.nt_id]
 			
-			if internal_id is not None:
-				query += ' AND n.n_id=?'
-				params.append(internal_id)
-			if name is not None:
-				query += ' AND n.n_payload_name=?'
-				params.append(name)
-			if _id is not None:
-				query += ' AND n.n_payload_id=?'
-				params.append(_id)
+			if (internal_ids is not None) and len(internal_ids) > 0:
+				if len(internal_ids) == 1:
+					query += ' AND n.n_id=?'
+				else:
+					query += f' AND n.n_id IN ({",".join(["?"] * len(internal_ids))})'
+				params.extend(internal_ids)
+				
+			if (names is not None) and len(names) > 0:
+				if len(names) == 1:
+					query += ' AND n.n_payload_name=?'
+				else:
+					query += f' AND n.n_payload_name IN ({",".join(["?"] * len(names))})'
+				params.extend(names)
+				
+			if (_ids is not None) and len(_ids) > 0:
+				if len(_ids) == 1:
+					query += ' AND n.n_payload_id=?'
+				else:
+					query += f' AND n.n_payload_id IN ({",".join(["?"] * len(_ids))})'
+				params.extend(_ids)
 				
 			# Additional join conditions
 			if from_to:
@@ -1052,7 +1086,15 @@ AND e.h_id = n.h_id
 				query += ' AND e.et_id = ?'
 				params.append(etId.et_id)
 			
+			# A set is internally used to skip duplicate
+			# results, because SELECT DISTINCT is not so
+			# optimized in SQLite
+			n_id_set = set()
 			for n in cur.execute(query, params):
+				cur_n_id = n[0]
+				if cur_n_id  in n_id_set:
+					continue
+				n_id_set.add(cur_n_id)
 				cur_nt_id = n[1]
 				node = NodeId(
 					n_id=n[0],
@@ -1070,7 +1112,7 @@ AND e.h_id = n.h_id
 		
 		return retval_batches.values()
 	
-	def getHyperedgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, hyperedgeTypeName: Optional[HyperedgeTypeName] = None, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> Iterable[Tuple[List[HyperedgeId], HyperedgeTypeName]]:
+	def getHyperedgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, hyperedgeTypeName: Optional[HyperedgeTypeName] = None, names: Optional[List[NodePayloadName]] = None, _ids: Optional[List[NodePayloadId]] = None, internal_ids: Optional[List[InternalNodeId]] = None) -> Iterable[Tuple[List[HyperedgeId], HyperedgeTypeName]]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
 		"""
@@ -1114,15 +1156,26 @@ AND he_nr.n_id = nr.n_id
 				query += ' AND he.het_id = ?'
 				params.append(hetId.het_id)
 			
-			if internal_id is not None:
-				query += ' AND n.n_id=?'
-				params.append(internal_id)
-			if name is not None:
-				query += ' AND n.n_payload_name=?'
-				params.append(name)
-			if _id is not None:
-				query += ' AND n.n_payload_id=?'
-				params.append(_id)
+			if (internal_ids is not None) and len(internal_ids) > 0:
+				if len(internal_ids) == 1:
+					query += ' AND n.n_id=?'
+				else:
+					query += f' AND n.n_id IN ({",".join(["?"] * len(internal_ids))})'
+				params.extend(internal_ids)
+				
+			if (names is not None) and len(names) > 0:
+				if len(names) == 1:
+					query += ' AND n.n_payload_name=?'
+				else:
+					query += f' AND n.n_payload_name IN ({",".join(["?"] * len(names))})'
+				params.extend(names)
+				
+			if (_ids is not None) and len(_ids) > 0:
+				if len(_ids) == 1:
+					query += ' AND n.n_payload_id=?'
+				else:
+					query += f' AND n.n_payload_id IN ({",".join(["?"] * len(_ids))})'
+				params.extend(_ids)
 				
 			# This is needed to assure the nodes appear in
 			# the same order they were stored related to the
@@ -1156,7 +1209,7 @@ AND he_nr.n_id = nr.n_id
 		
 		return retval_batches.values()
 	
-	def getNodesHyperedgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, hyperedgeTypeName: Optional[HyperedgeTypeName] = None, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> Iterable[Tuple[List[NodeId], NodeTypeName]]:
+	def getNodesHyperedgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, hyperedgeTypeName: Optional[HyperedgeTypeName] = None, names: Optional[List[NodePayloadName]] = None, _ids: Optional[List[NodePayloadId]] = None, internal_ids: Optional[List[InternalNodeId]] = None) -> Iterable[Tuple[List[NodeId], NodeTypeName]]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
 		"""
@@ -1199,20 +1252,40 @@ AND he_nr.n_id = nr.n_id
 				query += ' AND he.het_id = ?'
 				params.append(hetId.het_id)
 			
-			if internal_id is not None:
-				query += ' AND n.n_id=?'
-				params.append(internal_id)
-			if name is not None:
-				query += ' AND n.n_payload_name=?'
-				params.append(name)
-			if _id is not None:
-				query += ' AND n.n_payload_id=?'
-				params.append(_id)
+			if (internal_ids is not None) and len(internal_ids) > 0:
+				if len(internal_ids) == 1:
+					query += ' AND n.n_id=?'
+				else:
+					query += f' AND n.n_id IN ({",".join(["?"] * len(internal_ids))})'
+				params.extend(internal_ids)
+				
+			if (names is not None) and len(names) > 0:
+				if len(names) == 1:
+					query += ' AND n.n_payload_name=?'
+				else:
+					query += f' AND n.n_payload_name IN ({",".join(["?"] * len(names))})'
+				params.extend(names)
+				
+			if (_ids is not None) and len(_ids) > 0:
+				if len(_ids) == 1:
+					query += ' AND n.n_payload_id=?'
+				else:
+					query += f' AND n.n_payload_id IN ({",".join(["?"] * len(_ids))})'
+				params.extend(_ids)
 			
+			# A set is internally used to skip duplicate
+			# results, because SELECT DISTINCT is not so
+			# optimized in SQLite
+			n_id_set = set()
 			# This is needed to assure the nodes appear in
 			# the same order they were stored related to the
 			# hyperedge
 			for n in cur.execute(query + ' ORDER BY he_nr.he_id, he_nr.he_n_id', params):
+				cur_n_id = n[0]
+				if cur_n_id in n_id_set:
+					continue
+				
+				n_id_set.add(cur_n_id)
 				cur_nt_id = n[1]
 				node = NodeId(
 					n_id=n[0],
