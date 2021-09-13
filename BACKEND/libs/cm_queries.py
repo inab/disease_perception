@@ -441,14 +441,14 @@ class ComorbiditiesNetwork(object):
 		
 		return self._format_hyperedges(hyperedges, hyperedge_type, h_payload_id)
 	
-	def queryHyperedgeNodes(self, h_payload_id: HypergraphPayloadId, hyperedge_type: HyperedgeTypeName, from_to: bool, _id: Optional[HyperedgePayloadId] = None, internal_id: Optional[InternalHyperedgeId] = None) -> List[Mapping[str, Any]]:
-		nodes_nt = self.hgdb.getNodesByGraphAndHyperedge(h_payload_id, hyperedge_type, from_to=from_to, internal_id=internal_id, _id=_id)
+	def queryHyperedgeNodes(self, h_payload_id: HypergraphPayloadId, hyperedge_type: HyperedgeTypeName, _id: Optional[HyperedgePayloadId] = None, internal_id: Optional[InternalHyperedgeId] = None) -> List[Mapping[str, Any]]:
+		nodes_nt = self.hgdb.getNodesByGraphAndHyperedge(h_payload_id, hyperedge_type, internal_id=internal_id, _id=_id)
 		if nodes_nt is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the database or database was not properly populated (missing {hyperedge_type} hyperedge type?)")
 		
 		res = []
-		for nodes, node_type in nodes_nt:
-			res.extend(self._format_simple_nodes(nodes, node_type, h_payload_id))
+		for node, node_type in nodes_nt:
+			res.extend(self._format_simple_nodes([ node ], node_type, h_payload_id))
 		
 		if len(res) == 0:
 			errmsg = f"No hyperedge of type {hyperedge_type} was found in the hypergraph {h_payload_id} with the query criteria"

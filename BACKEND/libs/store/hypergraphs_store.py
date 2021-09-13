@@ -999,7 +999,7 @@ AND e.h_id = n.h_id
 		
 		return retval_batches.values()
 	
-	def getNodesEdgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, from_to: bool, edgeTypeName: Optional[EdgeTypeName] = None, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> Iterable[Tuple[List[EdgeId], EdgeTypeName]]:
+	def getNodesEdgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, from_to: bool, edgeTypeName: Optional[EdgeTypeName] = None, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> Iterable[Tuple[List[NodeId], NodeTypeName]]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
 		"""
@@ -1053,6 +1053,166 @@ AND e.h_id = n.h_id
 				params.append(etId.et_id)
 			
 			for n in cur.execute(query, params):
+				cur_nt_id = n[1]
+				node = NodeId(
+					n_id=n[0],
+					nt_id=cur_nt_id,
+					n_payload_id=n[2],
+					n_payload_name=n[3],
+				)
+				retval_nt = retval_batches.get(cur_nt_id)
+				if retval_nt is None:
+					curNtId = self.cachedNodeTypesByInternalId.get(cur_nt_id)
+					retval_batches[cur_nt_id] = ( [ node ], curNtId.name )
+				else:
+					retval_nt[0].append(node)
+			cur.close()
+		
+		return retval_batches.values()
+	
+	def getHyperedgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, hyperedgeTypeName: Optional[HyperedgeTypeName] = None, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> Iterable[Tuple[List[HyperedgeId], HyperedgeTypeName]]:
+		"""
+		Retrieves the list of known nodes from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		self._populateNodeTypesCache()
+		ntId = self.cachedNodeTypesByName.get(nodeTypeName)
+		if ntId is None:
+			return None
+		
+		self._populateHyperedgeTypesCache()
+		hetId = None
+		if hyperedgeTypeName is not None:
+			hetId = self.cachedHyperedgeTypesByName.get(hyperedgeTypeName)
+			if hetId is None:
+				return None
+		
+		retval_batches = {}
+		retvalH = {}
+		with self.conn:
+			cur = self.conn.cursor()
+			query = '''
+SELECT he.he_id, he.het_id, he.he_payload_id, he.he_payload_weight, he_nr.n_id, nr.n_payload_id
+FROM node n, hyperedge he, hyperedge_node he_n, hyperedge_node he_nr, node nr
+WHERE n.h_id=?
+AND n.nt_id=?
+AND he.h_id = n.h_id
+AND he.h_id = nr.h_id
+AND he.he_id = he_n.he_id
+AND he_n.n_id = n.n_id
+AND he.he_id = he_nr.he_id
+AND he_nr.n_id = nr.n_id
+'''
+			params = [hId.h_id, ntId.nt_id]
+			
+			# Additional join conditions
+			if hetId is not None:
+				query += ' AND he.het_id = ?'
+				params.append(hetId.het_id)
+			
+			if internal_id is not None:
+				query += ' AND n.n_id=?'
+				params.append(internal_id)
+			if name is not None:
+				query += ' AND n.n_payload_name=?'
+				params.append(name)
+			if _id is not None:
+				query += ' AND n.n_payload_id=?'
+				params.append(_id)
+				
+			# This is needed to assure the nodes appear in
+			# the same order they were stored related to the
+			# hyperedge
+			for he in cur.execute(query + ' ORDER BY he_nr.he_n_id', params):
+				cur_he_id = he[0]
+				edge = retvalH.get(cur_he_id)
+				if edge is None:
+					cur_het_id = he[1]
+					hyperedge = HyperedgeId(
+						he_id=he[0],
+						het_id=cur_het_id,
+						he_payload_id=he[2],
+						weight=he[3],
+						n_ids=[ he[4] ],
+						n_payload_ids=[ he[5] ],
+					)
+					retvalH[cur_he_id] = hyperedge
+					
+					retval_het = retval_batches.get(cur_het_id)
+					if retval_het is None:
+						curHetId = self.cachedHyperedgeTypesByInternalId.get(cur_het_id)
+						retval_batches[cur_het_id] = ( [ hyperedge ], curHetId.name )
+					else:
+						retval_het[0].append(hyperedge)
+				else:
+					hyperedge.n_ids.append(he[4])
+					hyperedge.n_payload_ids.append(he[5])
+			
+			cur.close()
+		
+		return retval_batches.values()
+	
+	def getNodesHyperedgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, hyperedgeTypeName: Optional[HyperedgeTypeName] = None, name: Optional[NodePayloadName] = None, _id: Optional[NodePayloadId] = None, internal_id: Optional[InternalNodeId] = None) -> Iterable[Tuple[List[NodeId], NodeTypeName]]:
+		"""
+		Retrieves the list of known nodes from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+		
+		self._populateNodeTypesCache()
+		ntId = self.cachedNodeTypesByName.get(nodeTypeName)
+		if ntId is None:
+			return None
+		
+		self._populateHyperedgeTypesCache()
+		hetId = None
+		if hyperedgeTypeName is not None:
+			hetId = self.cachedHyperedgeTypesByName.get(hyperedgeTypeName)
+			if hetId is None:
+				return None
+		
+		retval_batches = {}
+		with self.conn:
+			cur = self.conn.cursor()
+			query = '''
+SELECT nr.n_id, nr.nt_id, nr.n_payload_id, nr.n_payload_name
+FROM node n, hyperedge he, hyperedge_node he_n, hyperedge_node he_nr, node nr
+WHERE n.h_id=?
+AND n.nt_id=?
+AND he.h_id = n.h_id
+AND he.h_id = nr.h_id
+AND he.he_id = he_n.he_id
+AND he_n.n_id = n.n_id
+AND he.he_id = he_nr.he_id
+AND he_nr.n_id = nr.n_id
+'''
+			params = [hId.h_id, ntId.nt_id]
+			
+			# Additional join conditions
+			if hetId is not None:
+				query += ' AND he.het_id = ?'
+				params.append(hetId.het_id)
+			
+			if internal_id is not None:
+				query += ' AND n.n_id=?'
+				params.append(internal_id)
+			if name is not None:
+				query += ' AND n.n_payload_name=?'
+				params.append(name)
+			if _id is not None:
+				query += ' AND n.n_payload_id=?'
+				params.append(_id)
+			
+			# This is needed to assure the nodes appear in
+			# the same order they were stored related to the
+			# hyperedge
+			for n in cur.execute(query + ' ORDER BY he_nr.he_id, he_nr.he_n_id', params):
 				cur_nt_id = n[1]
 				node = NodeId(
 					n_id=n[0],
@@ -1173,9 +1333,6 @@ AND e.h_id = n.h_id
 		etId = self.cachedEdgeTypesByName.get(edgeTypeName)
 		if etId is None:
 			return None, None
-		
-		import pprint
-		pprint.pprint(etId)
 		
 		retval = []
 		with self.conn:
@@ -1329,6 +1486,55 @@ AND he_n.n_id = n.n_id
 				else:
 					heId.n_ids.append(he[4])
 					heId.n_payload_ids.append(he[5])
+			cur.close()
+		
+		return retval
+	
+	def getNodesByGraphAndHyperedge(self, h_payload_id: HypergraphPayloadId, hyperedgeTypeName: HyperedgeTypeName, internal_id: Optional[InternalHyperedgeId] = None, _id: Optional[HyperedgePayloadId] = None) -> Iterable[Tuple[NodeId, NodeTypeName]]:
+		"""
+		Retrieves the list of known nodes from this hypergraph
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None, None
+		
+		self._populateHyperedgeTypesCache()
+		hetId = self.cachedHyperedgeTypesByName.get(hyperedgeTypeName)
+		if hetId is None:
+			return None, None
+		
+		self._populateNodeTypesCache()
+		retval = []
+		with self.conn:
+			cur = self.conn.cursor()
+			query = '''
+SELECT nr.n_id, nr.nt_id, nr.n_payload_id, nr.n_payload_name
+FROM hyperedge he, hyperedge_node he_n, node nr
+WHERE he.h_id=?
+AND he.het_id=?
+AND he.he_id = he_n.he_id
+AND he_n.n_id = nr.n_id
+AND he.h_id = nr.h_id
+'''
+			params = [hId.h_id, hetId.het_id]
+			if internal_id is not None:
+				query += ' AND he.he_id=?'
+				params.append(internal_id)
+			if _id is not None:
+				query += ' AND he.he_payload_id=?'
+				params.append(_id)
+			
+			for n in cur.execute(query + ' ORDER BY he_n.he_n_id', params):
+				nt_id = n[1]
+				node = NodeId(
+					n_id=n[0],
+					nt_id=nt_id,
+					n_payload_id=n[2],
+					n_payload_name=n[3],
+				)
+				ntId = self.cachedNodeTypesByInternalId[nt_id]
+				retval.append( (node, ntId.name) )
 			cur.close()
 		
 		return retval
