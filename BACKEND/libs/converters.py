@@ -28,5 +28,5 @@ class ListConverter(BaseConverter):
 		return results
 	
 	def to_url(self, value):
-		return self.sep.join(map(lambda v: super().to_url(str(v)), value))
-		#return self.sep.join(map(lambda v: BaseConverter.to_url(str(v)), value))
+		return self.sep.join(map(lambda v: super(ListConverter, self).to_url(str(v)), value))
+		#return self.sep.join(map(lambda v: BaseConverter.to_url(self, str(v)), value))
