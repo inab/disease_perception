@@ -85,8 +85,9 @@ def init_comorbidities_app(local_config):
 	# in order to avoid circular dependencies
 	#
 	# https://explore-flask.readthedocs.io/en/latest/views.html#custom-converters
-	from .converters import ListConverter
+	from .converters import ListConverter, SplitPathConverter
 
+	app.url_map.converters['splitpath'] = SplitPathConverter
 	app.url_map.converters['list'] = ListConverter
 
 	blueprint = Blueprint('api','como_network_api')
