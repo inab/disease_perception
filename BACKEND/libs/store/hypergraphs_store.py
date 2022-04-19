@@ -46,6 +46,10 @@ class HypergraphsStore(object):
 	
 	@staticmethod
 	def _detect_extensions(keywords: List[str] = ['ENABLE_JSON1']) -> bool:
+		"""
+		Helper method which detects whether used SQLite was
+		compiled with all the required extensions
+		"""
 		conn = sqlite3.connect(':memory:')
 		detected = 0
 		with conn:
@@ -81,6 +85,10 @@ class HypergraphsStore(object):
 		self._bootstrap_store()
 	
 	def getCursor(self, batchSize:Optional[int] = None) -> sqlite3.Cursor:
+		"""
+		Low level method created to return a cursor to the
+		hypergraph database, setting up its batch size
+		"""
 		cur = self.conn.cursor()
 		if isinstance(batchSize, int):
 			cur.arraysize = batchSize
@@ -88,8 +96,10 @@ class HypergraphsStore(object):
 		return cur
 	
 	def isStoreBootstrapped(self) -> bool:
-		# Query to know about the number of tables.
-		# When there is no table, the store is empty
+		"""
+		Helper method to know about the number of tables.
+		When there is no table, the store is considered empty.
+		"""
 		with self.conn:
 			cur = self.conn.cursor()
 			cur.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'")
@@ -103,7 +113,20 @@ class HypergraphsStore(object):
 			
 			return retval
 	
-	def populateManifest(self, manifest: Union[str, Mapping[str, Any]]):
+	def populateManifest(self, manifest: Union[str, Mapping[str, Any]]) -> Tuple[int, int, int, int]:
+		"""
+		Manifests are used to declare a bunch of locally stored
+		JSON Schemas, used to model the payload of nodes, edges
+		and hyperedges, as well as the node types, edge types
+		and hyperedge types which use them.
+		This method takes as input either a path to a JSON file
+		with one of these manifests, or a dictionary following
+		the manifest structure, and stores it, along with the
+		referred JSON Schemas.
+		
+		It returns the number of newly stored JSON Schemas, node
+		types, edge types and hyperedge types
+		"""
 		# Initialize store with the manifest
 		if not isinstance(manifest, dict):
 			with open(manifest, mode="r", encoding="utf-8") as mR:
@@ -117,6 +140,11 @@ class HypergraphsStore(object):
 		
 			
 	def _connect_store(self, dbfilename:str, readonly: bool = True) -> sqlite3.Connection:
+		"""
+		This helper method connects to an SQLite database,
+		setting up the connection parameters accordingly to
+		whether it should be read-write or read-only
+		"""
 		self.dbfilename = dbfilename
 		if not dbfilename.startswith(':memory:'):
 			dburi = 'file:'+urllib.parse.quote(dbfilename)
@@ -143,7 +171,12 @@ class HypergraphsStore(object):
 		
 		return conn
 	
-	def _bootstrap_store(self):
+	def _bootstrap_store(self) -> None:
+		"""
+		This helper method bootstraps the store in case it was
+		not previously done. Bootstrapping the store means
+		declaring the SQL tables and indices needed by it
+		"""
 		if not self.schema_initialized:
 			# First, full path to the schema
 			sql_schema_filename = os.path.join(os.path.dirname(__file__), self.SQL_SCHEMA_FILENAME)
@@ -158,6 +191,11 @@ class HypergraphsStore(object):
 			self.schema_initialized = True
 	
 	def registeredJSONSchemas(self) -> List[str]:
+		"""
+		This method returns the list of JSON Schemas already
+		stored in the hypergraph store. It is equivalent to
+		return the value of the `$id` key from each JSON Schema
+		"""
 		retval = []
 		with self.conn:
 			cur = self.conn.cursor()
@@ -168,7 +206,10 @@ class HypergraphsStore(object):
 		return retval
 	
 	def getJSONSchemaValidator(self, schema_id: str) -> Mapping[str, Any]:
-		# It returns a stored JSON Schema from the database
+		"""
+		This method returns a stored JSON Schema from the
+		store, already parsed by `json` library
+		"""
 		with self.conn:
 			cur = self.conn.cursor()
 			for pload in cur.execute('SELECT payload FROM json_schemas WHERE schema_id=?',(schema_id,)):
@@ -180,6 +221,10 @@ class HypergraphsStore(object):
 		return None
 	
 	def registeredNodeTypes(self) -> List[NodeType]:
+		"""
+		This method returns the list of declared node types in
+		the store, using its corresponding named tuple
+		"""
 		retval = []
 		with self.conn:
 			cur = self.conn.cursor()
@@ -190,6 +235,10 @@ class HypergraphsStore(object):
 		return retval
 	
 	def registeredEdgeTypes(self) -> List[EdgeType]:
+		"""
+		This method returns the list of declared edge types in
+		the store, using its corresponding named tuple
+		"""
 		self._populateNodeTypesCache()
 		retval = []
 		with self.conn:
@@ -213,6 +262,10 @@ class HypergraphsStore(object):
 		return retval
 	
 	def registeredHyperedgeTypes(self) -> List[HyperedgeType]:
+		"""
+		This method returns the list of declared hyperedge types
+		in the store, using its corresponding named tuple
+		"""
 		retval = []
 		with self.conn:
 			cur = self.conn.cursor()
@@ -223,6 +276,11 @@ class HypergraphsStore(object):
 		return retval
 	
 	def expectedNodeTypesForHyperedgeType(self, hetId: InternalHyperedgeTypeId) -> List[NodeType]:
+		"""
+		Given an internal hyperedge type id, this method returns
+		the list of expected node types involved in hyperedges
+		of this type
+		"""
 		retval = []
 		with self.conn:
 			cur = self.conn.cursor()
@@ -233,7 +291,15 @@ class HypergraphsStore(object):
 		return retval
 	
 	
-	def uploadManifest(self, manifest: Mapping[str, Any], manifestBasePath: Optional[str] = None, exist_ok:bool = True):
+	def uploadManifest(self, manifest: Mapping[str, Any], manifestBasePath: Optional[str] = None, exist_ok:bool = True) -> Tuple[int, int, int, int]:
+		"""
+		This method stores all the JSON Schemas, node types,
+		edge types and hyperedge types in the hypergraphs store,
+		checking their coherence and consistency. As this method
+		is reading JSON schemas relative to a path, it takes an
+		optional parameter to tell this reference. Also, this
+		method's behaviour on duplicates can be controlled.
+		"""
 		# Validate the manifest
 		md_manifest_schema_filename = os.path.join(os.path.dirname(__file__), self.MANIFEST_SCHEMAS_RELDIR, self.METADATA_MANIFEST_JSONSCHEMA_FILENAME)
 		with open(md_manifest_schema_filename, mode="r", encoding="utf-8") as mS:
@@ -396,6 +462,10 @@ class HypergraphsStore(object):
 		return (len(schemaFiles), len(loadable_node_types), len(loadable_edge_types), len(loadable_hyperedge_types))
 		
 	def _store_schemas(self, schemaFiles: List[str]) -> int:
+		"""
+		This helper method parses a bunch of read JSON Schema
+		files and it stores them in the database
+		"""
 		with self.conn:
 			cur = self.conn.cursor()
 			rollback = False
@@ -422,6 +492,10 @@ class HypergraphsStore(object):
 		return numLoaded
 	
 	def _store_node_types(self, loadable_node_types: List[Mapping[str, Any]]) -> int:
+		"""
+		This helper method reads a bunch of node type
+		declarations and stores them in the hypergraphs database.
+		"""
 		numLoaded = 0
 		self._invalidateNodeTypesCache()
 		with self.conn:
@@ -450,6 +524,10 @@ class HypergraphsStore(object):
 		return numLoaded
 	
 	def _store_edge_types(self, loadable_edge_types: List[Mapping[str, Any]]) -> int:
+		"""
+		This helper method reads a bunch of edge type
+		declarations and stores them in the hypergraphs database.
+		"""
 		numLoaded = 0
 		self._invalidateEdgeTypesCache()
 		ntHash = { nt.name: nt.nt_id for nt in self.registeredNodeTypes() }
@@ -479,6 +557,10 @@ class HypergraphsStore(object):
 		return numLoaded
 	
 	def _store_hyperedge_types(self, loadable_hyperedge_types: List[Mapping[str, Any]]) -> int:
+		"""
+		This helper method reads a bunch of hyperedge type
+		declarations and stores them in the hypergraphs database.
+		"""
 		numLoaded = 0
 		self._invalidateHyperedgeTypesCache()
 		ntHash = { nt.name: nt.nt_id for nt in self.registeredNodeTypes() }
@@ -519,7 +601,17 @@ class HypergraphsStore(object):
 		
 		return numLoaded
 	
-	def populateDataManifest(self, data_manifest: Union[str, Mapping[str, Any]]):
+	def populateDataManifest(self, data_manifest: Union[str, Mapping[str, Any]]) -> None:
+		"""
+		A data manifest is a declaration of one or more
+		hypergraphs to be stored in the hypergraphs store.
+		This declaration can be either in a YAML file or already
+		read in memory as a dictionary, following the correct
+		structure.
+		This method takes as input this data manifest, and does
+		all the needed work to store or update all the declared
+		hypegraphs in the database.
+		"""
 		# Initialize store with the manifest
 		if not isinstance(data_manifest, dict):
 			with open(data_manifest, mode="r", encoding="utf-8") as mR:
@@ -531,7 +623,15 @@ class HypergraphsStore(object):
 		
 		self.uploadDataManifest(data_manifestObject, data_manifestBasePath)
 	
-	def uploadDataManifest(self, data_manifest: Mapping[str, Any], data_manifestBasePath: Optional[str] = None):
+	def uploadDataManifest(self, data_manifest: Mapping[str, Any], data_manifestBasePath: Optional[str] = None) -> None:
+		"""
+		This method validates and uploads/updates the
+		hypergraphs declared in the input data manifest. As the
+		data manifest points to both hypergraph metadata file
+		and all the data files needed to populate the store with
+		the hypergraph data, there is an optional parameter to
+		tell the reference for relative paths to those files.
+		"""
 		# Validate the data manifest
 		d_manifest_schema_filename = os.path.join(os.path.dirname(__file__), self.MANIFEST_SCHEMAS_RELDIR, self.DATA_MANIFEST_JSONSCHEMA_FILENAME)
 		with open(d_manifest_schema_filename, mode="r", encoding="utf-8") as dS:
@@ -550,6 +650,13 @@ class HypergraphsStore(object):
 			self.uploadHypergraph(hypergraphDesc, data_manifestBasePath)
 	
 	def getHypergraphMetadataId(self, hmId: HypergraphPayloadId) -> HypergraphId:
+		"""
+		This method takes as input a hypergraph id, as it was
+		declared in the hypergraph metadata file when it was
+		stored, and it returns a named tuple representing the
+		minimal metadata of the hypergraph, including creation
+		and update dates.
+		"""
 		h_id = None
 		stored_at = None
 		updated_at = None
@@ -565,6 +672,11 @@ class HypergraphsStore(object):
 		return HypergraphId(h_id=h_id, h_payload_id=hmId, stored_at=stored_at, updated_at=updated_at)
 	
 	def getHypergraphById(self, h_payload_id: HypergraphPayloadId) -> Tuple[HypergraphId, Any]:
+		"""
+		This method takes as input a hypergraph id, as it was
+		declared in the hypergraph metadata file when it was
+		stored, and it returns the payload associated to it.
+		"""
 		self._populateHypergraphsCache()
 		hId = self.cachedHypergraphs.get(h_payload_id)
 		if hId is None:
@@ -579,10 +691,13 @@ class HypergraphsStore(object):
 		
 		return hId, payload
 	
-	def _populateHypergraphsCache(self, invalidateCache:bool = False):
+	def _populateHypergraphsCache(self, invalidateCache:bool = False) -> None:
 		"""
-		Only try populating when empty
+		This helper method populates an internal cache of the
+		correspondence of the public hypergraph ids and their
+		minimal metadata.
 		"""
+		# Only try populating when empty
 		if not invalidateCache:
 			invalidateCache = len(self.cachedHypergraphs) == 0
 		if invalidateCache:
@@ -596,18 +711,31 @@ class HypergraphsStore(object):
 				# Assuring the cursor is properly closed
 				cur.close()
 	
-	def _invalidateHypergraphsCache(self):
+	def _invalidateHypergraphsCache(self) -> None:
+		"""
+		This helper method invalidates the cached
+		correspondences of hypergraph ids and their
+		minimal metadata
+		"""
 		self.cachedHypergraphs = {}
 	
 	@property
 	def hypergraphs(self) ->  Iterator[HypergraphId]:
+		"""
+		This property returns an iterator to all the known
+		hypergraphs minimal metadata
+		"""
 		self._populateHypergraphsCache()
 		return self.cachedHypergraphs.values()
 	
-	def _populateNodeTypesCache(self, invalidateCache:bool = False):
+	def _populateNodeTypesCache(self, invalidateCache:bool = False) -> None:
 		"""
-		Only try populating when empty
+		This helper method populates an internal cache of the
+		correspondence of the public node type names and
+		internal node type ids with their minimal
+		associated metadata.
 		"""
+		# Only try populating when empty
 		if not invalidateCache:
 			invalidateCache = len(self.cachedNodeTypesByInternalId) == 0
 		if invalidateCache:
@@ -620,18 +748,28 @@ class HypergraphsStore(object):
 				for ntId in self.registeredNodeTypes()
 			}
 	
-	def _invalidateNodeTypesCache(self):
+	def _invalidateNodeTypesCache(self) -> None:
+		"""
+		This helper method invalidates the cached
+		correspondences of node type names and internal node
+		type ids
+		"""
 		self.cachedNodeTypesByName = {}
 		self.cachedNodeTypesByInternalId = {}
 	
 	@property
 	def nodeTypes(self) ->  Iterator[NodeType]:
+		"""
+		This property returns an iterator to all the known node
+		types, whether they are being used in hypergraphs or not.
+		"""
 		self._populateNodeTypesCache()
 		return self.cachedNodeTypesByInternalId.values()
 	
 	def getNodeTypesByGraph(self, h_payload_id: HypergraphPayloadId, name: Optional[str] = None) -> Iterator[NodeType]:
 		"""
-		Retrieves the list of known nodes types from this hypergraph
+		Given a public hypergraph id, it retrieves an iterator
+		of nodes types used by nodes in this hypergraph
 		"""
 		self._populateHypergraphsCache()
 		hId = self.cachedHypergraphs.get(h_payload_id)
@@ -656,10 +794,14 @@ FROM node_type nt
 		return retval
 	
 	
-	def _populateEdgeTypesCache(self, invalidateCache:bool = False):
+	def _populateEdgeTypesCache(self, invalidateCache:bool = False) -> None:
 		"""
-		Only try populating when empty
+		This helper method populates an internal cache of the
+		correspondence of the public edge type names and
+		internal edge type ids with their minimal
+		associated metadata.
 		"""
+		# Only try populating when empty
 		if not invalidateCache:
 			invalidateCache = len(self.cachedEdgeTypesByName) == 0
 		if invalidateCache:
@@ -672,18 +814,30 @@ FROM node_type nt
 				for etId in self.registeredEdgeTypes()
 			}
 	
-	def _invalidateEdgeTypesCache(self):
+	def _invalidateEdgeTypesCache(self) -> None:
+		"""
+		This helper method invalidates the cached
+		correspondences of edge type names and internal edge
+		type ids
+		"""
 		self.cachedEdgeTypesByName = {}
 		self.cachedEdgeTypesByInternalId = {}
 	
 	@property
 	def edgeTypes(self) ->  Iterator[EdgeType]:
+		"""
+		This property returns an iterator to all the known edge
+		types, whether they are being used in hypergraphs or not.
+		"""
 		self._populateEdgeTypesCache()
 		return self.cachedEdgeTypesByInternalId.values()
 	
 	def getMinimalEdgeTypesByGraph(self, h_payload_id: HypergraphPayloadId) -> Iterator[EdgeType]:
 		"""
-		Retrieves the list of known edge types from this hypergraph
+		Given a public hypergraph id, it retrieves an iterator
+		of edge types used by edges in this hypergraph. The
+		named tuples are filled in with minimal metadata
+		information.
 		"""
 		self._populateHypergraphsCache()
 		hId = self.cachedHypergraphs.get(h_payload_id)
@@ -710,7 +864,10 @@ FROM edge_type et
 	
 	def getEdgeTypesByGraph(self, h_payload_id: HypergraphPayloadId, name: Optional[str] = None) -> Iterator[EdgeType]:
 		"""
-		Retrieves the list of known edge types from this hypergraph
+		Given a public hypergraph id, it retrieves an iterator
+		of edge types used by edges in this hypergraph. The
+		named tuples are filled in with all the available
+		metadata information, including the number of edges.
 		"""
 		self._populateHypergraphsCache()
 		hId = self.cachedHypergraphs.get(h_payload_id)
@@ -748,9 +905,12 @@ FROM edge_type et
 		
 		return retval
 	
-	def _populateHyperedgeTypesCache(self, invalidateCache:bool = False):
+	def _populateHyperedgeTypesCache(self, invalidateCache:bool = False) -> None:
 		"""
-		Only try populating when empty
+		This helper method populates an internal cache of the
+		correspondence of the public hyperedge type names and
+		internal hyperedge type ids with their minimal
+		associated metadata.
 		"""
 		if not invalidateCache:
 			invalidateCache = len(self.cachedHyperedgeTypesByInternalId) == 0
@@ -764,18 +924,31 @@ FROM edge_type et
 				for hetId in self.registeredHyperedgeTypes()
 			}
 	
-	def _invalidateHyperedgeTypesCache(self):
+	def _invalidateHyperedgeTypesCache(self) -> None:
+		"""
+		This helper method invalidates the cached
+		correspondences of hyperedge type names and
+		internal hyperedge type ids
+		"""
 		self.cachedHyperedgeTypesByInternalId = {}
 		self.cachedHyperedgeTypesByName = {}
 	
 	@property
 	def hyperedgeTypes(self) ->  Iterator[HyperedgeType]:
+		"""
+		This property returns an iterator to all the known
+		hyperedge types, whether they are being used in
+		hypergraphs or not.
+		"""
 		self._populateHyperedgeTypesCache()
 		return self.cachedHyperedgeTypesByInternalId.values()
 	
 	def getMinimalHyperedgeTypesByGraph(self, h_payload_id: HypergraphPayloadId) -> Iterator[EdgeType]:
 		"""
-		Retrieves the list of known edge types from this hypergraph
+		Given a public hypergraph id, it retrieves an iterator
+		of hyperedge types used by hyperedges in this
+		hypergraph. The	named tuples are filled in with minimal
+		metadata information.
 		"""
 		self._populateHypergraphsCache()
 		hId = self.cachedHypergraphs.get(h_payload_id)
@@ -802,7 +975,11 @@ FROM hyperedge_type het
 	
 	def getHyperedgeTypesByGraph(self, h_payload_id: HypergraphPayloadId, name: Optional[str] = None) -> Iterator[EdgeType]:
 		"""
-		Retrieves the list of known edge types from this hypergraph
+		Given a public hypergraph id, it retrieves an iterator
+		of hyperedge types used by hyperedges in this
+		hypergraph. The	named tuples are filled in with all the
+		available metadata information, including the number of
+		hyperedges.
 		"""
 		self._populateHypergraphsCache()
 		hId = self.cachedHypergraphs.get(h_payload_id)
