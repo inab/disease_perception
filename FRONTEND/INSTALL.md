@@ -39,4 +39,10 @@ yarn --frozen-lockfile
 webpack -p --progress --colors
 ```
 
+* If this error occurs [error](https://stackoverflow.com/questions/69692842/error-message-error0308010cdigital-envelope-routinesunsupported) you may have to export also:
+
+```
+export NODE_OPTIONS=--openssl-legacy-provider
+```
+
 * Congratulations! Disease PERCEPTION Comorbidities browser is available at the `../BACKEND/static` subdirectory.
