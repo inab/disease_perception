@@ -6,10 +6,9 @@ import sys, os
 
 from .api_models import CMResPath, CMRoutes, CMResource, \
     STUDIES_NS
-
 from flask import redirect
+from .nodes import NodesDetailed, NodesByName, NodeById
 
-from .nodes import NodesDetailed, NodesByName
 
 class StudyList(CMResource):
 	'''Shows a list of all the studies used to build the comorbidity network'''
@@ -18,6 +17,7 @@ class StudyList(CMResource):
 		'''List all the studies used to build the comorbidity network'''
 		return redirect(self.api.url_for(NodesDetailed, h_id=self.default_h_id, n_type='study'))
 
+
 @STUDIES_NS.response(404, 'Study not found')
 @STUDIES_NS.param('study_id', 'The study id')
 class Study(CMResource):
@@ -25,7 +25,9 @@ class Study(CMResource):
 	@STUDIES_NS.doc('study')
 	def get(self,study_id):
 		'''It gets detailed study information'''
-		return redirect(self.api.url_for(NodesByName, h_id=self.default_h_id, n_type='study', name=study_id))
+		return redirect(self.api.url_for(NodeById, h_id=self.default_h_id, 
+		n_type='study', _id=study_id))
+
 
 ROUTES = CMRoutes(
 	ns=STUDIES_NS,

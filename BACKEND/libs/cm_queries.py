@@ -25,7 +25,7 @@ from .store.common import *
 class ComorbiditiesNetwork(object):
 	def __init__(self, dbpath:str, api, itersize:int=100):
 		self.api = api
-		self.hgdb = HypergraphsStore(dbpath, readonly=True)	# type: HypergraphsStore
+		self.hgdb = HypergraphsStore(dbpath, readonly=False)	# type: HypergraphsStore
 		self.dbpath = dbpath	# type: str
 		self.itersize = itersize	# type: int
 	
@@ -44,7 +44,8 @@ class ComorbiditiesNetwork(object):
 		
 	def hypergraph(self, _id: HypergraphPayloadId) -> Mapping[str, Any]:
 		# First, get the internal graph id
-		hId, payload = self.hgdb.getHypergraphById(_id)	# type: Optional[HypergraphId], Optional[Any]
+		hId, payload = self.hgdb.getHypergraphById(_id)	
+		# type:Optional[HypergraphId], Optional[Any]
 		if hId is None:
 			self.api.abort(404, "Hypergraph {} was not found in the database".format(_id))
 		
@@ -334,7 +335,9 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
-	def queryNodeEdgesNodes(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, from_to: bool, edge_type: Optional[EdgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
+	def queryNodeEdgesNodes(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, 
+		from_to: bool, edge_type: Optional[EdgeTypeName] = None, internal_id: Optional[InternalNodeId] = None,
+		 _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
 		if (name is not None) and not isinstance(name, list):
 			name = [ name ]
 		if (_id is not None) and not isinstance(_id, list):
@@ -361,6 +364,40 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
+	def queryEdgesFromUpperNodes(self, h_payload_id: HypergraphPayloadId, 
+		edge_output_type: EdgeTypeName, ids: List[NodePayloadId],
+		edges_conection: List[EdgeTypeName], min_size:int=None)-> List[Mapping[str, Any]]:
+
+		if (ids is not None) and not isinstance(ids, list):
+			ids = [ ids ]
+		
+		edges = self.hgdb.getEdgesByEdgeAndNodesIds(h_payload_id, ids, edge_output_type, 
+			edges_conection, min_size)
+
+		if edges is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the \
+			database or database was not properly populated (missing {edge_output_type} edge type?)")
+		
+		return self._format_simple_edges(edges, edge_output_type, h_payload_id)
+	
+
+	def queryNodeFromUpperNodes(self, h_payload_id: HypergraphPayloadId, 
+		node_output_type: NodeTypeName, ids: List[NodePayloadId],
+		edges_conection: List[EdgeTypeName])-> List[Mapping[str, Any]]:
+
+		if (ids is not None) and not isinstance(ids, list):
+			ids = [ ids ]
+		
+		nodes = self.hgdb.getNodesByEdgesAndNodesIds(h_payload_id, ids, 
+			node_output_type, edges_conection)
+
+		if nodes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the \
+			database or database was not properly populated (missing {node_output_type} node type?)")
+		
+		return self._format_simple_nodes(nodes, node_output_type, h_payload_id)
+	
+		
 	def queryNodeHyperedges(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, hyperedge_type: Optional[HyperedgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
 		if (name is not None) and not isinstance(name, list):
 			name = [ name ]

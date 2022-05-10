@@ -127,6 +127,13 @@ class EdgeId(NamedTuple):
 	weight: Optional[float] = None
 	payload: Optional[Any] = None
 
+class NodeProps(NamedTuple):
+	"""
+	"""
+	node: NodeId
+	props: Mapping[str, Any]
+
+
 class HyperedgeId(NamedTuple):
 	"""
 	"""
