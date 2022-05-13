@@ -51,6 +51,7 @@ export class Diseases {
 					}));
 				})
 				.then(function(decodedJson) {
+					
 					_EdgesGroups = decodedJson[1]
 					_Diseases = decodedJson[0];
 					_DiseaseNodesByGroupId = {};
@@ -68,13 +69,13 @@ export class Diseases {
 							id: dis._id,
 							parent: _EdgesGroups[i].f_id._id,
 							disease_group_id: _EdgesGroups[i].f_id._id
+							
 						};
 						let retval =  {
 							data: retdis,
 							classes: 'D'
 						};
-			
-						
+
 						// Populating the hash of diseases grouped by disease group
 						if(_EdgesGroups[i].f_id._id in _DiseaseNodesByGroupId) {
 							_DiseaseNodesByGroupId[_EdgesGroups[i].f_id._id].push(retval);
@@ -105,7 +106,6 @@ export class Diseases {
 							disease_group_id: dg.internal_id,
 							id: dg._id
 						};
-						_DiseaseNodesByGroupId[dg._id]['color']= dg.payload.properties.color
 						// Unique identifiers
 						return {
 							data: retdg
@@ -139,6 +139,7 @@ export class Diseases {
 							id: dc._id,
 							source: dc.f_id._id,
 							target: dc.t_id._id,
+							rel_risk: dc.weight
 						};
 						//nose que fa aixo...
 						delete retdc.from_id;
@@ -194,6 +195,7 @@ export class Diseases {
 			_DiseaseNodes.forEach(function(d) {
 				// jshint camelcase: false 
 				d.data.disease_group = _DiseaseGroupsHash[d.data.disease_group_id];
+				d.data.color = _DiseaseGroupsHash[d.data.disease_group_id].payload.properties.color
 			});
 		}
 		
@@ -218,7 +220,6 @@ export class Diseases {
 	
 	// getCYComorbiditiesNetwork
 	getFetchedNetwork() {
-		
 		return {
 			nodes: [
 				...this.getDiseaseNodes(),
@@ -245,7 +246,6 @@ export class Diseases {
 	}
 	
 	getLegendDOM() {
-		console.log(_DiseaseNodesByGroupId)
 		let $result = $('<span style="font-size: 2rem;">Color legend (based on disease groups)</span>');
 		let $legend = $('<div></div>');
 		$legend.addClass('legend two-column');
@@ -294,7 +294,7 @@ export class Diseases {
 			
 			let dMap = _DiseaseNodesByGroupId[dg._id].map((d) => {
 				let $dIt = $('<div><div><i class="fas fa-circle" style="color: '+
-					_DiseaseNodesByGroupId[dg._id].color+
+					d.data.color+
 					';"></i></div><div><a>'+
 					d.data.name+
 					'</a></div></div>');
@@ -441,7 +441,6 @@ export class Diseases {
 	}
 	
 	makeNodeTooltipContent(node) {
-		console.log(node)
 		let diseaseName = node.data('name');
 		let diseaseLower = diseaseName.replace(/ +/g,'-').toLowerCase();
 		let icd9 = node.data('icd9');
