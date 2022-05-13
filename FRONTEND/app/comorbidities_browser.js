@@ -117,6 +117,7 @@ export class ComorbiditiesBrowser {
 		ui.$searchBody.append(ui.$searchField);
 		ui.$searchBody.hide();
 		
+		//cercador
 		let tipSearch = tippy(ui.$search.get(0),{ // tippy options:
 			content: ui.$searchBody.get(0),
 			arrow: roundArrow,
@@ -141,6 +142,7 @@ export class ComorbiditiesBrowser {
 		ui.$search.on('click', () => ui.$searchBody.toggle());
 		ui.$searchBody.on('mouseenter focus',() => ui.$searchBody.show());
 		ui.$searchBody.on('mouseleave unfocus',() => ui.$searchBody.hide());
+		
 		
 		// The legend button
 		ui.$legend = $('<button><i class="fas fa-info-circle" aria-hidden="true"></i></button>');
@@ -366,8 +368,6 @@ export class ComorbiditiesBrowser {
 				context.redirect('#','diseases');
 			});
 		});
-		
-		console.log(app);
 		
 		app.run();
 	}

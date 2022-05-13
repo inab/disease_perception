@@ -26,8 +26,8 @@ export class Genes {
 						let retgene = {
 							...gene,
 							// Unique identifiers
-							name: gene.gene_symbol,
-							id: gene.gene_symbol
+							name: gene.name,
+							id: gene._id
 						};
 						
 						return {

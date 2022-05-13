@@ -9,6 +9,8 @@ var _PatientSubgroups;
 var _PatientSubgroupNodes;
 var _PatientSubgroupNodesByDisease;
 
+var _EdgesPatients;
+
 var _PatientSubgroupsHash;
 var _PatientSubgroupsNodeHash;
 
@@ -51,16 +53,23 @@ export class PatientSubgroups {
 		
 		if(_PatientSubgroups===undefined) {
 			fetchPromises.push(
-				fetch('api/patients/subgroups', {mode: 'no-cors'})
-				.then(function(res) {
-					return res.json();
+				Promise.all([
+					fetch('api/patients/subgroups', {mode: 'no-cors'}),
+					fetch('api/h/disease_perception/e/disease_has_patient_subgroups', {mode: 'no-cors'})
+				])
+				.then(function (responses) {
+					// Get a JSON object from each of the responses
+					return Promise.all(responses.map(function (response) {
+						return response.json();
+					}));
 				})
 				.then(function(decodedJson) {
-					_PatientSubgroups = decodedJson;
+					_PatientSubgroups = decodedJson[0];
+					_EdgesPatients = decodedJson[1]
 					_PatientSubgroupsHash = {};
 					_PatientSubgroupsNodeHash = {};
 					_PatientSubgroupNodesByDisease = {};
-					_PatientSubgroupNodes = _PatientSubgroups.map(function(psg) {
+					_PatientSubgroupNodes = _PatientSubgroups.map(function(psg, i) {
 						// jshint camelcase: false 
 						let name = 'Sub '+psg.name.split('.')[1];
 						let label = name + '\n('+psg.size+')';
@@ -70,9 +79,9 @@ export class PatientSubgroups {
 							name: name,
 							label: label,
 							// Unique identifiers
-							patient_subgroup_id: psg.id,
-							id: 'PSG'+psg.id,
-							parent: 'D'+psg.disease_id
+							patient_subgroup_id: psg.internal_id,
+							id: psg._id,
+							parent: _EdgesPatients[i].f_id._id
 						};
 						_PatientSubgroupsHash[psg.id] = retpsg;
 						_PatientSubgroupsNodeHash[retpsg.id] = retpsg;
@@ -117,9 +126,9 @@ export class PatientSubgroups {
 					let retpsgc = {
 						...psgc,
 						// Unique identifiers
-						id: 'PSGC'+psgci,
-						source: 'PSG'+psgc.from_id,
-						target: 'PSG'+psgc.to_id
+						id: psgci._id,
+						source: psgc.f_id._id,
+						target: psgc.t_id._id,
 					};
 					//delete retpsgc.from_id;
 					//delete retpsgc.to_id;

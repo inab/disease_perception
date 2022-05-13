@@ -10,6 +10,8 @@ var _Diseases;
 var _DiseaseNodes;
 var _DiseaseNodesByGroupId;
 
+var _EdgesGroups;
+
 var _DiseaseGroups;
 var _DiseaseGroupNodes;
 var _DiseaseGroupsHash;
@@ -38,14 +40,21 @@ export class Diseases {
 		if(_Diseases===undefined) {
 			// This is from the fetch API
 			fetchPromises.push(
-				fetch('api/diseases', {mode: 'no-cors'})
-				.then(function(res) {
-					return res.json();
+				Promise.all([
+					fetch('api/diseases', {mode: 'no-cors'}),
+					fetch('api/h/disease_perception/e/disease_group_has_diseases', {mode: 'no-cors'})
+				])
+				.then(function (responses) {
+					// Get a JSON object from each of the responses
+					return Promise.all(responses.map(function (response) {
+						return response.json();
+					}));
 				})
 				.then(function(decodedJson) {
-					_Diseases = decodedJson;
+					_EdgesGroups = decodedJson[1]
+					_Diseases = decodedJson[0];
 					_DiseaseNodesByGroupId = {};
-					_DiseaseNodes = _Diseases.map(function(dis) {
+					_DiseaseNodes = _Diseases.map(function(dis, i) {
 						// jshint camelcase: false
 						let label = dis.name.replace(/ +/g,'\n');
 						let retdis = {
@@ -55,23 +64,23 @@ export class Diseases {
 							groupname: dis.name,
 							childcount: 0,
 							grandchildcount: 0,
-							disease_id: dis.id,
-							id: 'D'+dis.id,
-							parent: 'DG'+dis.disease_group_id,
+							disease_id: dis.internal_id,
+							id: dis._id,
+							parent: _EdgesGroups[i].f_id._id,
+							disease_group_id: _EdgesGroups[i].f_id._id
 						};
-						
 						let retval =  {
 							data: retdis,
 							classes: 'D'
 						};
+			
 						
 						// Populating the hash of diseases grouped by disease group
-						if(dis.disease_group_id in _DiseaseNodesByGroupId) {
-							_DiseaseNodesByGroupId[dis.disease_group_id].push(retval);
+						if(_EdgesGroups[i].f_id._id in _DiseaseNodesByGroupId) {
+							_DiseaseNodesByGroupId[_EdgesGroups[i].f_id._id].push(retval);
 						} else {
-							_DiseaseNodesByGroupId[dis.disease_group_id] = [ retval ];
+							_DiseaseNodesByGroupId[_EdgesGroups[i].f_id._id] = [ retval ];
 						}
-						
 						return retval;
 					});
 					return _Diseases;
@@ -93,14 +102,17 @@ export class Diseases {
 						let retdg = {
 							...dg,
 							label: label,
-							disease_group_id: dg.id,
-							id: 'DG'+dg.id
+							disease_group_id: dg.internal_id,
+							id: dg._id
 						};
+						_DiseaseNodesByGroupId[dg._id]['color']= dg.payload.properties.color
 						// Unique identifiers
 						return {
 							data: retdg
 						};
 					});
+
+
 					
 					return _DiseaseGroups;
 				})
@@ -119,21 +131,22 @@ export class Diseases {
 					_DiseaseComorbiditiesNetworkEdges = _DiseaseComorbiditiesNetwork.map(function(dc,dci) {
 						// Will be used later
 						// jshint camelcase: false 
-						dc.abs_rel_risk = Math.abs(dc.rel_risk);
+						dc.abs_rel_risk = Math.abs(dc.weight);
 						// Preparation
 						let retdc = {
 							...dc,
 							// Unique identifiers
-							id: 'DC'+dci,
-							source: 'D'+dc.from_id,
-							target: 'D'+dc.to_id,
+							id: dc._id,
+							source: dc.f_id._id,
+							target: dc.t_id._id,
 						};
+						//nose que fa aixo...
 						delete retdc.from_id;
 						delete retdc.to_id;
 						
 						return {
 							data: retdc,
-							classes: 'CM CM'+((retdc.rel_risk > 0) ? 'p' : 'n')
+							classes: 'CM CM'+((retdc.weight > 0) ? 'p' : 'n')
 						};
 					});
 					
@@ -176,9 +189,8 @@ export class Diseases {
 		if(!_DiseaseGroupsHash) {
 			_DiseaseGroupsHash = {};
 			_DiseaseGroups.forEach(function(dg) {
-				_DiseaseGroupsHash[dg.id] = dg;
+				_DiseaseGroupsHash[dg._id] = dg;
 			});
-			
 			_DiseaseNodes.forEach(function(d) {
 				// jshint camelcase: false 
 				d.data.disease_group = _DiseaseGroupsHash[d.data.disease_group_id];
@@ -206,6 +218,7 @@ export class Diseases {
 	
 	// getCYComorbiditiesNetwork
 	getFetchedNetwork() {
+		
 		return {
 			nodes: [
 				...this.getDiseaseNodes(),
@@ -232,6 +245,7 @@ export class Diseases {
 	}
 	
 	getLegendDOM() {
+		console.log(_DiseaseNodesByGroupId)
 		let $result = $('<span style="font-size: 2rem;">Color legend (based on disease groups)</span>');
 		let $legend = $('<div></div>');
 		$legend.addClass('legend two-column');
@@ -239,13 +253,13 @@ export class Diseases {
 		// For each disease group, show it
 		let $elemMap = _DiseaseGroups.map((dg) => {
 			let $dg = $('<div><div><i class="fas fa-circle" style="color: '+
-				dg.color+
+				dg.payload.properties.color+
 				';"></i></div><div><a>'+
 				dg.name+
 				'</a></div></div>');
 			$dg.addClass('item');
 			$dg.bind('click',() => {
-				let diseaseIds = _DiseaseNodesByGroupId[dg.id].map((d) => d.data.id);
+				let diseaseIds = _DiseaseNodesByGroupId[dg._id].map((d) => d.data.id);
 				this.cmBrowser.addSelectionByNodeId(diseaseIds);
 				tippyHideAll();
 				return true;
@@ -278,9 +292,9 @@ export class Diseases {
 				zIndex: 999
 			});
 			
-			let dMap = _DiseaseNodesByGroupId[dg.id].map((d) => {
+			let dMap = _DiseaseNodesByGroupId[dg._id].map((d) => {
 				let $dIt = $('<div><div><i class="fas fa-circle" style="color: '+
-					d.data.color+
+					_DiseaseNodesByGroupId[dg._id].color+
 					';"></i></div><div><a>'+
 					d.data.name+
 					'</a></div></div>');
@@ -427,11 +441,13 @@ export class Diseases {
 	}
 	
 	makeNodeTooltipContent(node) {
+		console.log(node)
 		let diseaseName = node.data('name');
 		let diseaseLower = diseaseName.replace(/ +/g,'-').toLowerCase();
 		let icd9 = node.data('icd9');
 		let icd10 = node.data('icd10');
 		let dg = node.data('disease_group');
+		console.log(node)
 		let links = [
 			{
 				name: 'MedlinePlus',
@@ -474,7 +490,7 @@ export class Diseases {
 		
 		//content.innerHTML = 'Tippy content';
 		content.innerHTML = '<b>'+diseaseName+'</b>'+' ICD9: '+icd9 + ' ICD10: ' + icd10 + '<br />\n'+
-			'('+'<i class="fas fa-circle" style="color: '+dg.color+';"></i> '+dg.name+')<br />\n'+
+			'('+'<i class="fas fa-circle" style="color: '+dg.payload.properties.color+';"></i> '+dg.name+')<br />\n'+
 			'<div style="text-align: left;">' +
 			links.map(function(link) {
 				return '<a target="_blank" href="' + link.url + '">' + link.name + '</a>';
@@ -492,7 +508,7 @@ export class Diseases {
 		let target = edge.target();
 		
 		
-		content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
+		content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('weight') +
 			'<div><b>Source</b>: '+source.data('name') + '<br />\n' +
 			'<b>Target</b>: '+target.data('name')+'</div>';
 		return content;
