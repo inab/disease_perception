@@ -65,7 +65,7 @@ export class Diseases {
 							groupname: dis.name,
 							childcount: 0,
 							grandchildcount: 0,
-							disease_id: dis.internal_id,
+							disease_id: dis._id,
 							id: dis._id,
 							parent: _EdgesGroups[i].f_id._id,
 							disease_group_id: _EdgesGroups[i].f_id._id
@@ -82,6 +82,7 @@ export class Diseases {
 						} else {
 							_DiseaseNodesByGroupId[_EdgesGroups[i].f_id._id] = [ retval ];
 						}
+						
 						return retval;
 					});
 					return _Diseases;
@@ -103,17 +104,17 @@ export class Diseases {
 						let retdg = {
 							...dg,
 							label: label,
-							disease_group_id: dg.internal_id,
-							id: dg._id
+							disease_group_id: dg._id,
+							id: dg._id,
+							color: dg.payload.properties.color,
+							groupname: dg.name
+
 						};
 						// Unique identifiers
 						return {
 							data: retdg
 						};
 					});
-
-
-					
 					return _DiseaseGroups;
 				})
 			);
@@ -182,6 +183,7 @@ export class Diseases {
 	}
 	
 	getDiseases() {
+		
 		return _Diseases;
 	}
 	
@@ -446,7 +448,6 @@ export class Diseases {
 		let icd9 = node.data('icd9');
 		let icd10 = node.data('icd10');
 		let dg = node.data('disease_group');
-		console.log(node)
 		let links = [
 			{
 				name: 'MedlinePlus',

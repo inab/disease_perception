@@ -352,9 +352,8 @@ export class ComorbiditiesBrowser {
 			
 			s.get(/\#\/([^\/]+)(?:\/(.*))?/, (context,viewName,viewParamsS) => {
 				let viewParams = viewParamsS.length === 0 ? [] : viewParamsS.split('/').map((p) => {
-						return (p.indexOf(',')>0) ? p.split(',').map((el) => parseInt(el)) : parseInt(p);
+						return (p.indexOf(',')>0) ? p.split(','):p;
 					});
-				console.log(viewName,'P',viewParams);
 				this._switchView(viewName,...viewParams);
 			});
 			
@@ -375,7 +374,7 @@ export class ComorbiditiesBrowser {
 	switchView(viewName, ...viewParams) {
 		// This method is needed to keep track of every view change
 		// so the location is updated
-		console.log(viewParams);
+		console.log('viewParams',viewParams);
 		let viewRoute = '#/' + [viewName,...viewParams].map((el) => {
 				if(el instanceof Array) {
 					return el.map((subel) => encodeURIComponent(subel)).join(',');
@@ -893,6 +892,7 @@ export class ComorbiditiesBrowser {
 		let $nodeListNextViewButton = hPanel.$nodeListNextViewButton = $('<input type="button" class="btn btn-default btn-xs" value="'+opts.nextLabel+'" />');
 		$nodeListNextViewButton.on('click',() => {
 			let nextViewIds = $nodeList.find('input[type="checkbox"]:checked').toArray().map((check) => {
+
 				let checkbox = $(check);
 				
 				return checkbox.data(opts.idPropertyName);

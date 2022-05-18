@@ -72,29 +72,30 @@ export class PatientSubgroups {
 					_PatientSubgroupNodes = _PatientSubgroups.map(function(psg, i) {
 						// jshint camelcase: false 
 						let name = 'Sub '+psg.name.split('.')[1];
-						let label = name + '\n('+psg.size+')';
+						let label = name + '\n('+psg.payload.properties.count+')';
 						let retpsg = {
 							color: '#008020',
 							...psg,
 							name: name,
 							label: label,
 							// Unique identifiers
-							patient_subgroup_id: psg.internal_id,
+							patient_subgroup_id: psg._id,
 							id: psg._id,
-							parent: _EdgesPatients[i].f_id._id
+							parent: _EdgesPatients[i].f_id._id,
+							size: psg.payload.properties.count
 						};
-						_PatientSubgroupsHash[psg.id] = retpsg;
-						_PatientSubgroupsNodeHash[retpsg.id] = retpsg;
+						_PatientSubgroupsHash[psg._id] = retpsg;
+						_PatientSubgroupsNodeHash[retpsg._id] = retpsg;
 						
 						let retval = {
 							classes: 'PSG',
 							data: retpsg
 						};
 						
-						if(psg.disease_id in _PatientSubgroupNodesByDisease) {
-							_PatientSubgroupNodesByDisease[psg.disease_id].push(retval);
+						if(_EdgesPatients[i].f_id._id in _PatientSubgroupNodesByDisease) {
+							_PatientSubgroupNodesByDisease[_EdgesPatients[i].f_id._id].push(retval);
 						} else {
-							_PatientSubgroupNodesByDisease[psg.disease_id] = [ retval ];
+							_PatientSubgroupNodesByDisease[_EdgesPatients[i].f_id._id] = [ retval ];
 						}
 						
 						return retval;
@@ -121,7 +122,7 @@ export class PatientSubgroups {
 				
 				this.patientSubgroupComorbidityNetworkEdges = dPSCN.map(function(psgc,psgci) {
 					// Will be used later
-					psgc.abs_rel_risk = Math.abs(psgc.rel_risk);
+					psgc.abs_rel_risk = Math.abs(psgc.weight);
 					// Preparation
 					let retpsgc = {
 						...psgc,
@@ -129,13 +130,14 @@ export class PatientSubgroups {
 						id: psgci._id,
 						source: psgc.f_id._id,
 						target: psgc.t_id._id,
+						rel_risk: psgc.weight
 					};
 					//delete retpsgc.from_id;
 					//delete retpsgc.to_id;
 					
 					return {
 						data: retpsgc,
-						classes: 'CM CM'+((retpsgc.rel_risk > 0) ? 'p' : 'n')
+						classes: 'CM CM'+((retpsgc.weight > 0) ? 'p' : 'n')
 					};
 				});
 				
@@ -146,6 +148,7 @@ export class PatientSubgroups {
 		);
 		
 		fetchPromises.push(
+			
 			fetch('api/diseases/'+encodeURIComponent(commaDiseaseIds)+'/patients/subgroups/drugs', {mode: 'no-cors'})
 			.then(function(res) {
 				return res.json();
@@ -159,31 +162,35 @@ export class PatientSubgroups {
 				
 				if(dPSDI instanceof Array) {
 					dPSDI.forEach(function(psd,psdi) {
-						dPSDIHash[psd.patient_subgroup_id] = psd;
-						let upList = [];
-						let downList = [];
-						psd.drugs.forEach(function(psde,psdei) {
-							if(psde.regulation_sign > 0) {
-								upList.push(psde.drug_id);
-							} else {
-								downList.push(psde.drug_id);
-							}
-							let retpsd = {
-								// Unique identifiers
-								id: 'PSDC'+psdi+'_'+psdei,
-								source: 'Dr'+psde.drug_id,
-								target: 'PSD'+psd.patient_subgroup_id,
-								sign: psde.regulation_sign
-							};
+						if( dPSDIHash[psd.f_id._id] === undefined ) {
+							dPSDIHash[psd.f_id._id] = [psd]
+							dPSDIHash[psd.f_id._id].upSet= new Set()
+							dPSDIHash[psd.f_id._id].downSet= new Set()
+						}else {
+							dPSDIHash[psd.f_id._id].push(psd)
+						}
+						
+						//psd.drugs.forEach(function(psde,psdei) {
+						if(psd.weight > 0) {
+							dPSDIHash[psd.f_id._id].upSet.add(psd.t_id._id);
+						} else {
+							dPSDIHash[psd.f_id._id].downSet.add(psd.t_id._id);
+						}
+						let retpsd = {
+							// Unique identifiers
+							id: psd._id,
+							source: psd.t_id._id,
+							target: psd.f_id._id,
+							sign: psd.weight
+						};
 							
-							dPSDIE.push({
-								data: retpsd,
-								classes: 'DI'
-							});
+						dPSDIE.push({
+							data: retpsd,
+							classes: 'DI'
 						});
-						psd.upSet = new Set(upList);
-						psd.downSet = new Set(downList);
+						//});
 					});
+					
 				}
 			})
 		);
@@ -202,30 +209,36 @@ export class PatientSubgroups {
 				
 				if(dPSGI instanceof Array) {
 					dPSGI.forEach(function(psg,psgi) {
-						dPSGIHash[psg.patient_subgroup_id] = psg;
+						if( dPSGIHash[psg.f_id._id] === undefined ) {
+							dPSGIHash[psg.f_id._id] = [psg]
+							dPSGIHash[psg.f_id._id].upSet= new Set()
+							dPSGIHash[psg.f_id._id].downSet= new Set()
+						}else {
+							dPSGIHash[psg.f_id._id].push(psg)
+						}
+						
 						let upList = [];
 						let downList = [];
-						psg.genes.forEach(function(psge,psgei) {
-							if(psge.regulation_sign > 0) {
-								upList.push(psge.gene_symbol);
+						//psg.genes.forEach(function(psge,psgei) {
+							if(psg.weight > 0) {
+								dPSGIHash[psg.f_id._id].upSet.add(psg.t_id._id);
 							} else {
-								downList.push(psge.gene_symbol);
+								dPSGIHash[psg.f_id._id].downSet.add(psg.t_id._id);
 							}
 							let retpsg = {
 								// Unique identifiers
-								id: 'PSGC'+psgi+'_'+psgei,
-								source: psge.gene_symbol,
-								target: 'PSD'+psg.patient_subgroup_id,
-								sign: psge.regulation_sign
+								id: psg._id,
+								source: psg.t_id._id,
+								target: psg.f_id._id,
+								sign: psg.weight
 							};
 							
 							dPSGIE.push({
 								data: retpsg,
 								classes: 'GI'
 							});
-						});
-						psg.upSet = new Set(upList);
-						psg.downSet = new Set(downList);
+						//});
+		
 					});
 				}
 			})
@@ -246,15 +259,16 @@ export class PatientSubgroups {
 		if(this.network === null) {
 			//let diseaseNodes = this.diseases.getDiseaseNodes();
 			let setDiseaseIds = new Set(this.diseaseIds);
-			let selectedDiseases = this.selectedDiseases = this.diseases.getDiseaseNodes().filter((d) => setDiseaseIds.has(d.data.disease_id));
+			let selectedDiseases = this.selectedDiseases = 
+				this.diseases.getDiseaseNodes().filter((d) => setDiseaseIds.has(d.data.disease_id));
 			
 			let dPSGIHash = this.diseasePatientSubgroupGeneIntersectHash;
 			let dPSDIHash = this.diseasePatientSubgroupDrugIntersectHash;
-			
 			let drugsHash = {};
 			
 			this.drugs.getDrugs().forEach((dr) => {
-				drugsHash[dr.id] = dr;
+				drugsHash[dr._id] = dr;
+				
 			});
 			
 			// The patient subgroups related to the selected diseases
@@ -323,9 +337,12 @@ export class PatientSubgroups {
 						// Some stats propagation
 						if(psn.data.patient_subgroup_id in dPSDIHash) {
 							let upArr = [];
-							dPSDIHash[psn.data.patient_subgroup_id].upSet.forEach((drug_id) => upArr.push(drugsHash[drug_id].name));
+							dPSDIHash[psn.data.patient_subgroup_id].upSet
+								.forEach((drug_id) => upArr.push(drugsHash[drug_id].name));
 							let downArr = [];
-							dPSDIHash[psn.data.patient_subgroup_id].downSet.forEach((drug_id) => downArr.push(drugsHash[drug_id].name));
+							dPSDIHash[psn.data.patient_subgroup_id].downSet
+								.forEach((drug_id) => downArr.push(drugsHash[drug_id].name));
+
 							psn.data.drugs = {
 								up: upArr,
 								down: downArr
@@ -372,8 +389,8 @@ export class PatientSubgroups {
 			});
 			
 			this.patientSubgroupComorbidityNetworkEdges.forEach((edge) => {
-				let fromPSG = _PatientSubgroupsHash[edge.data.from_id];
-				let toPSG = _PatientSubgroupsHash[edge.data.to_id];
+				let fromPSG = _PatientSubgroupsHash[edge.data.f_id._id];
+				let toPSG = _PatientSubgroupsHash[edge.data.f_id._id];
 				
 				// Labelling intra-disease commorbidities
 				edge.data.isIntraDisease = fromPSG.disease_id === toPSG.disease_id;
@@ -423,9 +440,9 @@ export class PatientSubgroups {
 				
 				// Adding some edge stats
 				if(edge.data.rel_risk > 0) {
-					if((edge.data.from_id in dPSDIHash) && (edge.data.to_id in dPSDIHash)) {
-						let fromDrugSets = dPSDIHash[edge.data.from_id];
-						let toDrugSets = dPSDIHash[edge.data.to_id];
+					if((edge.data.f_id._id in dPSDIHash) && (edge.data.t_id._id in dPSDIHash)) {
+						let fromDrugSets = dPSDIHash[edge.data.f_id._id];
+						let toDrugSets = dPSDIHash[edge.data.t_id._id];
 						
 						let upArr = [];
 						fromDrugSets.upSet.intersection(toDrugSets.upSet).forEach((drug_id) => upArr.push(drugsHash[drug_id].name));
@@ -443,9 +460,9 @@ export class PatientSubgroups {
 						};
 					}
 					
-					if(edge.data.from_id in dPSGIHash && edge.data.to_id in dPSGIHash) {
-						let fromGeneSets = dPSGIHash[edge.data.from_id];
-						let toGeneSets = dPSGIHash[edge.data.to_id];
+					if(edge.data.f_id._id in dPSGIHash && edge.data.t_id._id in dPSGIHash) {
+						let fromGeneSets = dPSGIHash[edge.data.f_id._id];
+						let toGeneSets = dPSGIHash[edge.data.t_id._id];
 						
 						edge.data.genes = {
 							up: Array.from(fromGeneSets.upSet.intersection(toGeneSets.upSet)),
@@ -458,9 +475,9 @@ export class PatientSubgroups {
 						};
 					}
 				} else {
-					if((edge.data.from_id in dPSDIHash) && (edge.data.to_id in dPSDIHash)) {
-						let fromDrugSets = dPSDIHash[edge.data.from_id];
-						let toDrugSets = dPSDIHash[edge.data.to_id];
+					if((edge.data.f_id._id in dPSDIHash) && (edge.data.t_id._id in dPSDIHash)) {
+						let fromDrugSets = dPSDIHash[edge.data.f_id._id];
+						let toDrugSets = dPSDIHash[edge.data.t_id._id];
 						
 						let upArr = [];
 						fromDrugSets.upSet.intersection(toDrugSets.downSet).forEach((drug_id) => upArr.push(drugsHash[drug_id].name));
@@ -478,9 +495,9 @@ export class PatientSubgroups {
 						};
 					}
 					
-					if(edge.data.from_id in dPSGIHash && edge.data.to_id in dPSGIHash) {
-						let fromGeneSets = dPSGIHash[edge.data.from_id];
-						let toGeneSets = dPSGIHash[edge.data.to_id];
+					if(edge.data.f_id._id in dPSGIHash && edge.data.t_id._id in dPSGIHash) {
+						let fromGeneSets = dPSGIHash[edge.data.f_id._id];
+						let toGeneSets = dPSGIHash[edge.data.t_id._id];
 						
 						edge.data.genes = {
 							up: Array.from(fromGeneSets.upSet.intersection(toGeneSets.downSet)),
@@ -780,8 +797,8 @@ export class PatientSubgroups {
 		let source = edge.source();
 		let target = edge.target();
 		
-		if(edge.data('rel_risk') > 0) {
-			content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
+		if(edge.data('weight') > 0) {
+			content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('weight') +
 				'<div><b>Source</b>: '+source.data('label') + '<br />\n' +
 				'<b>Target</b>: '+target.data('label')+'<br />\n'+
 				'<b>Common drugs</b>: '+
@@ -807,7 +824,7 @@ export class PatientSubgroups {
 					'</div>'+
 				'</div>';
 		} else {
-			content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('rel_risk') +
+			content.innerHTML = '<b><u>Relative risk</u></b>: ' + edge.data('weight') +
 				'<div><b>Source</b>: '+source.data('label') + '<br />\n' +
 				'<b>Target</b>: '+target.data('label')+'<br />\n'+
 				'<b>Inverse drugs</b>: '+

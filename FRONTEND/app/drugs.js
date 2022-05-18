@@ -26,8 +26,8 @@ export class Drugs {
 						let retdrug = {
 							...drug,
 							// Unique identifiers
-							drug_id: drug.id,
-							id: 'Dr'+drug.id,
+							drug_id: drug._id,
+							id: drug._id,
 						};
 						
 						return {

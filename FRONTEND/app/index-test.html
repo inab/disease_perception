@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+	<head profile="http://www.w3.org/2005/10/profile">
+		<meta charset=utf-8 />
+		<meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui" />
+		<link rel="shortcut icon" type="image/x-icon" href="images/disease_perception.ico" />
+		<link rel="icon" type="image/x-icon" href="images/disease_perception.ico" />
+		
+		<title>Disease PERCEPTION</title>
+		
+		<script src="bundle.js"></script>
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=UA-121959668-1"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+	
+			gtag('config', 'UA-121959668-1');
+		</script>
+	</head>
+	<body>
+		<div id="graph"></div>
+		
+		<div id="comorbidities-loading" class="loading">
+			<img src="images/disease_perception_logo.svg" style="width:auto; height:70%;"/>
+		</div>
+		
+		<div id="graph-loading" class="loading">
+			<span class="fas fa-sync-alt fa-spin"></span>
+		</div>
+		
+		<div id="modalGraphChange" class="modal fade" tabindex="-1" role="dialog">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">Modal title</h4>
+					</div>
+					<div class="modal-body">
+						<p>One fine body&hellip;</p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary">Save changes</button>
+					</div>
+				</div><!-- /.modal-content -->
+			</div><!-- /.modal-dialog -->
+		</div><!-- /.modal -->
+		
+		<!-- Configuration panel switch button -->
+		<span class="fas fa-sliders-h config-toggle" id="config-toggle"></span>
+
+		<div id="config" class="config config-panel">
+			<div class="preamble">
+				<div class="mini-title"><div class="logo"><img src="images/disease_perception_small.png" /></div><span class="label label-info">Disease PERCEPTION</span></div>
+
+				<p>This service helps to explore the comorbidity relations among different diseases from the experimental genomic data from a cohort of patients</p>
+				<p>
+				  Data gathered and processed by Jon&nbsp;Sánchez<a href="https://orcid.org/0000-0001-7959-6326" target="_blank"><img src="images/orcid_16x16.png" /></a> et al<br/>
+				  API and frontend visualisation written by José&nbsp;Mª&nbsp;Fernández<a href="https://orcid.org/0000-0002-4806-5140" target="_blank"><img src="images/orcid_16x16.png" /></a> using <a href="http://js.cytoscape.org">Cytoscape.js</a><br/>
+				</p>
+				<div class="logo"><a href="https://github.com/inab/disease_perception" target="_blank"><img src="images/GitHub-Mark-Light-32px.png" />inab/disease_perception</a></div>
+			</div>
+			<div id="graph-controls">
+			</div>
+		</div>
+	</body>
+</html>
