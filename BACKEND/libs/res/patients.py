@@ -14,7 +14,7 @@ from flask import redirect
 from .nodes import NodesDetailed, NodeById, NodesByName, EdgesFromNodesByName, \
 	EdgesFromNodeById, NodesFromUpperNodes, NodesFromNodeById
 
-from .edges import EdgesFromUpperNodes
+from .edges import EdgesFromUpperNodes, NodesProps
 
 
 class PatientList(CMResource):
@@ -76,8 +76,8 @@ class PatientSubgroupList(CMResource):
 	@PATIENT_NS.doc('list_patient_subgroups')
 	def get(self):
 		'''List all the patient subgroups present in the comorbidity network'''
-		return redirect(self.api.url_for(NodesDetailed, h_id=self.default_h_id, 
-			n_type='patient_subgroup'))
+		return redirect(self.api.url_for(NodesProps, h_id=self.default_h_id, 
+			e_type='patient_subgroup_has_patients'))
 
 
 @PATIENT_NS.response(404, 'Patient subgroup not found')
@@ -160,7 +160,8 @@ class PatientSubgroupPatientsInteraction(CMResource):
 		'''It gets the interactions among the patients of the query patient subgroup'''
 		#return self.cmn.patients_interactions(patient_subgroup_ids=ids)
 		return redirect(self.api.url_for(EdgesFromUpperNodes, h_id=self.default_h_id, 
-			e_type='patient_graph', _id=ids, edges_connection=['patient_subgroup_has_patients', ''],min_size=0))
+			e_type='patient_graph', _id=ids, edges_connection=['patient_subgroup_has_patients', ''],
+			loop=1, min_size=0))
 
 
 @PATIENT_NS.response(404, 'Patient subgroup not found')

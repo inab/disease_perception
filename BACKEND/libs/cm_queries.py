@@ -194,6 +194,23 @@ class ComorbiditiesNetwork(object):
 			}, nodes))
 		
 		return res
+
+	@staticmethod
+	def _format_nodes_props(nodes: List[NodeProps], node_type: NodeTypeName, 
+		h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
+		res = []
+		res.extend(map(lambda n: {
+				'_id': n.node.n_payload_id,
+				'_type': node_type,
+				'internal_id': n.node.n_id,
+				'h_id': h_payload_id,
+				'name': n.node.n_payload_name,
+				'payload':  {"properties": n.props},
+				'prop': n.props
+			}, nodes))
+			
+		return res
+
 	
 	@staticmethod
 	def _format_simple_edges(edges: List[EdgeId], edge_type: EdgeTypeName, h_payload_id: HypergraphPayloadId) -> List[Mapping[str, Any]]:
@@ -366,13 +383,13 @@ class ComorbiditiesNetwork(object):
 	
 	def queryEdgesFromUpperNodes(self, h_payload_id: HypergraphPayloadId, 
 		edge_output_type: EdgeTypeName, ids: List[NodePayloadId],
-		edges_conection: List[EdgeTypeName], min_size:int=None)-> List[Mapping[str, Any]]:
+		edges_conection: List[EdgeTypeName], loop:int, min_size:int=None)-> List[Mapping[str, Any]]:
 
 		if (ids is not None) and not isinstance(ids, list):
 			ids = [ ids ]
 		
 		edges = self.hgdb.getEdgesByEdgeAndNodesIds(h_payload_id, ids, edge_output_type, 
-			edges_conection, min_size)
+			edges_conection, loop, min_size)
 
 		if edges is None:
 			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the \
@@ -380,6 +397,17 @@ class ComorbiditiesNetwork(object):
 		
 		return self._format_simple_edges(edges, edge_output_type, h_payload_id)
 	
+	def queryCountGroupNodes(self, h_payload_id: HypergraphPayloadId, edge_type: EdgeTypeName):
+
+		nodes = self.hgdb.getNodeTypesCount(h_payload_id, edge_type)
+
+		if nodes is None:
+			self.api.abort(404, f"Hypergraph {h_payload_id} was not found in the \
+			database or database was not properly populated (missing {edge_type} edge type?)")
+		
+		return self._format_nodes_props(nodes, edge_type, h_payload_id)
+
+
 
 	def queryNodeFromUpperNodes(self, h_payload_id: HypergraphPayloadId, 
 		node_output_type: NodeTypeName, ids: List[NodePayloadId],
@@ -398,7 +426,9 @@ class ComorbiditiesNetwork(object):
 		return self._format_simple_nodes(nodes, node_output_type, h_payload_id)
 	
 		
-	def queryNodeHyperedges(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, hyperedge_type: Optional[HyperedgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
+	def queryNodeHyperedges(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, 
+		hyperedge_type: Optional[HyperedgeTypeName] = None, internal_id: Optional[InternalNodeId] = None,
+		 _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
 		if (name is not None) and not isinstance(name, list):
 			name = [ name ]
 		if (_id is not None) and not isinstance(_id, list):
@@ -425,7 +455,8 @@ class ComorbiditiesNetwork(object):
 		
 		return res
 	
-	def queryNodeHyperedgesNodes(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, hyperedge_type: Optional[HyperedgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
+	def queryNodeHyperedgesNodes(self, h_payload_id: HypergraphPayloadId, node_type: NodeTypeName, 
+		hyperedge_type: Optional[HyperedgeTypeName] = None, internal_id: Optional[InternalNodeId] = None, _id: Optional[NodePayloadId] = None, name: Optional[str] = None) -> List[Mapping[str, Any]]:
 		if (name is not None) and not isinstance(name, list):
 			name = [ name ]
 		if (_id is not None) and not isinstance(_id, list):

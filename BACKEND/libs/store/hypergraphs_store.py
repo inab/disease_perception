@@ -766,7 +766,8 @@ class HypergraphsStore(object):
 		self._populateNodeTypesCache()
 		return self.cachedNodeTypesByInternalId.values()
 	
-	def getNodeTypesByGraph(self, h_payload_id: HypergraphPayloadId, name: Optional[str] = None) -> Iterator[NodeType]:
+	def getNodeTypesByGraph(self, h_payload_id: HypergraphPayloadId, 
+		name: Optional[str] = None) -> Iterator[NodeType]:
 		"""
 		Given a public hypergraph id, it retrieves an iterator
 		of nodes types used by nodes in this hypergraph
@@ -788,7 +789,13 @@ FROM node_type nt
 				query += ' AND nt.nt_name=?'
 				params.append(name)
 			for nt in cur.execute(query + ' GROUP BY 1 HAVING count > 0', params):
-				retval.append(NodeType(nt_id=nt[0], name=nt[1], schema_id=nt[2], description=nt[3], payload=None if nt[4] is None else json.loads(nt[4]), number=nt[5]))
+				retval.append(NodeType(
+					nt_id=nt[0], 
+					name=nt[1], 
+					schema_id=nt[2], 
+					description=nt[3], 
+					payload=None if nt[4] is None else json.loads(nt[4]), 
+					number=nt[5]))
 			cur.close()
 		
 		return retval
@@ -905,6 +912,41 @@ FROM edge_type et
 		
 		return retval
 	
+
+	def getNodeTypesCount(self, h_payload_id: HypergraphPayloadId,edgeTypeName: EdgeTypeName):
+		"""
+		Gets node from edgetype name grouped by
+		"""
+		self._populateHypergraphsCache()
+		hId = self.cachedHypergraphs.get(h_payload_id)
+		if hId is None:
+			return None
+
+		retval = []
+		with self.conn:
+			cur = self.conn.cursor()
+			query = """
+			SELECT n.*, COUNT(*) AS num
+FROM edge e_ex, edge_type et_ex, node n
+WHERE et_ex.et_name = ?
+AND e_ex.h_id=?
+AND e_ex.et_id = et_ex.et_id
+and e_ex.from_id = n.n_id
+GROUP BY 1 
+			"""
+			queryParams= [edgeTypeName, hId.h_id]
+			#execute query
+			
+			for n in cur.execute(query, queryParams):
+				retval.append(NodeProps(
+					node= NodeId(n_id=n[0],nt_id=n[2], n_payload_id=n[5],n_payload_name=n[6]),
+					props={"count": n[7]}
+				))
+		
+			cur.close()
+		return retval
+
+
 	def _populateHyperedgeTypesCache(self, invalidateCache:bool = False) -> None:
 		"""
 		This helper method populates an internal cache of the
@@ -1117,7 +1159,8 @@ ORDER BY het_nt.het_nt_id
 			cur.close()
 		
 		return retval
-	
+
+
 	def getEdgesByGraphAndNode(self, h_payload_id: HypergraphPayloadId, nodeTypeName: NodeTypeName, from_to: bool, edgeTypeName: Optional[EdgeTypeName] = None, names: Optional[List[NodePayloadName]] = None, _ids: Optional[List[NodePayloadId]] = None, internal_ids: Optional[List[InternalNodeId]] = None) -> Iterable[Tuple[List[EdgeId], EdgeTypeName]]:
 		"""
 		Retrieves the list of known nodes from this hypergraph
@@ -1704,8 +1747,9 @@ ORDER BY he_n.he_n_id
 	
 
 	def getEdgesByEdgeAndNodesIds(self, h_payload_id: HypergraphPayloadId, _ids: List[NodePayloadId],
-		edgeTypeNameRetrieve: EdgeTypeName, edges_conection: List[EdgeTypeName], min_size: Optional[int]= None):
-		""",
+		edgeTypeNameRetrieve: EdgeTypeName, edges_conection: List[EdgeTypeName], 
+		loop:int, min_size: Optional[int]= None):
+		"""
 		Retrieve the list of edges of the given type connected through edges way to the given node ids 
 		"""
 		self._populateHypergraphsCache()
@@ -1761,22 +1805,25 @@ AND e_x.to_id = c_t.n_id;
 	AND n_o.n_id = e.from_id
 	AND e.to_id = n_d.n_id
 	'''
+
 				query = '''
-SELECT e_x.*
+SELECT DISTINCT e_x.*
 FROM edge e_x, edge_type et_x, prueba c_f, prueba c_t
 WHERE et_x.et_name =?
 AND e_x.et_id = et_x.et_id
 AND e_x.from_id = c_f.n_id
-AND e_x.to_id = c_t.n_id;
 '''				
+
+				if (loop):
+					query += 'AND e_x.to_id = c_t.n_id'
+				
 				queryTmpTableParams= [edges_conection[0], hId.h_id]
 				queryTmpTableParams.extend(_ids)
 				queryTmpTable += f' AND n_o.n_payload_id IN ({",".join(["?"] * len(_ids))})'
 			
 			queryIndex = "CREATE UNIQUE INDEX prueba_1 ON prueba(n_id);"
 			queryParams = [edgeTypeNameRetrieve]
-			print(queryTmpTable)
-			print(queryTmpTableParams)
+
 			#execute queries
 			try:
 				cur.execute(queryTmpTable, queryTmpTableParams)

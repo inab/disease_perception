@@ -70,7 +70,7 @@ class DiseasePatientSubgroupComorbidities(CMResource):
 		return redirect(self.api.url_for(EdgesFromUpperNodes, h_id=self.default_h_id, 
 			e_type='patient_subgroup_digraph', _id=disease_ids, 
 			edges_connection=["disease_has_patient_subgroups","patient_subgroup_has_patients"],
-			min_size=min_size))
+			loop=1, min_size=min_size))
 
 
 @DISEASE_NS.response(404, 'No disease found or with no known patient subgroup comorbidity')
@@ -80,9 +80,10 @@ class DiseasePatientSubgroupIntersectGenes(CMResource):
 	@DISEASE_NS.doc('disease_ps_genes')
 	def get(self,disease_ids):
 		'''It gets the intersected genes for each patient subgroup related to the input diseases'''
-		return redirect(self.api.url_for(NodesFromUpperNodes, h_id=self.default_h_id, 
-			n_type='gene', _id=disease_ids, edges_connection=["disease_has_patient_subgroups", "patient_subgroup_gene_intersects"]))
-
+		return redirect(self.api.url_for(EdgesFromUpperNodes, h_id=self.default_h_id, 
+			e_type='patient_subgroup_gene_intersects', _id=disease_ids, 
+			edges_connection=["disease_has_patient_subgroups", ""], loop=0,
+			min_size=0))
 
 @DISEASE_NS.response(404, 'No disease found or with no known patient subgroup comorbidity')
 @DISEASE_NS.param('disease_ids', 'The disease ids (at least, two), separated by commas')
@@ -91,8 +92,10 @@ class DiseasePatientSubgroupIntersectDrugs(CMResource):
 	@DISEASE_NS.doc('disease_ps_drugs')
 	def get(self,disease_ids):
 		'''It gets the intersected drugs for each patient subgroup related to the input diseases'''
-		return redirect(self.api.url_for(NodesFromUpperNodes, h_id=self.default_h_id, 
-			n_type='drug', _id=disease_ids, edges_connection=["disease_has_patient_subgroups", "patient_subgroup_drug_intersects"]))
+		return redirect(self.api.url_for(EdgesFromUpperNodes, h_id=self.default_h_id, 
+			e_type='patient_subgroup_drug_intersects', _id=disease_ids, 
+			edges_connection=["disease_has_patient_subgroups", ""], loop=0,
+			min_size=0))
 
 
 class DiseaseGroupList(CMResource):

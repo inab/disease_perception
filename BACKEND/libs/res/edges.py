@@ -7,7 +7,7 @@ import sys, os
 from typing import Optional, List
 
 from .api_models import CMResPath, CMRoutes, CMResource, \
-    EDGES_NS, simple_edge_model, edge_model, simple_node_model
+    EDGES_NS, simple_edge_model, edge_model, simple_node_model, node_model
 
 # Now, the routes
 @EDGES_NS.response(404, 'Hypergraph or edge type not found')
@@ -131,15 +131,27 @@ class Edges(CMResource):
 @EDGES_NS.param('e_type', 'The edge type name retrieved')
 @EDGES_NS.param('_id', 'The node id(s), separated by commas')
 @EDGES_NS.param('edges_connection', 'The edges to connect, separated by commas')
+@EDGES_NS.param('loop', 'Retrieve edges are a loop to itself')
 @EDGES_NS.param('min_size', 'Minimal size of the group node')
 class EdgesFromUpperNodes(CMResource):
 	'''Return the edges from upper nodes ids'''
 	@EDGES_NS.doc('edges_from_upper_nodes_ids')
 	@EDGES_NS.marshal_list_with(edge_model)
-	def get(self, h_id:str, e_type:str, _id:List[str], edges_connection:List[str], min_size:int=None):
-		return self.cmn.queryEdgesFromUpperNodes(h_id, e_type, _id,  edges_connection, min_size)
+	def get(self, h_id:str, e_type:str, _id:List[str], edges_connection:List[str], 
+		loop:int, min_size:int=None):
+		return self.cmn.queryEdgesFromUpperNodes(h_id, e_type, _id,  edges_connection, loop, min_size)
 
 
+@EDGES_NS.response(404, 'Hypergraph or node type not found')
+@EDGES_NS.param('h_id', 'The hypergraph id')
+@EDGES_NS.param('e_type', 'The edge type name')
+class NodesProps(CMResource):
+	'''Return the detailed information of the nodes with their count grouped props'''
+	@EDGES_NS.doc('list_nodes_properties')
+	@EDGES_NS.marshal_list_with(node_model)
+	def get(self, h_id:str, e_type:str):
+		'''It gets detailed node information'''
+		return self.cmn.queryCountGroupNodes(h_id, e_type)
 
 ROUTES = CMRoutes(
 	ns=EDGES_NS,
@@ -155,6 +167,8 @@ ROUTES = CMRoutes(
 		CMResPath(EdgeById,'/id/<string:_id>'),
 		CMResPath(NodesFromEdgeById,'/id/<string:_id>/from'),
 		CMResPath(NodesToEdgeById,'/id/<string:_id>/to'),
-		CMResPath(EdgesFromUpperNodes,'/to/n/id/<list(string,sep=","):_id>/e/<list(string,sep=","):edges_connection>/min_size/<int:min_size>'),
+		CMResPath(EdgesFromUpperNodes,'/to/n/id/<list(string,sep=","):_id>/e/<list(string,sep=","):edges_connection>/loop/<int:loop>/min_size/<int:min_size>'),
+		CMResPath(NodesProps,'/props'),
+		
 	]
 )

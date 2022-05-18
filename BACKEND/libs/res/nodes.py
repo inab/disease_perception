@@ -452,7 +452,6 @@ class NodesFromUpperNodes(CMResource):
 		return self.cmn.queryNodeFromUpperNodes(h_id, n_type, _id, edges_connection)
 
 
-["disease_has_patient_subgroups", "patient_subgroup_gene_intersects"]
 
 ROUTES = CMRoutes(
 	ns=NODES_NS,
@@ -498,6 +497,6 @@ ROUTES = CMRoutes(
 		CMResPath(NodesRelNodeByInternalId,'/i_id/<list(int,sep=","):internal_id>/he/<string:he_type>/n'),
 		CMResPath(NodesRelNodeById,'/id/<list(string,sep=","):_id>/he/<string:he_type>/n'),
 
-		CMResPath(NodesFromUpperNodes,'/to/n/id/<list(string,sep=","):_id>/e/<list(string,sep=","):edges_connection>'),
+		CMResPath(NodesFromUpperNodes,'/to/n/id/<list(string,sep=","):_id>/e/<list(string,sep=","):edges_connection>')
 	]
 )
