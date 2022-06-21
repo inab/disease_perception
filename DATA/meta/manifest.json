@@ -50,6 +50,11 @@
 			"name": "supporting_source",
 			"desc": "A source supporting some evidence",
 			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
+		},
+		{
+			"name": "pathway",
+			"desc": "A pathway describing some biological process",
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/node_types/node"
 		}
 	],
 	"edge_types": [
@@ -171,6 +176,19 @@
 			"name": "patient_subgroup_gene_intersects",
 			"desc": "",
 			"node_type_a": "patient_subgroup",
+			"node_type_b": "gene",
+			"is_directed": false,
+			"is_symmetric": false,
+			"schema_id": "http://disease-perception.bsc.es/schemas/1.0/edge_types/ungraph_edge",
+			"weight": {
+				"name": "regulation_sign",
+				"desc": "Sign of the regulation"
+			}
+		},
+		{
+			"name": "disease_gene_intersects",
+			"desc": "",
+			"node_type_a": "disease",
 			"node_type_b": "gene",
 			"is_directed": false,
 			"is_symmetric": false,

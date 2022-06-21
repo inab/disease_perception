@@ -1,0 +1,24 @@
+_schema: http://disease-perception.bsc.es/schemas/1.0/hypergraph_types/hypergraph
+_id: rna_seq_perception
+_generated: "2022-06-20T00:00:00+01:00"
+name: RNA SEQ PERCEPTION	
+description: ""
+attributions:
+  - name: Beatriz Urda
+    roles:
+      - conceptualization
+      - data-curation
+      - formal-analysis
+      - funding-acquisition
+      - investigation
+      - methodology
+      - project-administration
+      - resources
+      - software
+      - supervision
+      - validation
+      - visualization
+      - writing-original-draft
+      - writing-review-editing
+    pid: orcid: 0000-0002-3845-5751
+licence: "https://choosealicense.com/no-permission/"
