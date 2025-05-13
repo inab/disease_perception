@@ -1,4 +1,4 @@
-# Install instructions of Disease PERCEPTION database population program
+# Install instructions of Disease PERCEPTION 1 database population program
 
 This program is written for Python 3.5 or later. It depends on standard libreries, plus the ones declared in [requirements.txt](requirements.txt).
 
@@ -12,6 +12,6 @@ This program is written for Python 3.5 or later. It depends on standard librerie
 python3 -m venv .pyDBenv
 source .pyDBenv/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt -c constraints.txt
+pip install -r requirements.txt
 deactivate
 ```

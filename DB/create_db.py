@@ -5,14 +5,28 @@ import sys, os, json
 import pandas as pd
 import sqlite3
 
-def main(project_folder="./"):
-	data_folder = os.path.join(project_folder,'data')
-	output_folder = os.path.join(project_folder,'..','REST','DB')
+def main(project_folder="./", data_folder = None, output_folder = None, db_path = None):
 	
+	if data_folder is None:
+		data_folder = os.path.join(project_folder,'data')
+
+	if not os.path.isabs(data_folder):
+		data_folder = os.path.join(project_folder, data_folder)
+
+	if db_path is None:
+		if output_folder is None:
+			output_folder = os.path.join('..','REST','DB')
+
+		if not os.path.isabs(output_folder):
+			output_folder = os.path.join(project_folder, output_folder)
+
+		db_path = os.path.join(output_folder,'net_comorbidity.db')
+	else:
+		output_folder = os.path.dirname(db_path)
+
 	os.makedirs(output_folder,exist_ok=True)
 	
 	sql_creates_fname = os.path.join(data_folder, 'sql_create_tables.json')
-	db_path = os.path.join(output_folder,'net_comorbidity.db')
 	
 	# Load list of dicts from json: [{tab_name, SQL Create,datafile}]
 	with open(sql_creates_fname) as fh:
@@ -65,12 +79,25 @@ def main(project_folder="./"):
 	print("Tables Ready")        
 	con_db.close()
 
+if __name__ == "__main__":
+	if hasattr(sys, 'frozen'):
+		basis = sys.executable
+	else:
+		basis = sys.argv[0]
 
-if hasattr(sys, 'frozen'):
-	basis = sys.executable
-else:
-	basis = sys.argv[0]
+	project_folder = os.path.split(basis)[0]
 
-project_folder = os.path.split(basis)[0]
+	data_folder = None
+	output_folder = None
+	db_path = None
+	if len(sys.argv) > 1:
+		data_folder = sys.argv[1]
 
-main(project_folder)
+		if len(sys.argv) > 2:
+			a_path = sys.argv[2]
+			if os.path.isdir(a_path):
+				output_folder = a_path
+			else:
+				db_path = a_path
+
+	main(project_folder=project_folder, data_folder=data_folder, output_folder=output_folder, db_path=db_path)
