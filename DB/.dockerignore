@@ -1,0 +1,6 @@
+# Ignore everything but ...
+*
+
+# ...these files
+!/requirements.txt
+!/create_db.py
