@@ -4,7 +4,7 @@
 
 import sys, os
 
-from flask_restplus import Namespace, Api, Resource, fields
+from flask_restx import Namespace, Api, Resource, fields
 
 class CMResource(Resource):
 	'''This class eases passing the instance of the comorbidity network query API'''

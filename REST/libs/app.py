@@ -5,7 +5,7 @@
 import sys, os
 
 from flask import Flask, Blueprint, redirect
-from flask_restplus import Api, Namespace, Resource
+from flask_restx import Api, Namespace, Resource
 from flask_cors import CORS
 from flask_compress import Compress
 

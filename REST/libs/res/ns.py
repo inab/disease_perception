@@ -4,7 +4,7 @@
 
 import sys, os
 
-from flask_restplus import Namespace, Resource
+from flask_restx import Namespace, Resource
 
 from .api_models import CMResource, NS
 
