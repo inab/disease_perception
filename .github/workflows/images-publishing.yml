@@ -13,8 +13,6 @@ on:
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
   REGISTRY: ghcr.io
-  DP_IMAGE_NAME: ${{ github.repository }}
-  DP_BUILDER_IMAGE_NAME: ${{ github.repository }}_builder
 
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
@@ -25,9 +23,9 @@ jobs:
       matrix:
         include:
           - context: .
-            image: ${{ env.DP_IMAGE_NAME }}
+            image: ${{ github.repository }}
           - context: ./DB
-            image: ${{ env.DP_BUILDER_IMAGE_NAME }}
+            image: ${{ github.repository }}_builder
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     permissions:
       contents: read
