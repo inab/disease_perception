@@ -16,30 +16,39 @@ try:
 except ImportError:
 	from yaml import Loader as YAMLLoader, Dumper as YAMLDumper
 
-# Creating the object holding the state of the API
-if hasattr(sys, 'frozen'):
-	basis = sys.executable
-else:
-	basis = sys.argv[0]
+def initApp():
+	# Creating the object holding the state of the API
+	if hasattr(sys, 'frozen'):
+		basis = sys.executable
+	else:
+		basis = sys.argv[0]
 
-api_root = os.path.split(basis)[0]
+	# It is being called by either mod_wsgi or uwsgi
+	if basis in ('mod_wsgi', 'uwsgi'):
+		basis = __file__
 
-# Setup tweaks
-config_file = basis + '.yaml'
-if os.path.exists(config_file):
-	with open(config_file,"r",encoding="utf-8") as cf:
-		local_config = yaml.load(cf,Loader=YAMLLoader)
-else:
-	local_config = {}
+	api_root = os.path.split(basis)[0]
 
-# Connection to the database, setting up the default path
-dbpath = local_config.setdefault("db", os.path.join('DB','net_comorbidity.db'))
-if not os.path.isabs(dbpath):
-	local_config['db'] = os.path.normpath(os.path.join(api_root, dbpath))
+	# Setup tweaks
+	config_file = basis + '.yaml'
+	if os.path.exists(config_file):
+		with open(config_file,"r",encoding="utf-8") as cf:
+			local_config = yaml.safe_load(cf,Loader=YAMLLoader)
+	else:
+		local_config = {}
 
-app = libs.app.init_comorbidities_app(local_config)
+	# Connection to the database, setting up the default path
+	dbpath = local_config.setdefault("db", os.path.join('DB','net_comorbidity.db'))
+	if not os.path.isabs(dbpath):
+		dbpath = os.path.normpath(os.path.join(api_root, dbpath))
+	local_config['db'] = dbpath
+
+	app = libs.app.init_comorbidities_app(local_config)
+
+	return app, local_config
 
 if __name__ == '__main__':
+	app, local_config = initApp()
 	if len(sys.argv) > 1:
 		host = local_config.get('host',"0.0.0.0")
 		port = local_config.get('port',5000)
@@ -59,3 +68,5 @@ if __name__ == '__main__':
 		from flup.server.fcgi import WSGIServer
 
 		WSGIServer(app).run()
+else:
+	app, local_config = initApp()

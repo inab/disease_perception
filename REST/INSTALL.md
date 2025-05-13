@@ -1,4 +1,4 @@
-# Install instructions of Disease PERCEPTION REST API
+# Install instructions of Disease PERCEPTION 1 REST API
 
 The source code of this API is written for Python 3.5 or later. It depends on standard libreries, plus the ones declared in [requirements.txt](requirements.txt).
 
@@ -12,7 +12,7 @@ The source code of this API is written for Python 3.5 or later. It depends on st
 python3 -m venv .pyRESTenv
 source .pyRESTenv/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt -c constraints.txt
+pip install -r requirements.txt
 # Next commands are to assure a static swagger ui interface is in place
 if [ ! -d .pyRESTenv/lib/python3.5/site-packages/flask_restplus/static ] ; then
 	wget --content-disposition https://github.com/swagger-api/swagger-ui/archive/v3.14.2.tar.gz
@@ -22,9 +22,12 @@ if [ ! -d .pyRESTenv/lib/python3.5/site-packages/flask_restplus/static ] ; then
 fi
 ```
 
-## API integration into Apache
+## API integration into a reverse proxy
 
-This API can be integrated into an Apache instance. The instance must have the module [FCGID](https://httpd.apache.org/mod_fcgid/) installed (package `libapache2-mod-fcgid` in Ubuntu).
+This API can be integrated into a reverse proxy instance in several ways.
+
+### FCGID in Apache
+The instance must have the module [FCGID](https://httpd.apache.org/mod_fcgid/) installed (package `libapache2-mod-fcgid` in Ubuntu).
 
 ```bash
 sudo apt install apache2 libapache2-mod-fcgid
@@ -43,3 +46,5 @@ sudo service apache2 enable
 		Require all granted
 	</Location>
 ```
+
+### uWSGI in Apache

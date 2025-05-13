@@ -22,7 +22,7 @@ fi
 
 if [ -d "$PYBASEDIR" ] ; then
 	source "${PYBASEDIR}/bin/activate"
-	exec python "${BASEDIR}/$(basename "$0")".py "$@"
+	exec python "${BASEDIR}/$(basename "$0" .fgci)".py "$@"
 else
 	echo "UNCONFIGURED" 1>&2
 	exit 1
