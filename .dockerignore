@@ -1,0 +1,11 @@
+# Ignore everything but ...
+*
+
+# ...these files
+!FRONTEND
+!REST/libs
+!REST/disease_perception.py
+!REST/disease_perception.wsgi
+!REST/requirements.txt
+!REST/uwsgi.ini
+!LICENSE
