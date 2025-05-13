@@ -13,7 +13,8 @@ Recently, this repository has received an uplift, in order to automatically gene
 Once you have properly installed both `docker` and `docker compose` plugin following standard procedures, you only have to run it:
 
 ```bash
-docker compose up -d
+docker compose pull
+docker compose up --no-build -d
 ```
 
 Several setup parameters can be changed at [.env](.env) file.
