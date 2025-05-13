@@ -1,5 +1,5 @@
 # Based on https://docs.github.com/en/actions/use-cases-and-examples/publishing-packages/publishing-docker-images#publishing-images-to-github-packages
-name: Create and publish WfExS-backend Docker image
+name: Create and publish Disease PERCEPTION Docker images
 
 # Configures this workflow to run every time a change is pushed to the branch called `release`.
 on:
