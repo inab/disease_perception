@@ -33,11 +33,22 @@ sudo a2enmod proxy_uwsgi
 sudo systemctl restart apache2
 ```
 
-```apache config
-	<Location />
-		ProxyPass "uwsgi://192.168.0.186:5000/"
-		ProxyPassReverse "uwsgi://192.168.0.186:5000/"
-		ProxyAddHeaders On
-		ProxyPreserveHost On
-	</Location>
-```
+* Based on locations
+
+  ```apache config
+  	<Location />
+  		ProxyPass "uwsgi://192.168.0.186:5000/"
+  		ProxyPassReverse "uwsgi://192.168.0.186:5000/"
+  		ProxyAddHeaders On
+  		ProxyPreserveHost On
+  	</Location>
+  ```
+
+* Based on rewrites
+
+  ```apache config
+	ProxyPass "/" "uwsgi://192.168.0.186:5000/"
+	ProxyPassReverse "/" "uwsgi://192.168.0.186:5000/"
+	ProxyAddHeaders On
+	ProxyPreserveHost On
+  ```
