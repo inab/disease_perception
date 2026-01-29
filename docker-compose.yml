@@ -33,6 +33,7 @@ services:
     depends_on:
       builder:
         condition: service_completed_successfully
+    restart: unless-stopped
     healthcheck:
       test: /usr/bin/test -f /usr/src/app/DB/net_comorbidity.db || exit 1
       interval: 30s
@@ -52,6 +53,7 @@ services:
       - nginx
     depends_on:
       - production
+    restart: unless-stopped
     ports:
       - '8080:80'
     volumes:
